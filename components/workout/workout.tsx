@@ -10,18 +10,21 @@ import { ExerciseEditor } from "@/components/workout/exercise-editor";
 import { WorkoutWelcome } from "@/components/workout/workout-welcome";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import { supabase } from "@/lib/supabaseClient";
-import type { WorkoutExercise, Set, Exercise } from "@/types/workouts";
+import { generateUUID } from "@/lib/utils"; // Add this import
+import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
 
 export function Workout() {
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [exercises, setExercises] = useState<UIExtendedWorkout["exercises"]>(
+    []
+  );
   const [showExerciseModal, setShowExerciseModal] = useState(false);
-  const [selectedExercise, setSelectedExercise] =
-    useState<WorkoutExercise | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<
+    UIExtendedWorkout["exercises"][0] | null
+  >(null);
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  // Replace with your test user UUID
-  const tempUserId = "8e189739-3735-4495-abd1-7ddccee640ac"; // e.g., "550e8400-e29b-41d4-a716-446655440000"
+  const tempUserId = "8e189739-3735-4495-abd1-7ddccee640ac";
 
   const isWorkoutValid =
     exercises.length > 0 &&
@@ -31,7 +34,7 @@ export function Workout() {
         exercise.sets.every((set) => set.reps > 0 && set.weight_kg > 0)
     );
 
-  const calculateTotalVolume = (exercises: WorkoutExercise[]) => {
+  const calculateTotalVolume = (exercises: UIExtendedWorkout["exercises"]) => {
     return exercises.reduce(
       (total, exercise) =>
         total +
@@ -52,33 +55,35 @@ export function Workout() {
   const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
       const newExercises = selected.map((exercise) => ({
-        id: crypto.randomUUID(),
+        id: generateUUID(), // Replace crypto.randomUUID
         workout_id: "",
         exercise_id: exercise.id,
         exercise,
         sets: [
           {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             workout_exercise_id: "",
             reps: 0,
             weight_kg: 0,
             created_at: "",
           },
-        ],
+        ], // Replace here too
         created_at: "",
       }));
-
       setExercises([...exercises, ...newExercises]);
       setSelectedExercises([]);
       setShowExerciseModal(false);
     });
   };
 
-  const handleUpdateSets = (exerciseIndex: number, newSets: Set[]) => {
+  const handleUpdateSets = (
+    exerciseIndex: number,
+    newSets: UIExtendedWorkout["exercises"][0]["sets"]
+  ) => {
     if (exerciseIndex === -1) return;
     const updatedExercises = [...exercises];
     updatedExercises[exerciseIndex] = {
-      ...exercises[exerciseIndex],
+      ...updatedExercises[exerciseIndex],
       sets: newSets,
     };
     setExercises(updatedExercises);
@@ -103,7 +108,6 @@ export function Workout() {
 
     startTransition(async () => {
       try {
-        const now = new Date();
         const { data: workoutData, error: workoutError } = await supabase
           .from("workouts")
           .insert([{ user_id: tempUserId }])

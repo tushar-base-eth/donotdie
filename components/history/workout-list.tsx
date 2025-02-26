@@ -1,16 +1,20 @@
-"use client"
+"use client";
 
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
-import type { Workout } from "@/types/workouts"
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UIExtendedWorkout } from "@/types/workouts";
 
 interface WorkoutListProps {
-  workouts: Workout[]
-  onWorkoutSelect: (workout: Workout) => void
-  onWorkoutDelete: (workoutId: string) => void
+  workouts: UIExtendedWorkout[];
+  onWorkoutSelect: (workout: UIExtendedWorkout) => void;
+  onWorkoutDelete: (workoutId: string) => void;
 }
 
-export function WorkoutList({ workouts, onWorkoutSelect, onWorkoutDelete }: WorkoutListProps) {
+export function WorkoutList({
+  workouts,
+  onWorkoutSelect,
+  onWorkoutDelete,
+}: WorkoutListProps) {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
@@ -30,7 +34,7 @@ export function WorkoutList({ workouts, onWorkoutSelect, onWorkoutDelete }: Work
               dragElastic={0.1}
               onDragEnd={(_, info) => {
                 if (info.offset.x < -50) {
-                  onWorkoutDelete(workout.id)
+                  onWorkoutDelete(workout.id);
                 }
               }}
               className="cursor-grab active:cursor-grabbing relative"
@@ -45,12 +49,11 @@ export function WorkoutList({ workouts, onWorkoutSelect, onWorkoutDelete }: Work
                 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0 }}
-                whileDrag={{
-                  opacity: 1,
-                  transition: { duration: 0.2 },
-                }}
+                whileDrag={{ opacity: 1, transition: { duration: 0.2 } }}
               >
-                <span className="text-destructive-foreground font-medium">Delete</span>
+                <span className="text-destructive-foreground font-medium">
+                  Delete
+                </span>
               </motion.div>
 
               <Card
@@ -67,10 +70,14 @@ export function WorkoutList({ workouts, onWorkoutSelect, onWorkoutDelete }: Work
                           day: "numeric",
                         })}
                       </div>
-                      <div className="text-sm text-muted-foreground">{workout.time}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {workout.time}
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Total Volume</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Volume
+                      </div>
                       <div className="font-medium">{workout.totalVolume}kg</div>
                     </div>
                   </div>
@@ -81,6 +88,5 @@ export function WorkoutList({ workouts, onWorkoutSelect, onWorkoutDelete }: Work
         ))}
       </AnimatePresence>
     </div>
-  )
+  );
 }
-
