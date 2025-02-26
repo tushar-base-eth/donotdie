@@ -1,10 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Moon, Settings, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/auth-context";
 import type { Database } from "@/types/database";
 
 interface VolumeData {
@@ -13,27 +18,32 @@ interface VolumeData {
 }
 
 export default function DashboardPage() {
+  const { state } = useAuth();
+  const { user, isLoading } = state;
+  const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const [totalVolume, setTotalVolume] = useState<number>(0);
   const [totalWorkouts, setTotalWorkouts] = useState<number>(0);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [timeRange, setTimeRange] = useState<"7days" | "4weeks" | "6months">(
     "7days"
   );
-  const [isLoading, setIsLoading] = useState(true);
-
-  const userId = "8e189739-3735-4495-abd1-7ddccee640ac";
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [timeRange]);
+    if (!user && !isLoading) {
+      router.push("/auth");
+    } else if (user) {
+      fetchDashboardData();
+    }
+  }, [user, isLoading, timeRange, router]);
 
   const fetchDashboardData = async () => {
-    setIsLoading(true);
+    if (!user) return;
 
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("total_volume, total_workouts")
-      .eq("id", userId)
+      .eq("id", user.id)
       .single();
     if (userError) {
       console.error("Error fetching user stats:", userError.message);
@@ -47,7 +57,7 @@ export default function DashboardPage() {
     const { data: volumeByDay, error: volumeError } = (await supabase.rpc(
       "get_volume_by_day",
       {
-        p_user_id: userId,
+        p_user_id: user.id,
         p_days: daysToFetch,
       }
     )) as {
@@ -73,8 +83,6 @@ export default function DashboardPage() {
       }
       setVolumeData(formattedVolumeData);
     }
-
-    setIsLoading(false);
   };
 
   const aggregateByWeek = (
@@ -143,8 +151,31 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <div className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg">
+        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/settings")}
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
       <div className="p-4 space-y-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
         <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
         <VolumeChart
           data={volumeData}
@@ -152,6 +183,7 @@ export default function DashboardPage() {
           onTimeRangeChange={setTimeRange}
         />
       </div>
+
       <BottomNav />
     </div>
   );

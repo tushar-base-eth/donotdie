@@ -1,51 +1,48 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/auth-context";
 import type { UIExtendedWorkout } from "@/types/workouts";
 
 export default function HistoryPage() {
+  const { state } = useAuth();
+  const { user, isLoading } = state;
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedWorkout, setSelectedWorkout] =
     useState<UIExtendedWorkout | null>(null);
   const [workouts, setWorkouts] = useState<UIExtendedWorkout[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const userId = "8e189739-3735-4495-abd1-7ddccee640ac";
-
   useEffect(() => {
-    fetchWorkouts();
-  }, []);
+    if (!user && !isLoading) {
+      router.push("/auth");
+    } else if (user) {
+      fetchWorkouts();
+    }
+  }, [user, isLoading, router]);
 
   const fetchWorkouts = async () => {
+    if (!user) return;
+    setIsRefreshing(true);
     const { data, error } = await supabase
       .from("workouts")
       .select(
         "id, user_id, created_at, workout_exercises(id, exercise_id, created_at, exercise:available_exercises(*), sets(*))"
       )
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
-
     if (error) {
       console.error("Error fetching workouts:", error.message);
     } else {
-      const formattedWorkouts = data.map((rawWorkout) => {
-        // Parse the UTC timestamp
+      const formattedWorkouts: UIExtendedWorkout[] = data.map((rawWorkout) => {
         const createdAt = new Date(rawWorkout.created_at ?? "");
-
-        // Log for debugging (optional)
-        console.log(
-          "Raw created_at:",
-          rawWorkout.created_at,
-          "Local:",
-          createdAt.toLocaleString()
-        );
-
-        // Process exercises (unchanged from your original logic)
         const exercises = Array.isArray(rawWorkout.workout_exercises)
           ? rawWorkout.workout_exercises.map((we) => ({
               id: we.id,
@@ -60,8 +57,6 @@ export default function HistoryPage() {
               created_at: we.created_at ?? "",
             }))
           : [];
-
-        // Calculate total volume (unchanged)
         const totalVolume = exercises.reduce(
           (sum, ex) =>
             sum +
@@ -71,23 +66,22 @@ export default function HistoryPage() {
             ),
           0
         );
-
         return {
           id: rawWorkout.id,
           user_id: rawWorkout.user_id ?? "",
           created_at: rawWorkout.created_at ?? "",
           exercises,
-          date: createdAt.toLocaleDateString("en-US"), // Local date
+          date: createdAt.toISOString().split("T")[0],
           time: createdAt.toLocaleTimeString("en-US", {
             hour: "numeric",
             minute: "2-digit",
-          }), // Local time
+          }),
           totalVolume,
         };
       });
-
       setWorkouts(formattedWorkouts);
     }
+    setIsRefreshing(false);
   };
 
   const displayedWorkouts = selectedDate
@@ -99,6 +93,7 @@ export default function HistoryPage() {
   const workoutDates = new Set(workouts.map((w) => w.date));
 
   const handleDeleteWorkout = async (workoutId: string) => {
+    if (!user) return;
     try {
       const workoutToDelete = workouts.find((w) => w.id === workoutId);
       const volumeToSubtract = workoutToDelete
@@ -118,7 +113,7 @@ export default function HistoryPage() {
         const { error: statsError } = await supabase.rpc(
           "update_user_stats_on_delete",
           {
-            p_user_id: userId,
+            p_user_id: user.id,
             p_volume: volumeToSubtract,
             p_date: workoutDate,
           }
@@ -137,6 +132,10 @@ export default function HistoryPage() {
     await fetchWorkouts();
     setIsRefreshing(false);
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-background p-4">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">

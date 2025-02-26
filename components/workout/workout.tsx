@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Plus, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,15 @@ import { ExerciseEditor } from "@/components/workout/exercise-editor";
 import { WorkoutWelcome } from "@/components/workout/workout-welcome";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import { supabase } from "@/lib/supabaseClient";
-import { generateUUID } from "@/lib/utils"; // Add this import
+import { useAuth } from "@/contexts/auth-context";
+import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
+import { useRouter } from "next/navigation";
 
 export function Workout() {
+  const { state } = useAuth();
+  const { user, isLoading } = state;
+  const router = useRouter();
   const [exercises, setExercises] = useState<UIExtendedWorkout["exercises"]>(
     []
   );
@@ -24,7 +29,11 @@ export function Workout() {
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  const tempUserId = "8e189739-3735-4495-abd1-7ddccee640ac";
+  useEffect(() => {
+    if (!user && !isLoading) {
+      router.push("/auth");
+    }
+  }, [user, isLoading, router]);
 
   const isWorkoutValid =
     exercises.length > 0 &&
@@ -55,7 +64,7 @@ export function Workout() {
   const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
       const newExercises = selected.map((exercise) => ({
-        id: generateUUID(), // Replace crypto.randomUUID
+        id: generateUUID(),
         workout_id: "",
         exercise_id: exercise.id,
         exercise,
@@ -67,7 +76,7 @@ export function Workout() {
             weight_kg: 0,
             created_at: "",
           },
-        ], // Replace here too
+        ],
         created_at: "",
       }));
       setExercises([...exercises, ...newExercises]);
@@ -104,13 +113,14 @@ export function Workout() {
   };
 
   const handleSaveWorkout = async () => {
-    if (!isWorkoutValid) return;
+    if (!isWorkoutValid || !user || isLoading) return;
+
     startTransition(async () => {
       try {
-        const now = new Date().toISOString().split("T")[0]; // Use current date or workout-specific date
+        const now = new Date().toISOString().split("T")[0];
         const { data: workoutData, error: workoutError } = await supabase
           .from("workouts")
-          .insert([{ user_id: tempUserId }])
+          .insert([{ user_id: user.id }]) // Changed from supabaseUser!.id
           .select()
           .single();
         if (workoutError) throw new Error(workoutError.message);
@@ -139,18 +149,22 @@ export function Workout() {
 
         const totalVolume = calculateTotalVolume(exercises);
         const { error: statsError } = await supabase.rpc("update_user_stats", {
-          p_user_id: tempUserId,
+          p_user_id: user.id, // Changed from supabaseUser!.id
           p_volume: totalVolume,
           p_date: now,
         });
         if (statsError) throw new Error(statsError.message);
 
         setExercises([]);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error saving workout:", error.message);
       }
     });
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-background p-4">Loading...</div>;
+  }
 
   return (
     <div className="p-4 space-y-6">

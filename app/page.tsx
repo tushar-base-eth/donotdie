@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { Workout } from "@/components/workout/workout"
-import { BottomNav } from "@/components/navigation/bottom-nav"
+import { Workout } from "@/components/workout/workout";
+import { BottomNav } from "@/components/navigation/bottom-nav";
 
 export default function HomePage() {
   return (
@@ -9,6 +9,5 @@ export default function HomePage() {
       <Workout />
       <BottomNav />
     </div>
-  )
+  );
 }
-
