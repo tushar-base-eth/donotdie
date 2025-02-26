@@ -16,27 +16,26 @@
  * - Maintains proper navigation state
  */
 
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const currentUser = request.cookies.get("donotdie_current_user")
-  const isAuthPage = request.nextUrl.pathname === "/auth"
+  const currentUser = request.cookies.get("donotdie_current_user");
+  const isAuthPage = request.nextUrl.pathname === "/auth";
 
   // Redirect to auth page if not authenticated
-  if (!currentUser && !isAuthPage) {
-    return NextResponse.redirect(new URL("/auth", request.url))
-  }
+  // if (!currentUser && !isAuthPage) {
+  //   return NextResponse.redirect(new URL("/auth", request.url))
+  // }
 
   // Redirect to home if already authenticated
   if (currentUser && isAuthPage) {
-    return NextResponse.redirect(new URL("/", request.url))
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-}
-
+};
