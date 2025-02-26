@@ -1,21 +1,22 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { motion } from "framer-motion"
-import { exerciseGroups } from "@/lib/exercises"
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabaseClient";
+import type { Exercise } from "@/types/workouts";
 
 interface ExerciseSelectorProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  selectedExercises: string[]
-  onExerciseToggle: (id: string) => void
-  onAddExercises: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedExercises: string[];
+  onExerciseToggle: (id: string) => void;
+  onAddExercises: (selected: Exercise[]) => void; // Updated to pass Exercise[]
 }
 
 export function ExerciseSelector({
@@ -25,32 +26,62 @@ export function ExerciseSelector({
   onExerciseToggle,
   onAddExercises,
 }: ExerciseSelectorProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all")
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(
+    null
+  );
+  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
+
+  // Fetch exercises when the modal opens
+  useEffect(() => {
+    if (open) {
+      async function fetchExercises() {
+        const { data, error } = await supabase
+          .from("available_exercises")
+          .select("*");
+        if (error) {
+          console.error("Error fetching exercises:", error.message);
+        } else {
+          setAvailableExercises(data || []);
+        }
+      }
+      fetchExercises();
+    }
+  }, [open]);
 
   const muscleGroups = Array.from(
-    new Set(
-      Object.values(exerciseGroups)
-        .flat()
-        .map((ex) => ex.primary_muscle_group),
-    ),
-  )
+    new Set(availableExercises.map((ex) => ex.primary_muscle_group))
+  );
 
-  const filteredExercises = Object.entries(exerciseGroups).reduce(
-    (acc, [group, exercises]) => {
-      const filtered = exercises.filter(
-        (ex) =>
-          ex.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          (selectedTab === "all" || !selectedMuscleGroup || ex.primary_muscle_group === selectedMuscleGroup),
-      )
-      if (filtered.length > 0) {
-        acc[group] = filtered
-      }
-      return acc
-    },
-    {} as typeof exerciseGroups,
-  )
+  const filteredExercises = Object.entries(
+    availableExercises.reduce((acc, ex) => {
+      const group = ex.primary_muscle_group || "Other";
+      acc[group] = acc[group] || [];
+      acc[group].push(ex);
+      return acc;
+    }, {} as Record<string, Exercise[]>)
+  ).reduce((acc, [group, exercises]) => {
+    const filtered = exercises.filter(
+      (ex) =>
+        ex.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        (selectedTab === "all" ||
+          !selectedMuscleGroup ||
+          ex.primary_muscle_group === selectedMuscleGroup)
+    );
+    if (filtered.length > 0) {
+      acc[group] = filtered;
+    }
+    return acc;
+  }, {} as Record<string, Exercise[]>);
+
+  const handleAdd = () => {
+    const selected = availableExercises.filter((ex) =>
+      selectedExercises.includes(ex.id)
+    );
+    onAddExercises(selected);
+    onOpenChange(false); // Close the modal
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -58,7 +89,12 @@ export function ExerciseSelector({
         <div className="flex flex-col h-full">
           <div className="px-6 pb-6 flex items-center justify-between border-b">
             <SheetTitle className="text-xl">Add Exercise</SheetTitle>
-            <Button size="icon" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full h-8 w-8">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="rounded-full h-8 w-8"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -72,9 +108,9 @@ export function ExerciseSelector({
             />
             <Tabs
               value={selectedTab}
-              onValueChange={(value: "all" | "byMuscle") => {
-                setSelectedTab(value)
-                setSelectedMuscleGroup(null)
+              onValueChange={(value) => {
+                setSelectedTab(value as "all" | "byMuscle");
+                setSelectedMuscleGroup(null);
               }}
               className="w-full"
             >
@@ -96,8 +132,14 @@ export function ExerciseSelector({
                   {muscleGroups.map((muscle) => (
                     <Button
                       key={muscle}
-                      variant={selectedMuscleGroup === muscle ? "default" : "outline"}
-                      onClick={() => setSelectedMuscleGroup(selectedMuscleGroup === muscle ? null : muscle)}
+                      variant={
+                        selectedMuscleGroup === muscle ? "default" : "outline"
+                      }
+                      onClick={() =>
+                        setSelectedMuscleGroup(
+                          selectedMuscleGroup === muscle ? null : muscle
+                        )
+                      }
                       className="rounded-full"
                       size="sm"
                     >
@@ -112,7 +154,11 @@ export function ExerciseSelector({
                   <h3 className="font-semibold mb-2">{group}</h3>
                   <div className="space-y-2">
                     {exercises.map((exercise) => (
-                      <motion.div key={exercise.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                      <motion.div
+                        key={exercise.id}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
                         <div
                           className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer hover:bg-accent/5 transition-colors"
                           onClick={() => onExerciseToggle(exercise.id)}
@@ -121,7 +167,8 @@ export function ExerciseSelector({
                             <div>{exercise.name}</div>
                             <div className="text-sm text-muted-foreground">
                               {exercise.primary_muscle_group}
-                              {exercise.secondary_muscle_group && `, ${exercise.secondary_muscle_group}`}
+                              {exercise.secondary_muscle_group &&
+                                `, ${exercise.secondary_muscle_group}`}
                             </div>
                           </div>
                           <div
@@ -145,16 +192,16 @@ export function ExerciseSelector({
 
           <div className="p-4 bg-background/80 backdrop-blur-sm border-t">
             <Button
-              onClick={onAddExercises}
+              onClick={handleAdd}
               disabled={selectedExercises.length === 0}
               className="w-full bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 text-white rounded-xl h-12"
             >
-              Add {selectedExercises.length} Exercise{selectedExercises.length !== 1 ? "s" : ""}
+              Add {selectedExercises.length} Exercise
+              {selectedExercises.length !== 1 ? "s" : ""}
             </Button>
           </div>
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 }
-

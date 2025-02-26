@@ -1,115 +1,155 @@
-"use client"
+"use client";
 
-import { useState, useTransition } from "react"
-import { Plus, Save } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { WorkoutExercises } from "@/components/workout/workout-exercises"
-import { ExerciseSelector } from "@/components/workout/exercise-selector"
-import { ExerciseEditor } from "@/components/workout/exercise-editor"
-import { WorkoutWelcome } from "@/components/workout/workout-welcome"
-import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton"
-import { exerciseGroups } from "@/lib/exercises"
-import { saveWorkout } from "@/lib/api"
-import type { WorkoutExercise, Set, Workout } from "@/types/workouts"
+import { useState, useTransition } from "react";
+import { Plus, Save } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { WorkoutExercises } from "@/components/workout/workout-exercises";
+import { ExerciseSelector } from "@/components/workout/exercise-selector";
+import { ExerciseEditor } from "@/components/workout/exercise-editor";
+import { WorkoutWelcome } from "@/components/workout/workout-welcome";
+import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
+import { supabase } from "@/lib/supabaseClient";
+import type { WorkoutExercise, Set, Exercise } from "@/types/workouts";
 
 export function Workout() {
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([])
-  const [showExerciseModal, setShowExerciseModal] = useState(false)
-  const [selectedExercise, setSelectedExercise] = useState<WorkoutExercise | null>(null)
-  const [selectedExercises, setSelectedExercises] = useState<string[]>([])
-  const [isPending, startTransition] = useTransition()
+  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [selectedExercise, setSelectedExercise] =
+    useState<WorkoutExercise | null>(null);
+  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  const [isPending, startTransition] = useTransition();
+
+  // Replace with your test user UUID
+  const tempUserId = "8e189739-3735-4495-abd1-7ddccee640ac"; // e.g., "550e8400-e29b-41d4-a716-446655440000"
 
   const isWorkoutValid =
     exercises.length > 0 &&
     exercises.every(
-      (exercise) => exercise.sets.length > 0 && exercise.sets.every((set) => set.reps > 0 && set.weight_kg > 0),
-    )
+      (exercise) =>
+        exercise.sets.length > 0 &&
+        exercise.sets.every((set) => set.reps > 0 && set.weight_kg > 0)
+    );
 
   const calculateTotalVolume = (exercises: WorkoutExercise[]) => {
-    return exercises.reduce((total, exercise) => {
-      return (
+    return exercises.reduce(
+      (total, exercise) =>
         total +
-        exercise.sets.reduce((setTotal, set) => {
-          return setTotal + set.weight_kg * set.reps
-        }, 0)
-      )
-    }, 0)
-  }
+        exercise.sets.reduce(
+          (setTotal, set) => setTotal + set.weight_kg * set.reps,
+          0
+        ),
+      0
+    );
+  };
 
   const handleExerciseToggle = (id: string) => {
-    setSelectedExercises((prev) => {
-      const newSelection = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-      return newSelection
-    })
-  }
+    setSelectedExercises((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
-  const handleAddExercises = () => {
+  const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
-      const newExercises = selectedExercises
-        .map((id) => {
-          const exercise = Object.values(exerciseGroups)
-            .flat()
-            .find((e) => e.id === id)
-          if (!exercise) return null
-          return {
-            exercise,
-            sets: [{ weight_kg: 0, reps: 0 }],
-          }
-        })
-        .filter((ex): ex is WorkoutExercise => ex !== null)
+      const newExercises = selected.map((exercise) => ({
+        id: crypto.randomUUID(),
+        workout_id: "",
+        exercise_id: exercise.id,
+        exercise,
+        sets: [
+          {
+            id: crypto.randomUUID(),
+            workout_exercise_id: "",
+            reps: 0,
+            weight_kg: 0,
+            created_at: "",
+          },
+        ],
+        created_at: "",
+      }));
 
-      setExercises([...exercises, ...newExercises])
-      setSelectedExercises([])
-      setShowExerciseModal(false)
-    })
-  }
+      setExercises([...exercises, ...newExercises]);
+      setSelectedExercises([]);
+      setShowExerciseModal(false);
+    });
+  };
 
   const handleUpdateSets = (exerciseIndex: number, newSets: Set[]) => {
-    if (exerciseIndex === -1) return
-    const updatedExercises = [...exercises]
-    updatedExercises[exerciseIndex] = { ...exercises[exerciseIndex], sets: newSets }
-    setExercises(updatedExercises)
+    if (exerciseIndex === -1) return;
+    const updatedExercises = [...exercises];
+    updatedExercises[exerciseIndex] = {
+      ...exercises[exerciseIndex],
+      sets: newSets,
+    };
+    setExercises(updatedExercises);
 
-    if (selectedExercise && selectedExercise.exercise.id === updatedExercises[exerciseIndex].exercise.id) {
-      setSelectedExercise(updatedExercises[exerciseIndex])
+    if (
+      selectedExercise &&
+      selectedExercise.exercise.id ===
+        updatedExercises[exerciseIndex].exercise.id
+    ) {
+      setSelectedExercise(updatedExercises[exerciseIndex]);
     }
-  }
+  };
 
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
-      setExercises(exercises.filter((_, i) => i !== index))
-    })
-  }
+      setExercises(exercises.filter((_, i) => i !== index));
+    });
+  };
 
   const handleSaveWorkout = async () => {
-    if (isWorkoutValid) {
-      startTransition(async () => {
-        const now = new Date()
-        const workout: Workout = {
-          id: crypto.randomUUID(),
-          date: now.toISOString().split("T")[0],
-          time: now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-          totalVolume: calculateTotalVolume(exercises),
-          exercises: exercises.map((ex) => ({
-            name: ex.exercise.name,
-            sets: ex.sets.map((set) => ({
-              reps: set.reps,
-              weight: set.weight_kg,
-            })),
-          })),
+    if (!isWorkoutValid) return;
+
+    startTransition(async () => {
+      try {
+        const now = new Date();
+        const { data: workoutData, error: workoutError } = await supabase
+          .from("workouts")
+          .insert([{ user_id: tempUserId }])
+          .select()
+          .single();
+        if (workoutError) throw new Error(workoutError.message);
+
+        const workoutId = workoutData.id;
+
+        for (const ex of exercises) {
+          const { data: workoutExData, error: workoutExError } = await supabase
+            .from("workout_exercises")
+            .insert([{ workout_id: workoutId, exercise_id: ex.exercise_id }])
+            .select()
+            .single();
+          if (workoutExError) throw new Error(workoutExError.message);
+
+          const workoutExerciseId = workoutExData.id;
+          const setsData = ex.sets.map((set) => ({
+            workout_exercise_id: workoutExerciseId,
+            reps: set.reps,
+            weight_kg: set.weight_kg,
+          }));
+          const { error: setsError } = await supabase
+            .from("sets")
+            .insert(setsData);
+          if (setsError) throw new Error(setsError.message);
         }
 
-        await saveWorkout(workout)
-        setExercises([])
-      })
-    }
-  }
+        const totalVolume = calculateTotalVolume(exercises);
+        const { error: statsError } = await supabase.rpc("update_user_stats", {
+          p_user_id: tempUserId,
+          p_volume: totalVolume,
+        });
+        if (statsError) throw new Error(statsError.message);
+
+        setExercises([]);
+      } catch (error) {
+        console.error("Error saving workout:", error.message);
+      }
+    });
+  };
 
   return (
     <div className="p-4 space-y-6">
       <WorkoutWelcome />
-
       {isPending ? (
         <ExerciseSkeleton />
       ) : (
@@ -119,7 +159,6 @@ export function Workout() {
           onExerciseRemove={handleRemoveExercise}
         />
       )}
-
       <div className="fixed bottom-20 right-4 flex flex-col gap-4">
         <AnimatePresence>
           {isWorkoutValid && (
@@ -149,7 +188,6 @@ export function Workout() {
           </Button>
         </motion.div>
       </div>
-
       <ExerciseSelector
         open={showExerciseModal}
         onOpenChange={setShowExerciseModal}
@@ -157,16 +195,16 @@ export function Workout() {
         onExerciseToggle={handleExerciseToggle}
         onAddExercises={handleAddExercises}
       />
-
       {selectedExercise && (
         <ExerciseEditor
           exercise={selectedExercise}
           onClose={() => setSelectedExercise(null)}
           onUpdateSets={handleUpdateSets}
-          exerciseIndex={exercises.findIndex((ex) => ex.exercise.id === selectedExercise.exercise.id)}
+          exerciseIndex={exercises.findIndex(
+            (ex) => ex.exercise.id === selectedExercise.exercise.id
+          )}
         />
       )}
     </div>
-  )
+  );
 }
-
