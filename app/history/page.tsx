@@ -104,6 +104,9 @@ export default function HistoryPage() {
       const volumeToSubtract = workoutToDelete
         ? workoutToDelete.totalVolume
         : 0;
+      const workoutDate = workoutToDelete
+        ? workoutToDelete.date
+        : new Date().toISOString().split("T")[0];
 
       const { error } = await supabase
         .from("workouts")
@@ -117,6 +120,7 @@ export default function HistoryPage() {
           {
             p_user_id: userId,
             p_volume: volumeToSubtract,
+            p_date: workoutDate,
           }
         );
         if (statsError) throw new Error(statsError.message);

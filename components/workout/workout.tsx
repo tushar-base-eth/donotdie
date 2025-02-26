@@ -105,9 +105,9 @@ export function Workout() {
 
   const handleSaveWorkout = async () => {
     if (!isWorkoutValid) return;
-
     startTransition(async () => {
       try {
+        const now = new Date().toISOString().split("T")[0]; // Use current date or workout-specific date
         const { data: workoutData, error: workoutError } = await supabase
           .from("workouts")
           .insert([{ user_id: tempUserId }])
@@ -141,6 +141,7 @@ export function Workout() {
         const { error: statsError } = await supabase.rpc("update_user_stats", {
           p_user_id: tempUserId,
           p_volume: totalVolume,
+          p_date: now,
         });
         if (statsError) throw new Error(statsError.message);
 
