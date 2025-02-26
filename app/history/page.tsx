@@ -1,32 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
+import { withAuth } from '@/components/auth/protected-route';
 import type { UIExtendedWorkout } from "@/types/workouts";
 
-export default function HistoryPage() {
+function HistoryPage() {
   const { state } = useAuth();
-  const { user, isLoading } = state;
-  const router = useRouter();
+  const { user } = state;
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedWorkout, setSelectedWorkout] =
-    useState<UIExtendedWorkout | null>(null);
+  const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const [workouts, setWorkouts] = useState<UIExtendedWorkout[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    if (!user && !isLoading) {
-      router.push("/auth");
-    } else if (user) {
+    if (user) {
       fetchWorkouts();
     }
-  }, [user, isLoading, router]);
+  }, [user]);
 
   const fetchWorkouts = async () => {
     if (!user) return;
@@ -46,26 +42,19 @@ export default function HistoryPage() {
         const exercises = Array.isArray(rawWorkout.workout_exercises)
           ? rawWorkout.workout_exercises.map((we) => ({
               id: we.id,
-              workout_id: we.workout_id ?? rawWorkout.id,
+              workout_id: rawWorkout.id,
               exercise_id: we.exercise_id ?? "",
-              exercise: we.exercise ?? {
-                id: "",
-                name: "",
-                primary_muscle_group: "",
+              exercise: {
+                id: we.exercise?.id ?? "",
+                name: we.exercise?.name ?? "",
+                primary_muscle_group: we.exercise?.primary_muscle_group ?? "",
+                secondary_muscle_group: we.exercise?.secondary_muscle_group
               },
               sets: Array.isArray(we.sets) ? we.sets : [],
-              created_at: we.created_at ?? "",
+              created_at: we.created_at ?? ""
             }))
           : [];
-        const totalVolume = exercises.reduce(
-          (sum, ex) =>
-            sum +
-            ex.sets.reduce(
-              (setSum, set) => setSum + set.reps * set.weight_kg,
-              0
-            ),
-          0
-        );
+        
         return {
           id: rawWorkout.id,
           user_id: rawWorkout.user_id ?? "",
@@ -74,9 +63,12 @@ export default function HistoryPage() {
           date: createdAt.toISOString().split("T")[0],
           time: createdAt.toLocaleTimeString("en-US", {
             hour: "numeric",
-            minute: "2-digit",
+            minute: "2-digit"
           }),
-          totalVolume,
+          totalVolume: exercises.reduce(
+            (sum, ex) => sum + ex.sets.reduce((setSum, set) => setSum + set.reps * set.weight_kg, 0),
+            0
+          )
         };
       });
       setWorkouts(formattedWorkouts);
@@ -92,38 +84,18 @@ export default function HistoryPage() {
 
   const workoutDates = new Set(workouts.map((w) => w.date));
 
-  const handleDeleteWorkout = async (workoutId: string) => {
-    if (!user) return;
+  const handleDeleteWorkout = async (workout: UIExtendedWorkout) => {
     try {
-      const workoutToDelete = workouts.find((w) => w.id === workoutId);
-      const volumeToSubtract = workoutToDelete
-        ? workoutToDelete.totalVolume
-        : 0;
-      const workoutDate = workoutToDelete
-        ? workoutToDelete.date
-        : new Date().toISOString().split("T")[0];
-
-      const { error } = await supabase
-        .from("workouts")
-        .delete()
-        .eq("id", workoutId);
-      if (error) throw new Error(error.message);
-
-      if (volumeToSubtract > 0) {
-        const { error: statsError } = await supabase.rpc(
-          "update_user_stats_on_delete",
-          {
-            p_user_id: user.id,
-            p_volume: volumeToSubtract,
-            p_date: workoutDate,
-          }
-        );
-        if (statsError) throw new Error(statsError.message);
-      }
-
-      setWorkouts(workouts.filter((w) => w.id !== workoutId));
-    } catch (error) {
-      console.error("Error deleting workout:", error.message);
+      const { error } = await supabase.rpc('update_user_stats_on_delete', {
+        p_user_id: user!.id,
+        p_volume: workout.totalVolume
+      });
+      
+      if (error) throw error;
+      
+      setWorkouts(workouts.filter((w) => w.id !== workout.id));
+    } catch (err) {
+      console.error("Error deleting workout:", err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -132,10 +104,6 @@ export default function HistoryPage() {
     await fetchWorkouts();
     setIsRefreshing(false);
   };
-
-  if (isLoading) {
-    return <div className="min-h-screen bg-background p-4">Loading...</div>;
-  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -194,3 +162,5 @@ export default function HistoryPage() {
     </div>
   );
 }
+
+export default withAuth(HistoryPage, { requireComplete: true });

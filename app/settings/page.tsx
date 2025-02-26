@@ -30,6 +30,7 @@ import { useTheme } from "next-themes";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { useAuth } from "@/contexts/auth-context";
 import type { UserProfile } from "@/contexts/auth-context";
+import { withAuth } from "@/components/auth/protected-route";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -41,9 +42,12 @@ const settingsSchema = z.object({
   bodyFat: z.number().min(0).max(100).optional(),
 });
 
-export default function SettingsPage() {
+export default withAuth(SettingsPage, { requireComplete: false });
+
+function SettingsPage() {
   const { state, logout, updateProfile } = useAuth();
-  const { user, isLoading } = state;
+  const { user } = state;
+  const isLoading = state.status === 'loading';
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
@@ -55,7 +59,7 @@ export default function SettingsPage() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: "",
-      gender: "male",
+      gender: "Male",
       dateOfBirth: "",
       unitPreference: "metric",
       weight: 70,

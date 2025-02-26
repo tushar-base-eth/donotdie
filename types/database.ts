@@ -280,6 +280,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_user_stats_on_delete: {
+        Args: { p_user_id: string; p_volume: number };
+        Returns: void;
+      }
     }
     Enums: {
       [_ in never]: never

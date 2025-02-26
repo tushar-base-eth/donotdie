@@ -11,15 +11,19 @@ import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import type { Database } from "@/types/database";
+import { withAuth } from '@/components/auth/protected-route';
 
 interface VolumeData {
   date: string;
   volume: number;
 }
 
-export default function DashboardPage() {
+export default withAuth(DashboardPage, { requireComplete: true });
+
+function DashboardPage() {
   const { state } = useAuth();
-  const { user, isLoading } = state;
+  const { user } = state;
+  const isLoading = state.status === 'loading';
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [totalVolume, setTotalVolume] = useState<number>(0);

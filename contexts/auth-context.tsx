@@ -14,20 +14,24 @@ import type { Session, User } from "@supabase/supabase-js";
 export interface UserProfile {
   id: string;
   email: string;
-  name: string | null;
-  gender: "Male" | "Female" | "Other" | null; // Updated to match schema
-  dateOfBirth: string | null;
-  weight: number | null;
-  height: number | null;
+  name: string;
+  gender: "Male" | "Female" | "Other";
+  dateOfBirth: string;  // matches date_of_birth DATE type
+  weight: number;       // matches weight_kg FLOAT
+  height: number;       // matches height_cm FLOAT
   bodyFat?: number | null;
   unitPreference: "metric" | "imperial" | null;
-  isProfileComplete?: boolean;
+  themePreference?: "light" | "dark" | null;
+  totalVolume?: number | null;
+  totalWorkouts?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  isProfileComplete?: boolean;  // computed field
 }
 
 interface AuthState {
-  isAuthenticated: boolean;
+  status: 'loading' | 'authenticated' | 'unauthenticated';
   user: UserProfile | null;
-  isLoading: boolean;
 }
 
 interface AuthContextType {
@@ -41,72 +45,81 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
+  const [state, setState] = useState<AuthState>({
+    status: 'loading',
+    user: null
+  });
   const router = useRouter();
 
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        setSupabaseUser(session?.user ?? null);
-        setIsAuthenticated(!!session?.user);
-
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id);
-          if (profile && !profile.isProfileComplete) {
-            router.push("/settings");
-          }
-        } else {
-          setUserProfile(null);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          setState({ status: 'unauthenticated', user: null });
+          return;
         }
+
+        const profile = await fetchUserProfile(session.user.id);
+        setState({ 
+          status: 'authenticated', 
+          user: profile 
+        });
+
       } catch (error) {
-        console.error("Error fetching session:", error);
-        setSupabaseUser(null);
-        setIsAuthenticated(false);
-        setUserProfile(null);
-      } finally {
-        setIsLoading(false);
+        console.error("Auth error:", error);
+        setState({ status: 'unauthenticated', user: null });
       }
     };
 
     fetchSession();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSupabaseUser(session?.user ?? null);
-      setIsAuthenticated(!!session?.user);
-
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        if (profile && !profile.isProfileComplete) {
-          router.push("/settings");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (!session?.user) {
+          setState({ status: 'unauthenticated', user: null });
+          return;
         }
-      } else {
-        setUserProfile(null);
-      }
 
-      setIsLoading(false);
-    });
+        const profile = await fetchUserProfile(session.user.id);
+        setState({ 
+          status: 'authenticated', 
+          user: profile 
+        });
+      }
+    );
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, []);
 
-  const fetchUserProfile = async (
-    userId: string
-  ): Promise<UserProfile | null> => {
+  const isProfileCompleteCheck = (profile: {
+    name?: string | null;
+    gender?: string | null;
+    date_of_birth?: string | null;
+    weight_kg?: number | null;
+    height_cm?: number | null;
+    unit_preference?: string | null;
+  }) => {
+    const requiredFields = [
+      'name',
+      'gender',
+      'date_of_birth',
+      'weight_kg',
+      'height_cm',
+      'unit_preference'
+    ];
+    
+    return requiredFields.every(field => 
+      profile[field as keyof typeof profile] != null
+    ) && (profile.gender === 'Male' || profile.gender === 'Female' || profile.gender === 'Other');
+  };
+
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       const { data, error } = await supabase
         .from("users")
-        .select(
-          "email, name, gender, date_of_birth, weight_kg, height_cm, body_fat_percentage, unit_preference"
-        )
+        .select("*")
         .eq("id", userId)
         .single();
 
@@ -115,33 +128,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn("No profile found for user.");
           return null;
         }
-        console.error("Unexpected error fetching profile:", error);
         throw error;
       }
-
-      const isProfileComplete = !!(
-        data.name &&
-        data.gender &&
-        data.date_of_birth &&
-        data.weight_kg &&
-        data.height_cm &&
-        data.unit_preference
-      );
 
       const profile: UserProfile = {
         id: userId,
         email: data.email,
-        name: data.name || null,
-        gender: data.gender as "Male" | "Female" | "Other" | null,
-        dateOfBirth: data.date_of_birth || null,
-        weight: data.weight_kg || null,
-        height: data.height_cm || null,
-        bodyFat: data.body_fat_percentage || null,
+        name: data.name,
+        gender: data.gender as "Male" | "Female" | "Other",
+        dateOfBirth: data.date_of_birth,
+        weight: data.weight_kg,
+        height: data.height_cm,
+        bodyFat: data.body_fat_percentage,
         unitPreference: data.unit_preference as "metric" | "imperial" | null,
-        isProfileComplete,
+        themePreference: data.theme_preference as "light" | "dark" | null,
+        totalVolume: data.total_volume,
+        totalWorkouts: data.total_workouts,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        isProfileComplete: isProfileCompleteCheck(data)
       };
 
-      setUserProfile(profile);
+      setState({ status: 'authenticated', user: profile });
       return profile;
     } catch (error: any) {
       console.error("Fetch profile error:", error.message);
@@ -150,7 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -159,8 +166,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
-      setSupabaseUser(data.user);
-      setIsAuthenticated(true);
       const profile = await fetchUserProfile(data.user.id);
       if (profile && !profile.isProfileComplete) {
         router.push("/settings");
@@ -169,13 +174,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error: any) {
       throw new Error(error.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signup = async (email: string, password: string, name?: string) => {
-    setIsLoading(true);
     try {
       // Sign up with Supabase Auth
       const { data, error } = await supabase.auth.signUp({ email, password });
@@ -218,43 +220,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isProfileComplete: false,
       };
 
-      setSupabaseUser(data.user);
-      setIsAuthenticated(true);
-      setUserProfile(profile);
+      setState({ status: 'authenticated', user: profile });
 
       router.push("/settings");
     } catch (error: any) {
       console.error("Signup error:", error.message);
       throw new Error(error.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = async () => {
-    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      setSupabaseUser(null);
-      setIsAuthenticated(false);
-      setUserProfile(null);
+      setState({ status: 'unauthenticated', user: null });
 
       router.push("/auth");
     } catch (error: any) {
       console.error("Logout error:", error.message);
       throw new Error(error.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const updateProfile = async (updatedUser: Partial<UserProfile>) => {
-    if (!supabaseUser || !userProfile) return;
+    if (!state.user) return;
 
     try {
-      const mergedProfile = { ...userProfile, ...updatedUser };
+      const mergedProfile = { ...state.user, ...updatedUser };
 
       // Normalize gender to match schema CHECK constraint ('Male', 'Female', 'Other')
       const formattedGender = mergedProfile.gender
@@ -288,7 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           unit_preference: mergedProfile.unitPreference,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", supabaseUser.id);
+        .eq("id", state.user.id);
 
       if (error) throw error;
 
@@ -307,17 +300,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isProfileComplete,
       };
 
-      setUserProfile(updatedProfile);
+      setState({ status: 'authenticated', user: updatedProfile });
     } catch (error: any) {
       console.error("Update profile error:", error.message);
       throw new Error(error.message);
     }
-  };
-
-  const state: AuthState = {
-    isAuthenticated,
-    user: userProfile,
-    isLoading,
   };
 
   return (

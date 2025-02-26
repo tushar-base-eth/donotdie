@@ -14,10 +14,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
 import { useRouter } from "next/navigation";
+import { withAuth } from '@/components/auth/protected-route';
 
 export function Workout() {
   const { state } = useAuth();
-  const { user, isLoading } = state;
+  const { user } = state;
+  const isLoading = state.status === 'loading';
   const router = useRouter();
   const [exercises, setExercises] = useState<UIExtendedWorkout["exercises"]>(
     []
@@ -162,6 +164,21 @@ export function Workout() {
     });
   };
 
+  const handleDeleteWorkout = async (workout: UIExtendedWorkout) => {
+    try {
+      const { error } = await supabase.rpc('update_user_stats_on_delete', {
+        p_user_id: user!.id,
+        p_volume: volumeToSubtract
+      });
+      
+      if (error) throw error;
+      
+      // ... rest of delete logic
+    } catch (err) {
+      console.error("Error deleting workout:", err instanceof Error ? err.message : String(err));
+    }
+  };
+
   if (isLoading) {
     return <div className="min-h-screen bg-background p-4">Loading...</div>;
   }
@@ -227,3 +244,5 @@ export function Workout() {
     </div>
   );
 }
+
+export default withAuth(Workout);

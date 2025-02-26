@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -17,25 +18,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
 
-// Form validation schemas
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-const signupSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+const signupSchema = loginSchema.extend({
   name: z.string().min(2, "Name must be at least 2 characters").optional(),
 });
 
 export default function AuthPage() {
+  const { state, login, signup } = useAuth();
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, signup, state } = useAuth();
-  const router = useRouter();
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(isLogin ? loginSchema : signupSchema),
@@ -46,12 +43,23 @@ export default function AuthPage() {
     },
   });
 
-  // If user is already authenticated, redirect to home
   useEffect(() => {
-    if (state.isAuthenticated && !state.isLoading) {
-      router.push("/");
+    if (state.status === 'authenticated') {
+      if (state.user?.isProfileComplete) {
+        router.replace('/');
+      } else {
+        router.replace('/settings');
+      }
     }
-  }, [state.isAuthenticated, state.isLoading, router]);
+  }, [state.status, state.user, router]);
+
+  if (state.status === 'loading' || state.status === 'authenticated') {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   const onSubmit = async (values: z.infer<typeof signupSchema>) => {
     setIsLoading(true);
@@ -72,16 +80,6 @@ export default function AuthPage() {
       setIsLoading(false);
     }
   };
-
-  // If still checking auth status, show loading
-  if (state.isLoading) {
-    return <div className="container max-w-lg p-4">Loading...</div>;
-  }
-
-  // If already authenticated, don't render auth form (will redirect)
-  if (state.isAuthenticated) {
-    return <div className="container max-w-lg p-4">Redirecting...</div>;
-  }
 
   return (
     <div className="container max-w-lg p-4">
