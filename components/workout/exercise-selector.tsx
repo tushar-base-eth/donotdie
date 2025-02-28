@@ -85,18 +85,13 @@ export function ExerciseSelector({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] px-0">
+      <SheetContent side="bottom" className="h-[80vh] px-0" aria-describedby="exercise-selector-description">
         <div className="flex flex-col h-full">
-          <div className="px-6 pb-6 flex items-center justify-between border-b">
+          <div className="px-6 pb-6 flex items-center border-b">
             <SheetTitle className="text-xl">Add Exercise</SheetTitle>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              className="rounded-full h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <span id="exercise-selector-description" className="sr-only">
+              Select exercises to add to your workout. You can search for exercises or filter them by muscle group.
+            </span>
           </div>
 
           <div className="px-6 pt-4 space-y-4">
@@ -175,7 +170,7 @@ export function ExerciseSelector({
                             className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors
                               ${
                                 selectedExercises.includes(exercise.id)
-                                  ? "bg-[#4B7BFF] border-[#4B7BFF] text-white"
+                                  ? "bg-[#4B7BFF] dark:bg-red-500 border-[#4B7BFF] dark:border-red-500 text-white"
                                   : "border-input"
                               }`}
                           >
@@ -194,7 +189,7 @@ export function ExerciseSelector({
             <Button
               onClick={handleAdd}
               disabled={selectedExercises.length === 0}
-              className="w-full bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 text-white rounded-xl h-12"
+              className="w-full bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-xl h-12"
             >
               Add {selectedExercises.length} Exercise
               {selectedExercises.length !== 1 ? "s" : ""}

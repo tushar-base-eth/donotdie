@@ -14,9 +14,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
 import { useRouter } from "next/navigation";
-import { withAuth } from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
-export function Workout() {
+function WorkoutPage() {
   const { state } = useAuth();
   const { user } = state;
   const isLoading = state.status === 'loading';
@@ -119,16 +119,17 @@ export function Workout() {
 
     startTransition(async () => {
       try {
-        const now = new Date().toISOString().split("T")[0];
+        // Create the workout first
         const { data: workoutData, error: workoutError } = await supabase
           .from("workouts")
-          .insert([{ user_id: user.id }]) // Changed from supabaseUser!.id
+          .insert([{ user_id: user.id }])
           .select()
           .single();
         if (workoutError) throw new Error(workoutError.message);
 
         const workoutId = workoutData.id;
 
+        // Insert all workout exercises and their sets
         for (const ex of exercises) {
           const { data: workoutExData, error: workoutExError } = await supabase
             .from("workout_exercises")
@@ -149,11 +150,12 @@ export function Workout() {
           if (setsError) throw new Error(setsError.message);
         }
 
+        // Update user stats with the total volume
         const totalVolume = calculateTotalVolume(exercises);
-        const { error: statsError } = await supabase.rpc("update_user_stats", {
-          p_user_id: user.id, // Changed from supabaseUser!.id
+        const { error: statsError } = await supabase.rpc('update_user_stats', {
+          p_user_id: user.id,
           p_volume: totalVolume,
-          p_date: now,
+          p_date: new Date().toISOString().split('T')[0] // Store date in UTC
         });
         if (statsError) throw new Error(statsError.message);
 
@@ -166,12 +168,14 @@ export function Workout() {
 
   const handleDeleteWorkout = async (workout: UIExtendedWorkout) => {
     try {
-      const { error } = await supabase.rpc('update_user_stats_on_delete', {
+      const volumeToSubtract = calculateTotalVolume(workout.exercises);
+      const { error: statsError } = await supabase.rpc('update_user_stats_on_delete', {
         p_user_id: user!.id,
-        p_volume: volumeToSubtract
+        p_volume: volumeToSubtract,
+        p_date: workout.utcDate // Use the stored UTC date
       });
       
-      if (error) throw error;
+      if (statsError) throw statsError;
       
       // ... rest of delete logic
     } catch (err) {
@@ -184,65 +188,73 @@ export function Workout() {
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <WorkoutWelcome />
-      {isPending ? (
-        <ExerciseSkeleton />
-      ) : (
-        <WorkoutExercises
-          exercises={exercises}
-          onExerciseSelect={setSelectedExercise}
-          onExerciseRemove={handleRemoveExercise}
-        />
-      )}
-      <div className="fixed bottom-20 right-4 flex flex-col gap-4">
-        <AnimatePresence>
-          {isWorkoutValid && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            >
-              <Button
-                size="icon"
-                onClick={handleSaveWorkout}
-                className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all bg-green-500 hover:bg-green-600"
+    <div className="min-h-screen bg-background pb-20">
+      <div className="p-4 space-y-6">
+        <WorkoutWelcome />
+        {isPending ? (
+          <ExerciseSkeleton />
+        ) : (
+          <WorkoutExercises
+            exercises={exercises}
+            onExerciseSelect={setSelectedExercise}
+            onExerciseRemove={handleRemoveExercise}
+          />
+        )}
+        <div className="fixed bottom-20 right-4 flex flex-col gap-4">
+          <AnimatePresence>
+            {isWorkoutValid && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
               >
-                <Save className="h-6 w-6" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            size="icon"
-            onClick={() => setShowExerciseModal(true)}
-            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all bg-[#4B7BFF] hover:bg-[#4B7BFF]/90"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </motion.div>
-      </div>
-      <ExerciseSelector
-        open={showExerciseModal}
-        onOpenChange={setShowExerciseModal}
-        selectedExercises={selectedExercises}
-        onExerciseToggle={handleExerciseToggle}
-        onAddExercises={handleAddExercises}
-      />
-      {selectedExercise && (
-        <ExerciseEditor
-          exercise={selectedExercise}
-          onClose={() => setSelectedExercise(null)}
-          onUpdateSets={handleUpdateSets}
-          exerciseIndex={exercises.findIndex(
-            (ex) => ex.exercise.id === selectedExercise.exercise.id
-          )}
+                <Button
+                  size="icon"
+                  onClick={handleSaveWorkout}
+                  className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all bg-green-500 hover:bg-green-600"
+                >
+                  <Save className="h-6 w-6" />
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              size="icon"
+              onClick={() => setShowExerciseModal(true)}
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 dark:bg-red-500 dark:hover:bg-red-600"
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
+          </motion.div>
+        </div>
+        <ExerciseSelector
+          open={showExerciseModal}
+          onOpenChange={setShowExerciseModal}
+          selectedExercises={selectedExercises}
+          onExerciseToggle={handleExerciseToggle}
+          onAddExercises={handleAddExercises}
         />
-      )}
+        {selectedExercise && (
+          <ExerciseEditor
+            exercise={selectedExercise}
+            onClose={() => setSelectedExercise(null)}
+            onUpdateSets={handleUpdateSets}
+            exerciseIndex={exercises.findIndex(
+              (ex) => ex.exercise.id === selectedExercise.exercise.id
+            )}
+          />
+        )}
+      </div>
     </div>
   );
 }
 
-export default withAuth(Workout);
+export default function Workout() {
+  return (
+    <ProtectedRoute>
+      <WorkoutPage />
+    </ProtectedRoute>
+  );
+}

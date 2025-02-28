@@ -30,7 +30,7 @@ import { useTheme } from "next-themes";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { useAuth } from "@/contexts/auth-context";
 import type { UserProfile } from "@/contexts/auth-context";
-import { withAuth } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -41,8 +41,6 @@ const settingsSchema = z.object({
   height: z.number().positive("Height must be greater than 0"),
   bodyFat: z.number().min(0).max(100).optional(),
 });
-
-export default withAuth(SettingsPage, { requireComplete: false });
 
 function SettingsPage() {
   const { state, logout, updateProfile } = useAuth();
@@ -410,5 +408,13 @@ function SettingsPage() {
 
       <BottomNav />
     </div>
+  );
+}
+
+export default function Settings() {
+  return (
+    <ProtectedRoute>
+      <SettingsPage />
+    </ProtectedRoute>
   );
 }

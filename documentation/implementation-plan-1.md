@@ -6,7 +6,7 @@ Below is a detailed, step-by-step plan to update the "dontdie" web application b
 
 ## Navigation Enhancement
 
-- [ ] Step 1: Update Bottom Navigation to Use `<Link>`
+- [X] Step 1: Update Bottom Navigation to Use `<Link>`
   - **Task**: Replace `useRouter` with Next.js `<Link>` components in the bottom navigation for static routes (e.g., home, dashboard, history, settings) to improve performance and SEO. Reserve `useRouter` for dynamic redirects if needed in the future. Ensure navigation remains smooth and consistent across the app.
   - **Files**:
     - `components/navigation/bottom-nav.tsx`: Replace `useRouter` navigation logic with `<Link>` components for static routes (`/`, `/dashboard`, `/history`, `/settings`). Update any imported `useRouter` references accordingly.

@@ -10,8 +10,8 @@ export function BottomNav() {
 
   const navItems = [
     { href: '/', icon: Home, label: 'Home' },
-    { href: '/dashboard', icon: LineChart, label: 'Dashboard' },
     { href: '/history', icon: History, label: 'History' },
+    { href: '/dashboard', icon: LineChart, label: 'Dashboard' },
     { href: '/settings', icon: Settings, label: 'Settings' },
   ];
 
@@ -27,7 +27,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={`inline-flex flex-col items-center justify-center px-5 group ${
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                isActive ? 'text-[#4B7BFF] dark:text-red-500' : 'text-muted-foreground'
               }`}
             >
               <Icon className="w-6 h-6" />

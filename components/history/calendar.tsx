@@ -66,11 +66,11 @@ export function Calendar({ currentDate, workoutDates, onDateChange, onDateSelect
                 key={day}
                 className={`
                   aspect-square p-2 relative cursor-pointer
-                  ${hasWorkout ? "bg-primary/10" : "bg-card"}
+                  ${hasWorkout ? "bg-[#4B7BFF]/10 dark:bg-red-500/10" : "bg-card"}
                 `}
                 onClick={() => hasWorkout && onDateSelect(date)}
               >
-                <span className={`text-sm ${hasWorkout ? "font-medium" : ""}`}>{day}</span>
+                <span className={`text-sm ${hasWorkout ? "font-medium text-[#4B7BFF] dark:text-red-500" : ""}`}>{day}</span>
               </div>
             )
           })}

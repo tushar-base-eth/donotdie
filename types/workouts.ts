@@ -37,4 +37,5 @@ export interface UIExtendedWorkout extends Workout {
   date: string;
   time: string;
   totalVolume: number;
+  utcDate: string; // Raw UTC date string for consistent comparisons
 }

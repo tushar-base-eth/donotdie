@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { motion, AnimatePresence } from "framer-motion"
-import type { Set, WorkoutExercise } from "@/types/exercises"
+import type { Set, WorkoutExercise } from "@/types/workouts"
 
 interface ExerciseEditorProps {
   exercise: WorkoutExercise
@@ -32,11 +32,14 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
 
   return (
     <Sheet open={true} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0">
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0" aria-describedby="exercise-editor-description">
         <div className="flex flex-col h-full">
           <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl">{exercise.exercise.name}</SheetTitle>
+              <span id="exercise-editor-description" className="sr-only">
+                Edit sets for {exercise.exercise.name}. You can add, remove, or modify sets with reps and weight.
+              </span>
               <Button size="icon" variant="ghost" onClick={onClose} className="rounded-full h-8 w-8">
                 <X className="h-4 w-4" />
               </Button>
@@ -46,7 +49,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
           <ScrollArea className="flex-1">
             <div className="p-6 space-y-4">
               <AnimatePresence initial={false}>
-                {exercise.sets.map((set, setIndex) => (
+                {exercise.sets.map((set: Set, setIndex: number) => (
                   <motion.div
                     key={setIndex}
                     initial={{ opacity: 0, height: 0 }}
@@ -137,8 +140,15 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const newSets = [...exercise.sets, { weight_kg: 0, reps: 0 }]
-                    onUpdateSets(exerciseIndex, newSets)
+                    const newSet: Set = {
+                      id: crypto.randomUUID(),
+                      workout_exercise_id: null,
+                      reps: 0,
+                      weight_kg: 0,
+                      created_at: null
+                    };
+                    const newSets = [...exercise.sets, newSet];
+                    onUpdateSets(exerciseIndex, newSets);
                   }}
                   className="w-full rounded-xl h-10"
                 >

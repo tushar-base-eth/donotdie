@@ -7,7 +7,7 @@ import { WorkoutDetails } from "@/components/history/workout-details";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
-import { withAuth } from '@/components/auth/protected-route';
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import type { UIExtendedWorkout } from "@/types/workouts";
 
 function HistoryPage() {
@@ -38,7 +38,8 @@ function HistoryPage() {
       console.error("Error fetching workouts:", error.message);
     } else {
       const formattedWorkouts: UIExtendedWorkout[] = data.map((rawWorkout) => {
-        const createdAt = new Date(rawWorkout.created_at ?? "");
+        const utcDate = new Date(rawWorkout.created_at + 'Z');
+        
         const exercises = Array.isArray(rawWorkout.workout_exercises)
           ? rawWorkout.workout_exercises.map((we) => ({
               id: we.id,
@@ -48,7 +49,7 @@ function HistoryPage() {
                 id: we.exercise?.id ?? "",
                 name: we.exercise?.name ?? "",
                 primary_muscle_group: we.exercise?.primary_muscle_group ?? "",
-                secondary_muscle_group: we.exercise?.secondary_muscle_group
+                secondary_muscle_group: we.exercise?.secondary_muscle_group ?? null
               },
               sets: Array.isArray(we.sets) ? we.sets : [],
               created_at: we.created_at ?? ""
@@ -60,40 +61,56 @@ function HistoryPage() {
           user_id: rawWorkout.user_id ?? "",
           created_at: rawWorkout.created_at ?? "",
           exercises,
-          date: createdAt.toISOString().split("T")[0],
-          time: createdAt.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit"
-          }),
+          utcDate: utcDate.toISOString().split('T')[0],
+          date: new Intl.DateTimeFormat('en-CA', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          }).format(utcDate),
+          time: new Intl.DateTimeFormat('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZoneName: 'short',
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          }).format(utcDate),
           totalVolume: exercises.reduce(
             (sum, ex) => sum + ex.sets.reduce((setSum, set) => setSum + set.reps * set.weight_kg, 0),
             0
           )
         };
       });
+
       setWorkouts(formattedWorkouts);
     }
     setIsRefreshing(false);
   };
 
   const displayedWorkouts = selectedDate
-    ? workouts.filter(
-        (w) => w.date === selectedDate.toISOString().split("T")[0]
-      )
+    ? workouts.filter((w) => {
+        const selectedUtc = new Date(selectedDate.toISOString().split('T')[0]);
+        const workoutUtc = new Date(w.utcDate);
+        return selectedUtc.getTime() === workoutUtc.getTime();
+      })
     : workouts;
 
   const workoutDates = new Set(workouts.map((w) => w.date));
 
-  const handleDeleteWorkout = async (workout: UIExtendedWorkout) => {
+  const handleDeleteWorkout = async (workoutId: string) => {
     try {
+      const workout = workouts.find(w => w.id === workoutId);
+      if (!workout) return;
+
       const { error } = await supabase.rpc('update_user_stats_on_delete', {
         p_user_id: user!.id,
-        p_volume: workout.totalVolume
+        p_volume: workout.totalVolume,
+        p_date: workout.utcDate
       });
       
       if (error) throw error;
       
-      setWorkouts(workouts.filter((w) => w.id !== workout.id));
+      setWorkouts(workouts.filter((w) => w.id !== workoutId));
     } catch (err) {
       console.error("Error deleting workout:", err instanceof Error ? err.message : String(err));
     }
@@ -163,4 +180,10 @@ function HistoryPage() {
   );
 }
 
-export default withAuth(HistoryPage, { requireComplete: true });
+export default function History() {
+  return (
+    <ProtectedRoute>
+      <HistoryPage />
+    </ProtectedRoute>
+  );
+}

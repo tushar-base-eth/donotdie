@@ -83,7 +83,7 @@ export function VolumeChart({
                   dataKey="volume"
                   fill="currentColor"
                   radius={[4, 4, 0, 0]}
-                  className="fill-primary"
+                  className="fill-[#4B7BFF] dark:fill-red-500"
                 />
               </BarChart>
             </ResponsiveContainer>

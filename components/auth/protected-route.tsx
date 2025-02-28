@@ -1,40 +1,51 @@
+/**
+ * Protected Route Component
+ * 
+ * A higher-order component that handles route protection based on authentication status.
+ * It ensures that:
+ * 1. Unauthenticated users are redirected to the login page
+ * 2. Shows loading state while checking authentication
+ * 3. Only renders protected content for authenticated users
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <ProtectedRoute>
+ *   <MyProtectedComponent />
+ * </ProtectedRoute>
+ * ```
+ */
+
+"use client";
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 
-export function withAuth<P extends object>(
-  WrappedComponent: React.ComponentType<P>,
-  options: { requireComplete?: boolean } = {}
-) {
-  return function ProtectedRoute(props: P) {
-    const { state } = useAuth();
-    const router = useRouter();
+export interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
 
-    useEffect(() => {
-      if (state.status === 'unauthenticated') {
-        router.replace('/auth');
-      } else if (
-        state.status === 'authenticated' &&
-        options.requireComplete &&
-        state.user &&
-        !state.user.isProfileComplete
-      ) {
-        router.replace('/settings');
-      }
-    }, [state.status, state.user, router]);
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { state } = useAuth();
+  const router = useRouter();
 
-    if (state.status === 'loading') {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      );
-    }
-
+  // Redirect to auth page if user is not authenticated
+  useEffect(() => {
     if (state.status === 'unauthenticated') {
-      return null;
+      router.replace('/auth');
     }
+  }, [state.status, router]);
 
-    return <WrappedComponent {...props} />;
-  };
+  // Show loading spinner while checking auth state
+  if (state.status === 'loading') {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Render children only if authenticated
+  return state.status === 'authenticated' ? <>{children}</> : null;
 } 

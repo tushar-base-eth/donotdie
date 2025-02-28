@@ -11,16 +11,14 @@ import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import type { Database } from "@/types/database";
-import { withAuth } from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 interface VolumeData {
   date: string;
   volume: number;
 }
 
-export default withAuth(DashboardPage, { requireComplete: true });
-
-function DashboardPage() {
+export default function DashboardPage() {
   const { state } = useAuth();
   const { user } = state;
   const isLoading = state.status === 'loading';
@@ -154,41 +152,43 @@ function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg">
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/settings")}
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background pb-20">
+        <div className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg">
+          <h1 className="text-xl font-semibold">Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/settings")}
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <div className="p-4 space-y-6">
-        <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
-        <VolumeChart
-          data={volumeData}
-          timeRange={timeRange}
-          onTimeRangeChange={setTimeRange}
-        />
-      </div>
+        <div className="p-4 space-y-6">
+          <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
+          <VolumeChart
+            data={volumeData}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+          />
+        </div>
 
-      <BottomNav />
-    </div>
+        <BottomNav />
+      </div>
+    </ProtectedRoute>
   );
 }

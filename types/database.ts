@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       available_exercises: {
@@ -277,12 +302,17 @@ export type Database = {
         Args: {
           p_user_id: string
           p_volume: number
+          p_date: string
         }
         Returns: undefined
       }
       update_user_stats_on_delete: {
-        Args: { p_user_id: string; p_volume: number };
-        Returns: void;
+        Args: {
+          p_user_id: string
+          p_volume: number
+          p_date: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

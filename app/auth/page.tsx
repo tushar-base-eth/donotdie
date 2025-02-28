@@ -24,9 +24,15 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-const signupSchema = loginSchema.extend({
-  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+const signupSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
 });
+
+type LoginSchema = z.infer<typeof loginSchema>;
+type SignupSchema = z.infer<typeof signupSchema>;
+type FormSchema = LoginSchema & Partial<SignupSchema>;
 
 export default function AuthPage() {
   const { state, login, signup } = useAuth();
@@ -34,8 +40,8 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof signupSchema>>({
-    resolver: zodResolver(isLogin ? loginSchema : signupSchema),
+  const form = useForm<FormSchema>({
+    resolver: zodResolver(isLogin ? loginSchema : signupSchema) as any,
     defaultValues: {
       email: "",
       password: "",
@@ -45,13 +51,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (state.status === 'authenticated') {
-      if (state.user?.isProfileComplete) {
-        router.replace('/');
-      } else {
-        router.replace('/settings');
-      }
+      router.replace('/');
     }
-  }, [state.status, state.user, router]);
+  }, [state.status, router]);
 
   if (state.status === 'loading' || state.status === 'authenticated') {
     return (
@@ -61,16 +63,13 @@ export default function AuthPage() {
     );
   }
 
-  const onSubmit = async (values: z.infer<typeof signupSchema>) => {
+  const onSubmit = async (data: FormSchema) => {
     setIsLoading(true);
-
     try {
-      if (isLogin) {
-        await login(values.email, values.password);
-        // Redirect is handled in the login function
+      if (!isLogin) {
+        await signup(data.email, data.password, data.name!);
       } else {
-        await signup(values.email, values.password, values.name);
-        // Redirect is handled in the signup function
+        await login(data.email, data.password);
       }
     } catch (error) {
       form.setError("root", {
