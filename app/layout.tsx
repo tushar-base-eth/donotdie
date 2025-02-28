@@ -19,7 +19,7 @@ export default function RootLayout({
       <head>
         <title>DoNotDie - Track your workouts and stay alive</title>
         <meta name="description" content="Track your workouts and stay alive with DoNotDie" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
