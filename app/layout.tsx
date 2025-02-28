@@ -2,6 +2,7 @@ import type React from "react"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
+import { WorkoutProvider } from "@/contexts/workout-context"
 import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils"
 import "./globals.css"
@@ -23,8 +24,10 @@ export default function RootLayout({
       <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <AuthProvider>
-            {children}
-            <Toaster />
+            <WorkoutProvider>
+              {children}
+              <Toaster />
+            </WorkoutProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

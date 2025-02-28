@@ -11,27 +11,22 @@ import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
-import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
+import type { Exercise, UIExtendedWorkout, Set } from "@/types/workouts";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { useWorkout } from "@/contexts/workout-context"
 
 interface WorkoutProps {
   onExercisesChange?: (exercises: UIExtendedWorkout["exercises"]) => void;
 }
 
 function WorkoutPage({ onExercisesChange }: WorkoutProps) {
-  const { state } = useAuth();
-  const { user } = state;
-  const isLoading = state.status === 'loading';
+  const { state, dispatch } = useWorkout();
+  const { state: authState } = useAuth();
+  const { user } = authState;
+  const isLoading = authState.status === 'loading';
   const router = useRouter();
-  const [exercises, setExercises] = useState<UIExtendedWorkout["exercises"]>(
-    []
-  );
   const [showExerciseModal, setShowExerciseModal] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState<
-    UIExtendedWorkout["exercises"][0] | null
-  >(null);
-  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -41,8 +36,8 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   }, [user, isLoading, router]);
 
   const isWorkoutValid =
-    exercises.length > 0 &&
-    exercises.every(
+    state.currentWorkout.exercises.length > 0 &&
+    state.currentWorkout.exercises.every(
       (exercise) =>
         exercise.sets.length > 0 &&
         exercise.sets.every((set) => set.reps > 0 && set.weight_kg > 0)
@@ -52,8 +47,8 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     return exercises.reduce(
       (total, exercise) =>
         total +
-        exercise.sets.reduce(
-          (setTotal, set) => setTotal + set.weight_kg * set.reps,
+        exercise.sets.reduce<number>(
+          (setTotal, set: Set) => setTotal + set.weight_kg * set.reps,
           0
         ),
       0
@@ -61,14 +56,10 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   const handleExerciseToggle = (id: string) => {
-    setSelectedExercises((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const updateExercises = (newExercises: UIExtendedWorkout["exercises"]) => {
-    setExercises(newExercises);
-    onExercisesChange?.(newExercises);
+    dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: state.currentWorkout.selectedExerciseIds.includes(id) 
+      ? state.currentWorkout.selectedExerciseIds.filter(x => x !== id)
+      : [...state.currentWorkout.selectedExerciseIds, id]
+    });
   };
 
   const handleAddExercises = (selected: Exercise[]) => {
@@ -89,8 +80,8 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         ],
         created_at: "",
       }));
-      updateExercises([...exercises, ...newExercises]);
-      setSelectedExercises([]);
+      dispatch({ type: "SET_EXERCISES", exercises: [...state.currentWorkout.exercises, ...newExercises] });
+      dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });
       setShowExerciseModal(false);
     });
   };
@@ -100,25 +91,13 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     newSets: UIExtendedWorkout["exercises"][0]["sets"]
   ) => {
     if (exerciseIndex === -1) return;
-    const updatedExercises = [...exercises];
-    updatedExercises[exerciseIndex] = {
-      ...updatedExercises[exerciseIndex],
-      sets: newSets,
-    };
-    updateExercises(updatedExercises);
-
-    if (
-      selectedExercise &&
-      selectedExercise.exercise.id ===
-        updatedExercises[exerciseIndex].exercise.id
-    ) {
-      setSelectedExercise(updatedExercises[exerciseIndex]);
-    }
+    dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: newSets });
   };
 
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
-      updateExercises(exercises.filter((_, i) => i !== index));
+      const newExercises = state.currentWorkout.exercises.filter((_, i) => i !== index);
+      dispatch({ type: "SET_EXERCISES", exercises: newExercises });
     });
   };
 
@@ -138,7 +117,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         const workoutId = workoutData.id;
 
         // Insert all workout exercises and their sets
-        for (const ex of exercises) {
+        for (const ex of state.currentWorkout.exercises) {
           const { data: workoutExData, error: workoutExError } = await supabase
             .from("workout_exercises")
             .insert([{ workout_id: workoutId, exercise_id: ex.exercise_id }])
@@ -147,7 +126,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
           if (workoutExError) throw new Error(workoutExError.message);
 
           const workoutExerciseId = workoutExData.id;
-          const setsData = ex.sets.map((set) => ({
+          const setsData = ex.sets.map((set: Set) => ({
             workout_exercise_id: workoutExerciseId,
             reps: set.reps,
             weight_kg: set.weight_kg,
@@ -159,7 +138,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         }
 
         // Update user stats with the total volume
-        const totalVolume = calculateTotalVolume(exercises);
+        const totalVolume = calculateTotalVolume(state.currentWorkout.exercises);
         const { error: statsError } = await supabase.rpc('update_user_stats', {
           p_user_id: user.id,
           p_volume: totalVolume,
@@ -167,7 +146,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         });
         if (statsError) throw new Error(statsError.message);
 
-        updateExercises([]);
+        dispatch({ type: "SET_EXERCISES", exercises: [] });
       } catch (error: any) {
         console.error("Error saving workout:", error.message);
       }
@@ -202,8 +181,8 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
           <ExerciseSkeleton />
         ) : (
           <WorkoutExercises
-            exercises={exercises}
-            onExerciseSelect={setSelectedExercise}
+            exercises={state.currentWorkout.exercises}
+            onExerciseSelect={(exercise) => dispatch({ type: "SET_SELECTED_EXERCISE", exercise })}
             onExerciseRemove={handleRemoveExercise}
           />
         )}
@@ -239,17 +218,17 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         <ExerciseSelector
           open={showExerciseModal}
           onOpenChange={setShowExerciseModal}
-          selectedExercises={selectedExercises}
+          selectedExercises={state.currentWorkout.selectedExerciseIds}
           onExerciseToggle={handleExerciseToggle}
           onAddExercises={handleAddExercises}
         />
-        {selectedExercise && (
+        {state.currentWorkout.selectedExercise && (
           <ExerciseEditor
-            exercise={selectedExercise}
-            onClose={() => setSelectedExercise(null)}
+            exercise={state.currentWorkout.selectedExercise}
+            onClose={() => dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null })}
             onUpdateSets={handleUpdateSets}
-            exerciseIndex={exercises.findIndex(
-              (ex) => ex.exercise.id === selectedExercise.exercise.id
+            exerciseIndex={state.currentWorkout.exercises.findIndex(
+              (ex) => ex.exercise.id === state.currentWorkout.selectedExercise?.exercise.id
             )}
           />
         )}
