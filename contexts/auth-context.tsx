@@ -121,15 +121,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Login function with profile creation
+  // Login function with profile creation and unique email handling
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      const { data: { session }, error } = await supabase.auth.signInWithPassword({
+      // Authenticate the user
+      const { data: { session }, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
       const userId = session.user.id;
       let profile = await fetchUserProfile(userId);
@@ -138,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const pendingProfile = JSON.parse(localStorage.getItem("pendingProfile") || "{}");
         const { name, unitPreference } = pendingProfile;
 
+        // Attempt to insert a new profile
         const defaultProfile = {
           id: userId,
           email,
@@ -150,18 +152,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           unit_preference: unitPreference || "metric",
         };
 
-        const { error: insertError } = await supabase
-          .from("users")
-          .insert(defaultProfile);
+        const { error } = await supabase.from("users").insert(defaultProfile);
+        if (error) {
+          if (error.code === "23505") { // Unique constraint violation (duplicate email)
+            // Fetch the existing profile for this email
+            const { data: existingProfile, error: profileError } = await supabase
+              .from("users")
+              .select("*")
+              .eq("email", email)
+              .single();
 
-        if (insertError) throw insertError;
+            if (profileError) throw profileError;
 
-        localStorage.removeItem("pendingProfile");
-        profile = await fetchUserProfile(userId);
+            profile = existingProfile;
+            localStorage.removeItem("pendingProfile"); // Clean up, even if reusing profile
+          } else {
+            throw error; // Other errors (e.g., network issues)
+          }
+        } else {
+          // Profile was successfully inserted, fetch it
+          profile = await fetchUserProfile(userId);
+          localStorage.removeItem("pendingProfile");
+        }
       }
 
       setState({ status: "authenticated", user: profile });
     } catch (error: any) {
+      if (error.code === "23505") {
+        alert("This email is already registered. Please log in or use a different email.");
+      } else {
+        alert("An error occurred during sign-up. Please try again.");
+      }
       throw new Error(error.message);
     }
   };
