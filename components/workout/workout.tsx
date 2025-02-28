@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { WorkoutExercises } from "@/components/workout/workout-exercises";
 import { ExerciseSelector } from "@/components/workout/exercise-selector";
 import { ExerciseEditor } from "@/components/workout/exercise-editor";
-import { WorkoutWelcome } from "@/components/workout/workout-welcome";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
@@ -16,7 +15,11 @@ import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from '@/components/auth/protected-route';
 
-function WorkoutPage() {
+interface WorkoutProps {
+  onExercisesChange?: (exercises: UIExtendedWorkout["exercises"]) => void;
+}
+
+function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const { state } = useAuth();
   const { user } = state;
   const isLoading = state.status === 'loading';
@@ -63,6 +66,11 @@ function WorkoutPage() {
     );
   };
 
+  const updateExercises = (newExercises: UIExtendedWorkout["exercises"]) => {
+    setExercises(newExercises);
+    onExercisesChange?.(newExercises);
+  };
+
   const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
       const newExercises = selected.map((exercise) => ({
@@ -81,7 +89,7 @@ function WorkoutPage() {
         ],
         created_at: "",
       }));
-      setExercises([...exercises, ...newExercises]);
+      updateExercises([...exercises, ...newExercises]);
       setSelectedExercises([]);
       setShowExerciseModal(false);
     });
@@ -97,7 +105,7 @@ function WorkoutPage() {
       ...updatedExercises[exerciseIndex],
       sets: newSets,
     };
-    setExercises(updatedExercises);
+    updateExercises(updatedExercises);
 
     if (
       selectedExercise &&
@@ -110,7 +118,7 @@ function WorkoutPage() {
 
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
-      setExercises(exercises.filter((_, i) => i !== index));
+      updateExercises(exercises.filter((_, i) => i !== index));
     });
   };
 
@@ -159,7 +167,7 @@ function WorkoutPage() {
         });
         if (statsError) throw new Error(statsError.message);
 
-        setExercises([]);
+        updateExercises([]);
       } catch (error: any) {
         console.error("Error saving workout:", error.message);
       }
@@ -190,7 +198,6 @@ function WorkoutPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="p-4 space-y-6">
-        <WorkoutWelcome />
         {isPending ? (
           <ExerciseSkeleton />
         ) : (
@@ -251,10 +258,10 @@ function WorkoutPage() {
   );
 }
 
-export default function Workout() {
+export default function Workout(props: WorkoutProps) {
   return (
     <ProtectedRoute>
-      <WorkoutPage />
+      <WorkoutPage {...props} />
     </ProtectedRoute>
   );
 }
