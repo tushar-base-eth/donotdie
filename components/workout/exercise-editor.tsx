@@ -1,6 +1,6 @@
 "use client"
 
-import { X } from "lucide-react"
+import { X, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -61,49 +61,56 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   >
-                    <motion.div layout className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#4B7BFF]/10 dark:bg-red-500/10 flex items-center justify-center text-[#4B7BFF] dark:text-red-500 font-medium">
-                            {setIndex + 1}
-                          </div>
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            const newSets = exercise.sets.filter((_, i) => i !== setIndex)
-                            onUpdateSets(exerciseIndex, newSets)
-                          }}
-                          className="rounded-full h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                    <motion.div 
+                      layout 
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={{ left: 0.2, right: 0 }}
+                      onDragEnd={(e, { offset, velocity }) => {
+                        const swipe = offset.x;
+                        if (swipe < -100) {
+                          const newSets = exercise.sets.filter((_, i) => i !== setIndex);
+                          onUpdateSets(exerciseIndex, newSets);
+                        }
+                      }}
+                      className="relative"
+                    >
+                      <div className="absolute right-0 top-0 bottom-0 w-[50px] bg-destructive/10 rounded-r-xl flex items-center justify-center">
+                        <Trash className="h-4 w-4 text-destructive" />
                       </div>
 
-                      <Card className="p-4 bg-accent/5 border-0">
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`reps-${setIndex}`}>Reps</Label>
-                              <Input
-                                id={`reps-${setIndex}`}
-                                type="text"
-                                inputMode="decimal"
-                                value={set.reps || ""}
-                                onChange={(e) => {
-                                  const newValue = handleNumberInput(e.target.value)
-                                  if (newValue !== null) {
-                                    const newSets = [...exercise.sets]
-                                    newSets[setIndex] = { ...set, reps: newValue }
-                                    onUpdateSets(exerciseIndex, newSets)
-                                  }
-                                }}
-                                className="rounded-xl bg-background text-foreground"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`weight-${setIndex}`}>Weight ({unitLabel})</Label>
+                      <motion.div 
+                        className="relative bg-background rounded-xl"
+                        style={{ x: 0 }}
+                      >
+                        <div className="px-4 py-3">
+                          <div className="flex gap-3 mb-1">
+                            <div className="w-8" /> {/* Spacer for set number */}
+                            <div className="w-[140px] text-left">Reps</div>
+                            <div className="w-[140px] text-left">Weight ({unitLabel})</div>
+                          </div>
+                          <div className="flex flex-col gap-3">
+                            <div className="flex gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-[#4B7BFF]/10 dark:bg-red-500/10 flex items-center justify-center text-[#4B7BFF] dark:text-red-500 font-medium flex-shrink-0">
+                                  {setIndex + 1}
+                                </div>
+                                <Input
+                                  id={`reps-${setIndex}`}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={set.reps || ""}
+                                  onChange={(e) => {
+                                    const newValue = handleNumberInput(e.target.value)
+                                    if (newValue !== null) {
+                                      const newSets = [...exercise.sets]
+                                      newSets[setIndex] = { ...set, reps: newValue }
+                                      onUpdateSets(exerciseIndex, newSets)
+                                    }
+                                  }}
+                                  className="rounded-xl bg-background text-foreground shadow-sm w-[140px]"
+                                />
+                              </div>
                               <Input
                                 id={`weight-${setIndex}`}
                                 type="text"
@@ -117,35 +124,40 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                                     onUpdateSets(exerciseIndex, newSets)
                                   }
                                 }}
-                                className="rounded-xl bg-background text-foreground"
+                                className="rounded-xl bg-background text-foreground shadow-sm w-[140px]"
                               />
                             </div>
                           </div>
                         </div>
-                      </Card>
+                      </motion.div>
                     </motion.div>
                   </motion.div>
                 ))}
               </AnimatePresence>
 
               <motion.div layout>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const newSet: Set = {
-                      id: crypto.randomUUID(),
-                      workout_exercise_id: null,
-                      reps: 0,
-                      weight_kg: 0,
-                      created_at: null
-                    };
-                    const newSets = [...exercise.sets, newSet];
-                    onUpdateSets(exerciseIndex, newSets);
-                  }}
-                  className="w-full rounded-xl h-10"
-                >
-                  Add Set
-                </Button>
+                <div className="px-4">
+                  <div className="flex gap-3">
+                    <div className="w-8" /> {/* Spacer for alignment with set number */}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const newSet: Set = {
+                          id: Date.now().toString(),
+                          workout_exercise_id: null,
+                          reps: 0,
+                          weight_kg: 0,
+                          created_at: null
+                        };
+                        const newSets = [...exercise.sets, newSet];
+                        onUpdateSets(exerciseIndex, newSets);
+                      }}
+                      className="rounded-xl h-10 px-6 dark:bg-red-500 dark:text-white dark:hover:bg-red-600 dark:border-transparent"
+                    >
+                      Add Set
+                    </Button>
+                  </div>
+                </div>
               </motion.div>
             </div>
           </ScrollArea>
