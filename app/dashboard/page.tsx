@@ -35,40 +35,54 @@ export default function DashboardPage() {
     if (!user && !isLoading) {
       router.push("/auth");
     } else if (user) {
+      console.log("Fetching dashboard data for user:", user.id);
       fetchDashboardData();
     }
-  }, [user, isLoading, timeRange, router]);
+  }, [user, isLoading, timeRange, router, user?.unitPreference]);
 
   const fetchDashboardData = async () => {
     if (!user) return;
 
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("total_volume, total_workouts")
-      .eq("id", user.id)
-      .single();
-    if (userError) {
-      console.error("Error fetching user stats:", userError.message);
-    } else {
+    try {
+      // Fetch user stats
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("total_volume, total_workouts")
+        .eq("id", user.id)
+        .single();
+
+      if (userError) {
+        console.error("Error fetching user stats:", userError.message);
+        return;
+      }
+
+      console.log("User stats:", userData);
       setTotalVolume(userData.total_volume ?? 0);
       setTotalWorkouts(userData.total_workouts ?? 0);
-    }
 
-    const daysToFetch =
-      timeRange === "7days" ? 7 : timeRange === "4weeks" ? 28 : 180;
-    const { data: volumeByDay, error: volumeError } = (await supabase.rpc(
-      "get_volume_by_day",
-      {
-        p_user_id: user.id,
-        p_days: daysToFetch,
+      // Fetch volume data
+      const daysToFetch =
+        timeRange === "7days" ? 7 : timeRange === "4weeks" ? 28 : 180;
+      console.log("Fetching volume data for days:", daysToFetch);
+
+      const { data: volumeByDay, error: volumeError } = (await supabase.rpc(
+        "get_volume_by_day",
+        {
+          p_user_id: user.id,
+          p_days: daysToFetch,
+        }
+      )) as {
+        data: Database["public"]["Functions"]["get_volume_by_day"]["Returns"];
+        error: any;
+      };
+
+      if (volumeError) {
+        console.error("Error fetching volume by day:", volumeError.message);
+        return;
       }
-    )) as {
-      data: Database["public"]["Functions"]["get_volume_by_day"]["Returns"];
-      error: any;
-    };
-    if (volumeError) {
-      console.error("Error fetching volume by day:", volumeError.message);
-    } else {
+
+      console.log("Raw volume data:", volumeByDay);
+
       let formattedVolumeData: VolumeData[] = [];
       if (timeRange === "7days") {
         formattedVolumeData = volumeByDay.map((entry) => ({
@@ -76,14 +90,18 @@ export default function DashboardPage() {
             month: "short",
             day: "numeric",
           }),
-          volume: entry.volume,
+          volume: entry.volume || 0,
         }));
       } else if (timeRange === "4weeks") {
         formattedVolumeData = aggregateByWeek(volumeByDay, 4);
       } else if (timeRange === "6months") {
         formattedVolumeData = aggregateByMonth(volumeByDay, 6);
       }
+
+      console.log("Formatted volume data:", formattedVolumeData);
       setVolumeData(formattedVolumeData);
+    } catch (error) {
+      console.error("Error in fetchDashboardData:", error);
     }
   };
 

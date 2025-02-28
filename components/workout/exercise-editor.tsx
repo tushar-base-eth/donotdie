@@ -8,16 +8,20 @@ import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { motion, AnimatePresence } from "framer-motion"
-import type { Set, WorkoutExercise } from "@/types/workouts"
+import type { UIExtendedWorkout } from "@/types/workouts"
+import type { Set } from "@/types/workouts"
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference"
 
 interface ExerciseEditorProps {
-  exercise: WorkoutExercise
+  exercise: UIExtendedWorkout["exercises"][0]
   onClose: () => void
-  onUpdateSets: (exerciseIndex: number, newSets: Set[]) => void
+  onUpdateSets: (exerciseIndex: number, sets: Set[]) => void
   exerciseIndex: number
 }
 
 export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex }: ExerciseEditorProps) {
+  const { formatWeight, parseInputToKg, convertFromKg, unitLabel } = useUnitPreference()
+
   const handleNumberInput = (value: string) => {
     // Allow only numbers and one decimal point
     const regex = /^\d*\.?\d*$/
@@ -46,48 +50,36 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
-            <div className="p-6 space-y-4">
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-4">
               <AnimatePresence initial={false}>
                 {exercise.sets.map((set: Set, setIndex: number) => (
                   <motion.div
-                    key={setIndex}
+                    key={set.id}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    layout
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   >
-                    <motion.div
-                      drag="x"
-                      dragConstraints={{ left: -100, right: 0 }}
-                      dragElastic={0.1}
-                      onDragEnd={(_, info) => {
-                        if (info.offset.x < -50) {
-                          const newSets = [...exercise.sets]
-                          newSets.splice(setIndex, 1)
-                          onUpdateSets(exerciseIndex, newSets)
-                        }
-                      }}
-                      className="cursor-grab active:cursor-grabbing relative"
-                      whileDrag={{ scale: 1.02 }}
-                      whileHover={{ scale: 1.01 }}
-                    >
-                      <motion.div
-                        className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-destructive to-transparent flex items-center justify-end pr-4"
-                        style={{
-                          borderTopRightRadius: "0.5rem",
-                          borderBottomRightRadius: "0.5rem",
-                        }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0 }}
-                        whileDrag={{
-                          opacity: 1,
-                          transition: { duration: 0.2 },
-                        }}
-                      >
-                        <span className="text-destructive-foreground font-medium">Delete</span>
-                      </motion.div>
+                    <motion.div layout className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-[#4B7BFF]/10 dark:bg-red-500/10 flex items-center justify-center text-[#4B7BFF] dark:text-red-500 font-medium">
+                            {setIndex + 1}
+                          </div>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            const newSets = exercise.sets.filter((_, i) => i !== setIndex)
+                            onUpdateSets(exerciseIndex, newSets)
+                          }}
+                          className="rounded-full h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
 
                       <Card className="p-4 bg-accent/5 border-0">
                         <div className="space-y-4">
@@ -111,17 +103,17 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor={`weight-${setIndex}`}>Weight (kg)</Label>
+                              <Label htmlFor={`weight-${setIndex}`}>Weight ({unitLabel})</Label>
                               <Input
                                 id={`weight-${setIndex}`}
                                 type="text"
                                 inputMode="decimal"
-                                value={set.weight_kg || ""}
+                                value={convertFromKg(set.weight_kg) || ""}
                                 onChange={(e) => {
                                   const newValue = handleNumberInput(e.target.value)
                                   if (newValue !== null) {
                                     const newSets = [...exercise.sets]
-                                    newSets[setIndex] = { ...set, weight_kg: newValue }
+                                    newSets[setIndex] = { ...set, weight_kg: parseInputToKg(e.target.value) }
                                     onUpdateSets(exerciseIndex, newSets)
                                   }
                                 }}

@@ -18,6 +18,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -28,6 +35,7 @@ const signupSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(2, "Name must be at least 2 characters"),
+  unitPreference: z.enum(["metric", "imperial"]),
 });
 
 type LoginSchema = z.infer<typeof loginSchema>;
@@ -46,6 +54,7 @@ export default function AuthPage() {
       email: "",
       password: "",
       name: "",
+      unitPreference: "metric",
     },
   });
 
@@ -67,7 +76,7 @@ export default function AuthPage() {
     setIsLoading(true);
     try {
       if (!isLogin) {
-        await signup(data.email, data.password, data.name!);
+        await signup(data.email, data.password, data.name!, data.unitPreference!);
       } else {
         await login(data.email, data.password);
       }
@@ -141,21 +150,47 @@ export default function AuthPage() {
                     )}
                   />
 
-                  {/* Signup-only field for name */}
+                  {/* Signup-only fields */}
                   {!isLogin && (
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="unitPreference"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Unit Preference</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select units" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="metric">Metric (kg/cm)</SelectItem>
+                                <SelectItem value="imperial">Imperial (lb/ft-in)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
                   )}
 
                   {/* Form actions */}

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
@@ -15,6 +16,8 @@ export function WorkoutList({
   onWorkoutSelect,
   onWorkoutDelete,
 }: WorkoutListProps) {
+  const { formatWeight } = useUnitPreference();
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
@@ -78,7 +81,7 @@ export function WorkoutList({
                       <div className="text-sm text-muted-foreground">
                         Total Volume
                       </div>
-                      <div className="font-medium">{workout.totalVolume}kg</div>
+                      <div className="font-medium">{formatWeight(workout.totalVolume)}</div>
                     </div>
                   </div>
                 </CardContent>

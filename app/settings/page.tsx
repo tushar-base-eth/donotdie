@@ -56,13 +56,13 @@ function SettingsPage() {
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      name: "",
-      gender: "Male",
-      dateOfBirth: "",
-      unitPreference: "metric",
-      weight: 70,
-      height: 170,
-      bodyFat: 0,
+      name: user?.name || "",
+      gender: (user?.gender as "Male" | "Female" | "Other") || "Male",
+      dateOfBirth: user?.dateOfBirth || "",
+      unitPreference: user?.unitPreference || "metric",
+      weight: user?.weight || 70,
+      height: user?.height || 170,
+      bodyFat: user?.bodyFat || 0,
     },
   });
 
@@ -78,31 +78,6 @@ function SettingsPage() {
   const feetInchesToCm = (feet: number, inches: number) => {
     return Math.round((feet * 12 + inches) * 2.54);
   };
-
-  useEffect(() => {
-    if (!user && !isLoading) {
-      router.push("/auth");
-    } else if (user) {
-      // Check if this might be a new profile setup
-      setIsNewProfile(!user.isProfileComplete);
-
-      // Set initial form values from user profile
-      const height = user.height || 170;
-      const { feet, inches } = cmToFeetInches(height);
-      setFeetPart(feet);
-      setInchesPart(inches);
-
-      form.reset({
-        name: user.name || "New User",
-        gender: (user.gender as "Male" | "Female" | "Other") || "Other",
-        dateOfBirth: user.dateOfBirth || "",
-        unitPreference: user.unitPreference || "metric",
-        weight: user.weight || 70,
-        height: user.height || 170,
-        bodyFat: user.bodyFat || 0,
-      });
-    }
-  }, [user, isLoading, form, router]);
 
   // Handle manual form submission
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
@@ -123,33 +98,33 @@ function SettingsPage() {
     }
   };
 
-  // Set up auto-save on important field changes
+  // Remove auto-save effect
   useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      // Only auto-save if it's not the initial form setup and not a new profile
-      if (user && !isLoading && !isNewProfile && type === "change") {
-        // Don't auto-save for every keystroke, only important fields
-        if (
-          name &&
-          ["gender", "unitPreference", "dateOfBirth"].includes(name)
-        ) {
-          const formData = form.getValues();
-          setIsSaving(true);
-          updateProfile(formData as UserProfile)
-            .then(() => {
-              console.log(`Updated ${name} successfully`);
-            })
-            .catch((error) => {
-              console.error(`Error auto-saving ${name}:`, error);
-            })
-            .finally(() => {
-              setIsSaving(false);
-            });
-        }
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form.watch, user, isLoading, isNewProfile, updateProfile]);
+    if (!user && !isLoading) {
+      router.push("/auth");
+    } else if (user) {
+      // Check if this might be a new profile setup
+      setIsNewProfile(!user.isProfileComplete);
+
+      // Set initial form values from user profile
+      const height = user.height || 170;
+      const { feet, inches } = cmToFeetInches(height);
+      setFeetPart(feet);
+      setInchesPart(inches);
+
+      const resetValues = {
+        name: user.name || "New User",
+        gender: (user.gender as "Male" | "Female" | "Other") || "Other",
+        dateOfBirth: user.dateOfBirth || "",
+        unitPreference: user.unitPreference || "metric",
+        weight: user.weight || 70,
+        height: user.height || 170,
+        bodyFat: user.bodyFat || 0,
+      };
+      
+      form.reset(resetValues);
+    }
+  }, [user, isLoading, form, router]);
 
   const handleLogout = () => {
     logout();
@@ -271,18 +246,18 @@ function SettingsPage() {
                       <FormLabel>Unit Preference</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select units" />
+                            <SelectValue defaultValue={field.value}>
+                              {field.value === 'metric' ? 'Metric (kg/cm)' : field.value === 'imperial' ? 'Imperial (lb/ft-in)' : 'Select units'}
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="metric">Metric (kg/cm)</SelectItem>
-                          <SelectItem value="imperial">
-                            Imperial (lb/ft-in)
-                          </SelectItem>
+                          <SelectItem value="imperial">Imperial (lb/ft-in)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

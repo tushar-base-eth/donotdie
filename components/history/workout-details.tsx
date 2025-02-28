@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { UIExtendedWorkout } from "@/types/workouts";
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface WorkoutDetailsProps {
   workout: UIExtendedWorkout | null;
@@ -11,6 +12,8 @@ interface WorkoutDetailsProps {
 }
 
 export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
+  const { formatWeight } = useUnitPreference();
+  
   if (!workout) return null;
 
   return (
@@ -48,7 +51,7 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
                       {set.reps} reps
                     </span>
                     <span className="text-muted-foreground">
-                      {set.weight_kg}kg
+                      {formatWeight(set.weight_kg)}
                     </span>
                   </div>
                 </div>

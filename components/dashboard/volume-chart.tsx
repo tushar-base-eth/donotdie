@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface VolumeChartProps {
   data: { date: string; volume: number }[];
@@ -22,13 +23,15 @@ export function VolumeChart({
   timeRange,
   onTimeRangeChange,
 }: VolumeChartProps) {
+  const { formatWeight, convertFromKg, unitLabel } = useUnitPreference();
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Volume</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={timeRange} onValueChange={onTimeRangeChange}>
+        <Tabs value={timeRange} onValueChange={(value) => onTimeRangeChange(value as "7days" | "4weeks" | "6months")}>
           <TabsList className="w-full bg-muted/50 p-1">
             <TabsTrigger value="7days" className="flex-1">
               Last 7 Days
@@ -43,7 +46,7 @@ export function VolumeChart({
 
           <div className="mt-6 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={data.map(d => ({ ...d, volume: convertFromKg(d.volume) }))}>
                 <XAxis
                   dataKey="date"
                   stroke="#888888"
@@ -56,7 +59,9 @@ export function VolumeChart({
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `${value}kg`}
+                  tickFormatter={(value) => `${value}${unitLabel}`}
+                  width={45}
+                  padding={{ top: 20 }}
                 />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -69,7 +74,7 @@ export function VolumeChart({
                                 Volume
                               </span>
                               <span className="font-bold text-muted-foreground">
-                                {payload[0].value}kg
+                                {formatWeight(payload[0].payload.volume)}
                               </span>
                             </div>
                           </div>

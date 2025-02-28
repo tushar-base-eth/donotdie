@@ -56,7 +56,7 @@ interface AuthState {
 interface AuthContextType {
   state: AuthState;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, unitPreference: "metric" | "imperial") => Promise<void>;
   logout: () => void;
   updateProfile: (user: Partial<UserProfile>) => Promise<void>;
 }
@@ -197,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (email: string, password: string, name: string): Promise<void> => {
+  const signup = async (email: string, password: string, name: string, unitPreference: "metric" | "imperial"): Promise<void> => {
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -215,8 +215,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         date_of_birth: '2000-01-01',
         weight_kg: 70,
         height_cm: 170,
-        unit_preference: 'metric',
         theme_preference: 'light',
+        unit_preference: unitPreference,
       };
 
       const { error: profileError } = await supabase
@@ -251,6 +251,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const mergedProfile = { ...state.user, ...updatedUser };
+      console.log('Updating profile with:', {
+        currentUser: state.user,
+        updatedUser,
+        mergedProfile
+      });
 
       // Normalize gender to match schema CHECK constraint ('Male', 'Female', 'Other')
       const formattedGender = mergedProfile.gender
@@ -272,21 +277,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
       }
 
-      const { error } = await supabase
-        .from("users")
-        .update({
-          name: mergedProfile.name,
-          gender: formattedGender,
-          date_of_birth: mergedProfile.dateOfBirth,
-          weight_kg: mergedProfile.weight,
-          height_cm: mergedProfile.height,
-          body_fat_percentage: mergedProfile.bodyFat,
-          unit_preference: mergedProfile.unitPreference,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", state.user.id);
+      const updateData = {
+        name: mergedProfile.name,
+        gender: formattedGender,
+        date_of_birth: mergedProfile.dateOfBirth,
+        weight_kg: mergedProfile.weight,
+        height_cm: mergedProfile.height,
+        body_fat_percentage: mergedProfile.bodyFat,
+        unit_preference: mergedProfile.unitPreference,
+        updated_at: new Date().toISOString(),
+      };
+      console.log('Sending update to database:', updateData);
 
-      if (error) throw error;
+      const { error, data } = await supabase
+        .from("users")
+        .update(updateData)
+        .eq("id", state.user.id)
+        .select();
+
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
+      console.log('Database update response:', data);
 
       const isProfileComplete = !!(
         mergedProfile.name &&
@@ -302,6 +315,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         gender: formattedGender,
         isProfileComplete,
       };
+      console.log('Setting new state with profile:', updatedProfile);
 
       setState({ status: 'authenticated', user: updatedProfile });
     } catch (error: any) {
