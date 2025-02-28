@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ export function ExerciseSelector({
   onAddExercises,
 }: ExerciseSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(
     null
@@ -36,6 +37,8 @@ export function ExerciseSelector({
   // Fetch exercises when the modal opens
   useEffect(() => {
     if (open) {
+      setSearchQuery("");
+      inputRef.current?.blur();
       async function fetchExercises() {
         const { data, error } = await supabase
           .from("available_exercises")
@@ -85,7 +88,12 @@ export function ExerciseSelector({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] px-0" aria-describedby="exercise-selector-description">
+      <SheetContent 
+        side="bottom" 
+        className="h-[80vh] px-0" 
+        aria-describedby="exercise-selector-description"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <div className="flex flex-col h-full">
           <div className="px-6 pb-6 flex items-center border-b">
             <SheetTitle className="text-xl">Add Exercise</SheetTitle>
@@ -96,10 +104,12 @@ export function ExerciseSelector({
 
           <div className="px-6 pt-4 space-y-4">
             <Input
+              ref={inputRef}
               placeholder="Search exercises..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="rounded-xl bg-accent/10 border-0"
+              autoFocus={false}
             />
             <Tabs
               value={selectedTab}
