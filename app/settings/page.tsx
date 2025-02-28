@@ -215,6 +215,13 @@ function SettingsPage() {
                     </FormItem>
                   )}
                 />
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input value={user?.email || ''} readOnly disabled />
+                  </FormControl>
+                </FormItem>
+                {/* Gender field - temporarily hidden
                 <FormField
                   control={form.control}
                   name="gender"
@@ -240,6 +247,8 @@ function SettingsPage() {
                     </FormItem>
                   )}
                 />
+                */}
+                {/* Date of Birth field - temporarily hidden
                 <FormField
                   control={form.control}
                   name="dateOfBirth"
@@ -253,6 +262,7 @@ function SettingsPage() {
                     </FormItem>
                   )}
                 />
+                */}
                 <FormField
                   control={form.control}
                   name="unitPreference"
@@ -279,6 +289,7 @@ function SettingsPage() {
                     </FormItem>
                   )}
                 />
+                {/* Weight field - temporarily hidden
                 <FormField
                   control={form.control}
                   name="weight"
@@ -315,6 +326,8 @@ function SettingsPage() {
                     </FormItem>
                   )}
                 />
+                */}
+                {/* Height field - temporarily hidden
                 <FormField
                   control={form.control}
                   name="height"
@@ -371,6 +384,8 @@ function SettingsPage() {
                     </FormItem>
                   )}
                 />
+                */}
+                {/* Body Fat field - temporarily hidden
                 <FormField
                   control={form.control}
                   name="bodyFat"
@@ -392,6 +407,7 @@ function SettingsPage() {
                     </FormItem>
                   )}
                 />
+                */}
 
                 <Button type="submit" disabled={isSaving}>
                   {isSaving

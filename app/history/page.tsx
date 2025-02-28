@@ -72,7 +72,6 @@ function HistoryPage() {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true,
-            timeZoneName: 'short',
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
           }).format(utcDate),
           totalVolume: exercises.reduce(
@@ -102,13 +101,30 @@ function HistoryPage() {
       const workout = workouts.find(w => w.id === workoutId);
       if (!workout) return;
 
-      const { error } = await supabase.rpc('update_user_stats_on_delete', {
+      // Delete workout exercises and their sets first
+      const { error: exercisesError } = await supabase
+        .from('workout_exercises')
+        .delete()
+        .eq('workout_id', workoutId);
+
+      if (exercisesError) throw exercisesError;
+
+      // Delete the workout itself
+      const { error: workoutError } = await supabase
+        .from('workouts')
+        .delete()
+        .eq('id', workoutId);
+
+      if (workoutError) throw workoutError;
+
+      // Update user stats
+      const { error: statsError } = await supabase.rpc('update_user_stats_on_delete', {
         p_user_id: user!.id,
         p_volume: workout.totalVolume,
         p_date: workout.utcDate
       });
       
-      if (error) throw error;
+      if (statsError) throw statsError;
       
       setWorkouts(workouts.filter((w) => w.id !== workoutId));
     } catch (err) {
