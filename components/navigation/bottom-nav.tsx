@@ -1,47 +1,42 @@
 "use client"
 
-import { Home, History, BarChart2 } from "lucide-react"
-import { usePathname, useRouter } from "next/navigation"
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Home, LineChart, Settings, History } from 'lucide-react';
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
-  const pathname = usePathname()
-  const router = useRouter()
+  const pathname = usePathname();
 
-  const items = [
-    {
-      title: "Home",
-      href: "/",
-      icon: Home,
-    },
-    {
-      title: "History",
-      href: "/history",
-      icon: History,
-    },
-    {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: BarChart2,
-    },
-  ]
+  const navItems = [
+    { href: '/', icon: Home, label: 'Home' },
+    { href: '/dashboard', icon: LineChart, label: 'Dashboard' },
+    { href: '/history', icon: History, label: 'History' },
+    { href: '/settings', icon: Settings, label: 'Settings' },
+  ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-background px-4 backdrop-blur-lg">
-      {items.map((item) => (
-        <button
-          key={item.href}
-          onClick={() => router.push(item.href)}
-          className={cn(
-            "flex flex-col items-center justify-center gap-1",
-            pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-primary",
-          )}
-        >
-          <item.icon className="h-6 w-6" />
-          <span className="text-xs">{item.title}</span>
-        </button>
-      ))}
-    </div>
-  )
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-background border-t">
+      <div className="grid h-full max-w-lg grid-cols-4 mx-auto">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`inline-flex flex-col items-center justify-center px-5 group ${
+                isActive ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <Icon className="w-6 h-6" />
+              <span className="text-xs">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
 }
 
