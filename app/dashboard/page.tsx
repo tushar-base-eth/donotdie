@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const [totalVolume, setTotalVolume] = useState<number>(0);
   const [totalWorkouts, setTotalWorkouts] = useState<number>(0);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
-  const [timeRange, setTimeRange] = useState<"7days" | "4weeks" | "6months">(
+  const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">(
     "7days"
   );
 
@@ -35,7 +35,6 @@ export default function DashboardPage() {
     if (!user && !isLoading) {
       router.push("/auth");
     } else if (user) {
-      console.log("Fetching dashboard data for user:", user.id);
       fetchDashboardData();
     }
   }, [user, isLoading, timeRange, router, user?.unitPreference]);
@@ -56,14 +55,12 @@ export default function DashboardPage() {
         return;
       }
 
-      console.log("User stats:", userData);
       setTotalVolume(userData.total_volume ?? 0);
       setTotalWorkouts(userData.total_workouts ?? 0);
 
       // Fetch volume data
       const daysToFetch =
-        timeRange === "7days" ? 7 : timeRange === "4weeks" ? 28 : 180;
-      console.log("Fetching volume data for days:", daysToFetch);
+        timeRange === "7days" ? 7 : timeRange === "8weeks" ? 56 : 365;
 
       const { data: volumeByDay, error: volumeError } = (await supabase.rpc(
         "get_volume_by_day",
@@ -81,24 +78,75 @@ export default function DashboardPage() {
         return;
       }
 
-      console.log("Raw volume data:", volumeByDay);
-
       let formattedVolumeData: VolumeData[] = [];
       if (timeRange === "7days") {
-        formattedVolumeData = volumeByDay.map((entry) => ({
-          date: new Date(entry.date).toLocaleDateString("en-US", {
+        // Create array of last 7 days
+        const days = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (6 - i));
+          return date.toISOString().split('T')[0];
+        });
+
+        // Map each day to its volume, using 0 for days without data
+        formattedVolumeData = days.map(day => ({
+          date: new Date(day).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
           }),
-          volume: entry.volume || 0,
+          volume: volumeByDay?.find(d => d.date === day)?.volume || 0,
         }));
-      } else if (timeRange === "4weeks") {
-        formattedVolumeData = aggregateByWeek(volumeByDay, 4);
-      } else if (timeRange === "6months") {
-        formattedVolumeData = aggregateByMonth(volumeByDay, 6);
+      } else if (timeRange === "8weeks") {
+        // Create array of last 8 weeks
+        const weeks = Array.from({ length: 8 }, (_, i) => {
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() - (i * 7));
+          const startDate = new Date(endDate);
+          startDate.setDate(startDate.getDate() - 6);
+          return {
+            start: startDate.toISOString().split('T')[0],
+            end: endDate.toISOString().split('T')[0],
+            displayDate: startDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            }),
+          };
+        }).reverse();
+
+        formattedVolumeData = weeks.map(week => ({
+          date: week.displayDate,
+          volume: volumeByDay
+            ?.filter(d => d.date >= week.start && d.date <= week.end)
+            .reduce((sum, day) => sum + day.volume, 0) || 0,
+        }));
+      } else {
+        // Create array of last 12 months
+        const months = Array.from({ length: 12 }, (_, i) => {
+          const date = new Date();
+          date.setMonth(date.getMonth() - (11 - i));
+          const year = date.getFullYear();
+          const month = date.getMonth();
+          return {
+            month: date.toLocaleString("en-US", {
+              month: "short",
+              year: "numeric",
+            }),
+            monthStart: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+            monthEnd: `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`,
+          };
+        });
+
+        formattedVolumeData = months.map(month => {
+          const monthVolume = volumeByDay
+            ?.filter(d => d.date >= month.monthStart && d.date <= month.monthEnd)
+            .reduce((sum, day) => sum + (day.volume || 0), 0) || 0;
+          
+          return {
+            date: month.month,
+            volume: monthVolume,
+          };
+        });
       }
 
-      console.log("Formatted volume data:", formattedVolumeData);
       setVolumeData(formattedVolumeData);
     } catch (error) {
       console.error("Error in fetchDashboardData:", error);

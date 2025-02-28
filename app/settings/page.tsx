@@ -88,8 +88,7 @@ function SettingsPage() {
       await updateProfile(data as UserProfile);
       setIsNewProfile(false);
       if (data.name !== user.name) {
-        // If name was changed, show success message
-        console.log("Profile updated successfully");
+        // If name was changed, update state
       }
     } catch (error) {
       console.error("Error saving profile:", error);

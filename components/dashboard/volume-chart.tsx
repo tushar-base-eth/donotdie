@@ -14,8 +14,8 @@ import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface VolumeChartProps {
   data: { date: string; volume: number }[];
-  timeRange: "7days" | "4weeks" | "6months";
-  onTimeRangeChange: (value: "7days" | "4weeks" | "6months") => void;
+  timeRange: "7days" | "8weeks" | "12months";
+  onTimeRangeChange: (value: "7days" | "8weeks" | "12months") => void;
 }
 
 export function VolumeChart({
@@ -31,28 +31,36 @@ export function VolumeChart({
         <CardTitle>Volume</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={timeRange} onValueChange={(value) => onTimeRangeChange(value as "7days" | "4weeks" | "6months")}>
+        <Tabs value={timeRange} onValueChange={(value) => onTimeRangeChange(value as "7days" | "8weeks" | "12months")}>
           <TabsList className="w-full bg-muted/50 p-1">
             <TabsTrigger value="7days" className="flex-1">
-              Last 7 Days
+              Days
             </TabsTrigger>
-            <TabsTrigger value="4weeks" className="flex-1">
-              Last 4 Weeks
+            <TabsTrigger value="8weeks" className="flex-1">
+              Weeks
             </TabsTrigger>
-            <TabsTrigger value="6months" className="flex-1">
-              Last 6 Months
+            <TabsTrigger value="12months" className="flex-1">
+              Months
             </TabsTrigger>
           </TabsList>
 
           <div className="mt-6 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.map(d => ({ ...d, volume: convertFromKg(d.volume) }))}>
+              <BarChart 
+                data={data}
+                margin={{ top: 20, right: 20, bottom: 40, left: 0 }}
+              >
                 <XAxis
                   dataKey="date"
                   stroke="#888888"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  tickFormatter={(value) => timeRange === "12months" ? value.split(" ")[0] : value}
                 />
                 <YAxis
                   stroke="#888888"
@@ -74,7 +82,10 @@ export function VolumeChart({
                                 Volume
                               </span>
                               <span className="font-bold text-muted-foreground">
-                                {formatWeight(payload[0].payload.volume)}
+                                {formatWeight(Number(payload[0].value) || 0)}
+                              </span>
+                              <span className="text-[0.70rem] text-muted-foreground">
+                                {payload[0].payload.date}
                               </span>
                             </div>
                           </div>

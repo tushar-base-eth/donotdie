@@ -155,7 +155,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         if (error.code === "PGRST116") {
-          console.warn("No profile found for user.");
           return null;
         }
         throw error;
@@ -251,11 +250,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const mergedProfile = { ...state.user, ...updatedUser };
-      console.log('Updating profile with:', {
-        currentUser: state.user,
-        updatedUser,
-        mergedProfile
-      });
 
       // Normalize gender to match schema CHECK constraint ('Male', 'Female', 'Other')
       const formattedGender = mergedProfile.gender
@@ -287,7 +281,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unit_preference: mergedProfile.unitPreference,
         updated_at: new Date().toISOString(),
       };
-      console.log('Sending update to database:', updateData);
 
       const { error, data } = await supabase
         .from("users")
@@ -299,7 +292,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Database update error:', error);
         throw error;
       }
-      console.log('Database update response:', data);
 
       const isProfileComplete = !!(
         mergedProfile.name &&
@@ -315,7 +307,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         gender: formattedGender,
         isProfileComplete,
       };
-      console.log('Setting new state with profile:', updatedProfile);
 
       setState({ status: 'authenticated', user: updatedProfile });
     } catch (error: any) {
