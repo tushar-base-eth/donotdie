@@ -13,11 +13,11 @@ export default function HomePage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background pb-20">
-        <div className="p-4">
+        {/* <div className="p-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-[#4B7BFF] dark:text-red-500">Do Not Die</h1>
           </div>
-        </div>
+        </div> */}
 
         <AnimatePresence mode="wait">
           {!hasExercises && (
@@ -60,10 +60,10 @@ export default function HomePage() {
               </motion.div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-semibold text-foreground">
-                  Time to Get Stronger
+                  Don't Die!
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-sm">
-                  Start your workout by adding exercises with the + button below
+                  Smash that + button below
                 </p>
               </div>
             </motion.div>

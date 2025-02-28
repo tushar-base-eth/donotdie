@@ -186,7 +186,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             onExerciseRemove={handleRemoveExercise}
           />
         )}
-        <div className="fixed bottom-20 right-4 flex flex-col gap-4">
+        <div className="fixed bottom-24 right-4 flex flex-col gap-4 z-50">
           <AnimatePresence>
             {isWorkoutValid && (
               <motion.div
@@ -198,9 +198,9 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
                 <Button
                   size="icon"
                   onClick={handleSaveWorkout}
-                  className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all bg-green-500 hover:bg-green-600"
+                  className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-green-500 hover:bg-green-600 touch-target ios-active"
                 >
-                  <Save className="h-6 w-6" />
+                  <Save className="h-8 w-8" />
                 </Button>
               </motion.div>
             )}
@@ -209,9 +209,9 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             <Button
               size="icon"
               onClick={() => setShowExerciseModal(true)}
-              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 dark:bg-red-500 dark:hover:bg-red-600"
+              className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 dark:bg-red-500 dark:hover:bg-red-600 touch-target ios-active"
             >
-              <Plus className="h-6 w-6" />
+              <Plus className="h-8 w-8" />
             </Button>
           </motion.div>
         </div>
