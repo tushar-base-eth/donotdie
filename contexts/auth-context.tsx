@@ -1,31 +1,9 @@
-/**
- * Authentication Context Provider for the DoNotDie web application
- * 
- * This context handles all authentication-related functionality including:
- * - User authentication state management
- * - Login/Signup/Logout operations
- * - User profile management
- * - Session persistence
- * 
- * The auth flow is designed to be simple and user-friendly:
- * 1. Users can sign up with email, password, and name
- * 2. Other profile fields are optional with sensible defaults
- * 3. Users can access all features immediately after signup
- * 4. Profile can be completed/updated at any time via settings
- */
-
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import type { Session, User } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
 
 // User profile interface matching database schema
 export interface UserProfile {
@@ -33,9 +11,9 @@ export interface UserProfile {
   email: string;
   name: string;
   gender: "Male" | "Female" | "Other";
-  dateOfBirth: string;  // matches date_of_birth DATE type
-  weight: number;       // matches weight_kg FLOAT
-  height: number;       // matches height_cm FLOAT
+  dateOfBirth: string;
+  weight: number;
+  height: number;
   bodyFat?: number | null;
   unitPreference: "metric" | "imperial" | null;
   themePreference?: "light" | "dark" | null;
@@ -43,16 +21,14 @@ export interface UserProfile {
   totalWorkouts?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
-  isProfileComplete?: boolean;  // computed field
+  isProfileComplete?: boolean;
 }
 
-// Auth state interface for tracking authentication status
 interface AuthState {
-  status: 'loading' | 'authenticated' | 'unauthenticated';
+  status: "loading" | "authenticated" | "unauthenticated";
   user: UserProfile | null;
 }
 
-// Auth context interface defining available methods
 interface AuthContextType {
   state: AuthState;
   login: (email: string, password: string) => Promise<void>;
@@ -65,100 +41,62 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
-    status: 'loading',
-    user: null
+    status: "loading",
+    user: null,
   });
   const router = useRouter();
 
+  // Handle initial session and auth state changes
   useEffect(() => {
     let mounted = true;
 
     const fetchSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (!session?.user) {
-          if (mounted) {
-            setState({ status: 'unauthenticated', user: null });
-          }
+          if (mounted) setState({ status: "unauthenticated", user: null });
           return;
         }
-
         const profile = await fetchUserProfile(session.user.id);
-        if (mounted) {
-          setState({ 
-            status: 'authenticated', 
-            user: profile 
-          });
-        }
+        if (mounted) setState({ status: "authenticated", user: profile });
       } catch (error) {
         console.error("Auth error:", error);
-        if (mounted) {
-          setState({ status: 'unauthenticated', user: null });
-        }
+        if (mounted) setState({ status: "unauthenticated", user: null });
       }
     };
 
     fetchSession();
 
-    let timeoutId: NodeJS.Timeout;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        // Clear any pending state updates
-        clearTimeout(timeoutId);
-        
-        // Debounce the state update
-        timeoutId = setTimeout(async () => {
-          if (!mounted) return;
-
-          if (!session?.user) {
-            setState({ status: 'unauthenticated', user: null });
-            return;
-          }
-
-          const profile = await fetchUserProfile(session.user.id);
-          if (mounted) {
-            setState({ 
-              status: 'authenticated', 
-              user: profile 
-            });
-          }
-        }, 100); // Small delay to prevent rapid state updates
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setState({ status: "unauthenticated", user: null });
+        return;
       }
-    );
+      const profile = await fetchUserProfile(session.user.id);
+      setState({ status: "authenticated", user: profile });
+    });
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
 
-  // Check if user has minimum required profile fields
-  const isProfileCompleteCheck = (profile: any): boolean => {
-    if (!profile) return false;
-    
-    // Only require essential fields that are set during signup
-    return !!(
-      profile.email &&
-      profile.name
-    );
-  };
-
+  // Fetch user profile from Supabase
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle(); // Prevents 406 error when no row exists
 
       if (error) {
-        if (error.code === "PGRST116") {
-          return null;
-        }
+        if (error.code === "PGRST116") return null; // No row found
         throw error;
       }
+
+      if (!data) return null;
 
       return {
         id: userId,
@@ -175,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         totalWorkouts: data.total_workouts,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        isProfileComplete: isProfileCompleteCheck(data)
+        isProfileComplete: !!data.name && !!data.email,
       };
     } catch (error: any) {
       console.error("Fetch profile error:", error.message);
@@ -183,61 +121,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Login function with profile creation
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { session }, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
+
+      const userId = session.user.id;
+      let profile = await fetchUserProfile(userId);
+
+      if (!profile) {
+        const pendingProfile = JSON.parse(localStorage.getItem("pendingProfile") || "{}");
+        const { name, unitPreference } = pendingProfile;
+
+        const defaultProfile = {
+          id: userId,
+          email,
+          name: name || "User",
+          gender: "Other",
+          date_of_birth: "2000-01-01",
+          weight_kg: 70,
+          height_cm: 170,
+          theme_preference: "light",
+          unit_preference: unitPreference || "metric",
+        };
+
+        const { error: insertError } = await supabase
+          .from("users")
+          .insert(defaultProfile);
+
+        if (insertError) throw insertError;
+
+        localStorage.removeItem("pendingProfile");
+        profile = await fetchUserProfile(userId);
+      }
+
+      setState({ status: "authenticated", user: profile });
     } catch (error: any) {
       throw new Error(error.message);
     }
   };
 
+  // Signup function to store pending profile data
   const signup = async (email: string, password: string, name: string, unitPreference: "metric" | "imperial"): Promise<void> => {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (authError) throw authError;
-      if (!authData.user?.id) throw new Error('No user ID returned from signup');
 
-      const defaultProfile = {
-        id: authData.user.id,
-        email,
-        name,
-        gender: 'Other',
-        date_of_birth: '2000-01-01',
-        weight_kg: 70,
-        height_cm: 170,
-        theme_preference: 'light',
-        unit_preference: unitPreference,
-      };
-
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert(defaultProfile);
-
-      if (profileError) {
-        await supabase.auth.signOut();
-        throw profileError;
-      }
+      localStorage.setItem("pendingProfile", JSON.stringify({ name, unitPreference }));
     } catch (error) {
       throw error;
     }
   };
 
+  // Logout function
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      setState({ status: 'unauthenticated', user: null });
-
+      setState({ status: "unauthenticated", user: null });
       router.push("/auth");
     } catch (error: any) {
       console.error("Logout error:", error.message);
@@ -245,31 +196,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Update profile function with improved error handling
   const updateProfile = async (updatedUser: Partial<UserProfile>) => {
     if (!state.user) return;
 
     try {
       const mergedProfile = { ...state.user, ...updatedUser };
 
-      // Normalize gender to match schema CHECK constraint ('Male', 'Female', 'Other')
       const formattedGender = mergedProfile.gender
-        ? ((mergedProfile.gender.charAt(0).toUpperCase() +
-            mergedProfile.gender.slice(1).toLowerCase()) as
-            | "Male"
-            | "Female"
-            | "Other")
-        : "Other"; // Default to 'Other' if null
-
-      const allowedGenders: ("Male" | "Female" | "Other")[] = [
-        "Male",
-        "Female",
-        "Other",
-      ];
-      if (!allowedGenders.includes(formattedGender)) {
-        throw new Error(
-          "Invalid gender value; must be 'Male', 'Female', or 'Other'"
-        );
-      }
+        ? ((mergedProfile.gender.charAt(0).toUpperCase() + mergedProfile.gender.slice(1).toLowerCase()) as "Male" | "Female" | "Other")
+        : "Other";
 
       const updateData = {
         name: mergedProfile.name,
@@ -282,16 +218,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updated_at: new Date().toISOString(),
       };
 
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from("users")
         .update(updateData)
-        .eq("id", state.user.id)
-        .select();
+        .eq("id", state.user.id);
 
-      if (error) {
-        console.error('Database update error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       const isProfileComplete = !!(
         mergedProfile.name &&
@@ -308,7 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isProfileComplete,
       };
 
-      setState({ status: 'authenticated', user: updatedProfile });
+      setState({ status: "authenticated", user: updatedProfile });
     } catch (error: any) {
       console.error("Update profile error:", error.message);
       throw new Error(error.message);
@@ -316,25 +248,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider
-      value={{ state, login, signup, logout, updateProfile }}
-    >
+    <AuthContext.Provider value={{ state, login, signup, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook for accessing auth context
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
-}
-
-// Global profile completion check
-export function isProfileCompleteCheck(profile: UserProfile | null): boolean {
-  if (!profile) return false;
-  return !!(profile.email && profile.name);
 }

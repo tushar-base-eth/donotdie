@@ -232,6 +232,17 @@ CREATE INDEX IF NOT EXISTS idx_workouts_user_id ON public.workouts (user_id);
 CREATE INDEX IF NOT EXISTS idx_workouts_created_at ON public.workouts (created_at);
 CREATE INDEX IF NOT EXISTS idx_daily_volume_user_id_date ON public.daily_volume (user_id, date);
 
+
+------------------------------------------------------------------------
+-- 5. Ensure your users table has an RLS policy that allows authenticated users to insert their own data.
+-- This approach ensures that only authenticated users can create their profiles, avoiding the 401 error.
+------------------------------------------------------------------------
+
+CREATE POLICY "Users can insert their own profile" ON users
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = id);
+
 ------------------------------------------------------------------------
 -- End of Script
 ------------------------------------------------------------------------

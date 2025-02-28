@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/lib/supabaseClient";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -47,6 +48,12 @@ export default function AuthPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Add new states for email confirmation
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
+  const [resendEmail, setResendEmail] = useState('');
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(isLogin ? loginSchema : signupSchema) as any,
@@ -74,20 +81,75 @@ export default function AuthPage() {
 
   const onSubmit = async (data: FormSchema) => {
     setIsLoading(true);
+    setMessage(null);
     try {
       if (!isLogin) {
         await signup(data.email, data.password, data.name!, data.unitPreference!);
+        setShowConfirmationMessage(true);
       } else {
         await login(data.email, data.password);
       }
-    } catch (error) {
-      form.setError("root", {
-        message: error instanceof Error ? error.message : "An error occurred",
-      });
+    } catch (error: any) {
+      if (error.message.includes('Email not confirmed')) {
+        setShowResendConfirmation(true);
+        setResendEmail(data.email);
+      } else {
+        setMessage({ text: error.message || 'An error occurred', isError: true });
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleResendConfirmation = async () => {
+    setIsLoading(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: resendEmail,
+      });
+      if (error) throw error;
+      setMessage({ text: 'Confirmation email resent. Please check your email.', isError: false });
+    } catch (error: any) {
+      setMessage({ text: error.message || 'Failed to resend confirmation email', isError: true });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (showConfirmationMessage) {
+    return (
+      <div className="text-center p-8">
+        <h2 className="text-2xl font-bold mb-4">Check your email</h2>
+        <p className="mb-4">We've sent a confirmation email to {form.getValues('email')}.</p>
+        <p className="mb-4">Please click the link in that email to confirm your account.</p>
+        <Button onClick={() => { setShowConfirmationMessage(false); setIsLogin(true); setMessage(null); }}>
+          Back to Login
+        </Button>
+      </div>
+    );
+  }
+  
+  if (showResendConfirmation) {
+    return (
+      <div className="text-center p-8">
+        <h2 className="text-2xl font-bold mb-4">Email not confirmed</h2>
+        <p className="mb-4">Please confirm your email before logging in.</p>
+        {message && (
+          <p className={`mb-4 ${message.isError ? 'text-red-600' : 'text-green-600'}`}>
+            {message.text}
+          </p>
+        )}
+        <Button onClick={handleResendConfirmation} disabled={isLoading}>
+          {isLoading ? 'Sending...' : 'Resend Confirmation Email'}
+        </Button>
+        <Button variant="outline" onClick={() => { setShowResendConfirmation(false); setMessage(null); }} className="mt-2">
+          Back to Login
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-lg p-4">

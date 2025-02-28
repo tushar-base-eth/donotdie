@@ -29,11 +29,21 @@ function HistoryPage() {
     setIsRefreshing(true);
     const { data, error } = await supabase
       .from("workouts")
-      .select(
-        "id, user_id, created_at, workout_exercises(id, exercise_id, created_at, exercise:available_exercises(*), sets(*))"
-      )
+      .select(`
+        id,
+        user_id,
+        created_at,
+        workout_exercises!fk_workout (
+          id,
+          exercise_id,
+          created_at,
+          exercise:available_exercises(*),
+          sets!fk_workout_exercise (*)
+        )
+      `)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+
     if (error) {
       console.error("Error fetching workouts:", error.message);
     } else {
@@ -101,7 +111,6 @@ function HistoryPage() {
       const workout = workouts.find(w => w.id === workoutId);
       if (!workout) return;
 
-      // Delete workout exercises and their sets first
       const { error: exercisesError } = await supabase
         .from('workout_exercises')
         .delete()
@@ -109,7 +118,6 @@ function HistoryPage() {
 
       if (exercisesError) throw exercisesError;
 
-      // Delete the workout itself
       const { error: workoutError } = await supabase
         .from('workouts')
         .delete()
@@ -117,15 +125,14 @@ function HistoryPage() {
 
       if (workoutError) throw workoutError;
 
-      // Update user stats
       const { error: statsError } = await supabase.rpc('update_user_stats_on_delete', {
         p_user_id: user!.id,
         p_volume: workout.totalVolume,
         p_date: workout.utcDate
       });
-      
+
       if (statsError) throw statsError;
-      
+
       setWorkouts(workouts.filter((w) => w.id !== workoutId));
     } catch (err) {
       console.error("Error deleting workout:", err instanceof Error ? err.message : String(err));
