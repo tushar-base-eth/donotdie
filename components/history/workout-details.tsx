@@ -13,7 +13,7 @@ interface WorkoutDetailsProps {
 
 export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
   const { formatWeight } = useUnitPreference();
-  
+
   if (!workout) return null;
 
   return (
@@ -38,21 +38,15 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
         <div className="p-4 space-y-6">
           {workout.exercises.map((exercise, index) => (
             <div key={index} className="space-y-4">
-              <h3 className="text-lg font-semibold">
-                {exercise.exercise.name}
-              </h3>
+              <h3 className="text-lg font-semibold">{exercise.exercise.name}</h3>
               {exercise.sets.map((set, setIndex) => (
                 <div key={setIndex} className="flex items-center gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-full bg-[#4B7BFF]/10 dark:bg-red-500/10 flex items-center justify-center text-[#4B7BFF] dark:text-red-500 font-medium">
                       {setIndex + 1}
                     </div>
-                    <span className="text-muted-foreground">
-                      {set.reps} reps
-                    </span>
-                    <span className="text-muted-foreground">
-                      {formatWeight(set.weight_kg)}
-                    </span>
+                    <span className="text-muted-foreground">{set.reps} reps</span>
+                    <span className="text-muted-foreground">{formatWeight(set.weight_kg)}</span>
                   </div>
                 </div>
               ))}

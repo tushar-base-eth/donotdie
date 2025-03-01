@@ -1,82 +1,99 @@
-"use client"
+"use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface CalendarProps {
-  currentDate: Date
-  workoutDates: Set<string>
-  onDateChange: (date: Date) => void
-  onDateSelect: (date: string) => void
+  currentDate: Date | null;
+  workoutDates: Set<string>;
+  onDateChange: (date: Date | null) => void;
 }
 
-export function Calendar({ currentDate, workoutDates, onDateChange, onDateSelect }: CalendarProps) {
-  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
-  const previousMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => null)
+export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarProps) {
+  const [monthDate, setMonthDate] = useState(currentDate || new Date());
+  const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).getDay();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const previousMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => null);
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    if (!currentDate) {
+      setMonthDate(new Date());
+    } else {
+      setMonthDate(currentDate);
+    }
+  }, [currentDate]);
+
+  const handleMonthChange = (increment: number) => {
+    const newDate = new Date(monthDate.setMonth(monthDate.getMonth() + increment));
+    setMonthDate(new Date(newDate));
+    onDateChange(null); // Clear selection when changing months
+  };
 
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
-        {/* Calendar Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">
-            {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
+            {monthDate.toLocaleString("default", { month: "long", year: "numeric" })}
           </h2>
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDateChange(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))}
-            >
+            <Button variant="ghost" size="icon" onClick={() => handleMonthChange(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDateChange(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))}
-            >
+            <Button variant="ghost" size="icon" onClick={() => handleMonthChange(1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-1">
-          {/* Day headers */}
           {["SU", "MO", "TU", "WE", "TH", "FR", "SA"].map((day) => (
             <div key={day} className="text-center text-sm font-medium text-muted-foreground p-2">
               {day}
             </div>
           ))}
 
-          {/* Previous month days */}
           {previousMonthDays.map((_, index) => (
             <div key={`prev-${index}`} className="aspect-square p-2 bg-muted" />
           ))}
 
-          {/* Current month days */}
           {days.map((day) => {
-            const date = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-            const hasWorkout = workoutDates.has(date)
+            const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const hasWorkout = workoutDates.has(date);
+            const isSelected = currentDate && currentDate.toISOString().split("T")[0] === date;
+            const isToday = date === today;
+
             return (
               <div
                 key={day}
                 className={`
-                  aspect-square p-2 relative cursor-pointer
-                  ${hasWorkout ? "bg-[#4B7BFF]/10 dark:bg-red-500/10" : "bg-card"}
+                  aspect-square p-2 relative cursor-pointer flex items-center justify-center
+                  ${isToday && !isSelected ? "bg-muted" : ""}
                 `}
-                onClick={() => hasWorkout && onDateSelect(date)}
+                onClick={() => onDateChange(isSelected ? null : new Date(date))}
               >
-                <span className={`text-sm ${hasWorkout ? "font-medium text-[#4B7BFF] dark:text-red-500" : ""}`}>{day}</span>
+                {/* Solid circle highlight for selected date */}
+                {isSelected && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-[#4B7BFF] dark:bg-red-500" />
+                  </div>
+                )}
+                <span className={`text-sm relative z-10 ${hasWorkout && !isSelected ? "font-medium text-[#4B7BFF] dark:text-red-500" : ""}`}>
+                  {day}
+                </span>
+                {/* Small dot for workout dates */}
+                {hasWorkout && !isSelected && (
+                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#4B7BFF] dark:bg-red-500" />
+                )}
               </div>
-            )
+            );
           })}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

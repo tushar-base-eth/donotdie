@@ -9,14 +9,52 @@ interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
   onWorkoutSelect: (workout: UIExtendedWorkout) => void;
   onWorkoutDelete: (workoutId: string) => void;
+  selectedDate: Date | null; // Added to determine context for no-workouts message
 }
 
 export function WorkoutList({
   workouts,
   onWorkoutSelect,
   onWorkoutDelete,
+  selectedDate,
 }: WorkoutListProps) {
   const { formatWeight } = useUnitPreference();
+
+  if (workouts.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-8">
+        {selectedDate ? (
+          // Message for a selected date with no workouts
+          <div>
+            <div className="mb-4">
+              <div className="rounded-full bg-muted p-4 inline-block">
+                <span role="img" aria-label="Sad face" className="text-4xl">😔</span>
+              </div>
+            </div>
+            <p className="text-lg font-medium">
+              No workouts logged on {format(selectedDate, "MMMM d, yyyy")}.
+            </p>
+            <p className="text-sm">Log a workout to get started!</p>
+          </div>
+        ) : (
+          // Fun UI for new users with no workouts overall
+          <div>
+            <div className="mb-4">
+              <div className="rounded-full bg-muted p-4 inline-block animate-bounce">
+                <span role="img" aria-label="Dumbbell" className="text-4xl">🏋️</span>
+              </div>
+            </div>
+            <p className="text-lg font-medium">
+              Welcome! No workouts yet?
+            </p>
+            <p className="text-sm">
+              Start your fitness journey by logging your first workout!
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -54,9 +92,7 @@ export function WorkoutList({
                 animate={{ opacity: 0 }}
                 whileDrag={{ opacity: 1, transition: { duration: 0.2 } }}
               >
-                <span className="text-destructive-foreground font-medium">
-                  Delete
-                </span>
+                <span className="text-destructive-foreground font-medium">Delete</span>
               </motion.div>
 
               <Card
@@ -73,14 +109,10 @@ export function WorkoutList({
                           day: "numeric",
                         })}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {workout.time}
-                      </div>
+                      <div className="text-sm text-muted-foreground">{workout.time}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-muted-foreground">
-                        Total Volume
-                      </div>
+                      <div className="text-sm text-muted-foreground">Total Volume</div>
                       <div className="font-medium">{formatWeight(workout.totalVolume)}</div>
                     </div>
                   </div>

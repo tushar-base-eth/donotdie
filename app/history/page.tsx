@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
@@ -9,14 +9,17 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import type { UIExtendedWorkout } from "@/types/workouts";
+import { format, parseISO } from "date-fns";
 
 function HistoryPage() {
   const { state } = useAuth();
   const { user } = state;
+  // Initialize selectedDate as null to prevent default highlighting
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const [workouts, setWorkouts] = useState<UIExtendedWorkout[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -27,115 +30,113 @@ function HistoryPage() {
   const fetchWorkouts = async () => {
     if (!user) return;
     setIsRefreshing(true);
-    const { data, error } = await supabase
-      .from("workouts")
-      .select(`
-        id,
-        user_id,
-        created_at,
-        workout_exercises!fk_workout (
-          id,
-          exercise_id,
-          created_at,
-          exercise:available_exercises(*),
-          sets!fk_workout_exercise (*)
-        )
-      `)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+    setError(null);
 
-    if (error) {
-      console.error("Error fetching workouts:", error.message);
-    } else {
-      const formattedWorkouts: UIExtendedWorkout[] = data.map((rawWorkout) => {
-        const utcDate = new Date(rawWorkout.created_at + 'Z');
-        
-        const exercises = Array.isArray(rawWorkout.workout_exercises)
-          ? rawWorkout.workout_exercises.map((we) => ({
-              id: we.id,
-              workout_id: rawWorkout.id,
-              exercise_id: we.exercise_id ?? "",
-              exercise: {
-                id: we.exercise?.id ?? "",
-                name: we.exercise?.name ?? "",
-                primary_muscle_group: we.exercise?.primary_muscle_group ?? "",
-                secondary_muscle_group: we.exercise?.secondary_muscle_group ?? null
-              },
-              sets: Array.isArray(we.sets) ? we.sets : [],
-              created_at: we.created_at ?? ""
-            }))
-          : [];
-        
-        return {
-          id: rawWorkout.id,
-          user_id: rawWorkout.user_id ?? "",
-          created_at: rawWorkout.created_at ?? "",
-          exercises,
-          utcDate: utcDate.toISOString().split('T')[0],
-          date: new Intl.DateTimeFormat('en-CA', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          }).format(utcDate),
-          time: new Intl.DateTimeFormat('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          }).format(utcDate),
-          totalVolume: exercises.reduce(
-            (sum, ex) => sum + ex.sets.reduce((setSum, set) => setSum + set.reps * set.weight_kg, 0),
-            0
+    try {
+      const { data, error } = await supabase
+        .from("workouts")
+        .select(`
+          id,
+          user_id,
+          created_at,
+          workout_exercises!fk_workout (
+            id,
+            exercise_id,
+            created_at,
+            exercise:available_exercises(*),
+            sets!fk_workout_exercise (*)
           )
-        };
-      });
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw new Error(error.message);
+
+      // Process workouts and convert UTC timestamps to local time
+      const formattedWorkouts: UIExtendedWorkout[] = data
+        .filter((rawWorkout) => rawWorkout.created_at !== null)
+        .map((rawWorkout) => {
+          const utcDate = parseISO(rawWorkout.created_at as string); // Parse UTC timestamp
+          const localDate = format(utcDate, "yyyy-MM-dd"); // Convert to local date
+          const localTime = format(utcDate, "hh:mm a");    // Convert to local time (e.g., 2:09 PM)
+
+          const exercises = Array.isArray(rawWorkout.workout_exercises)
+            ? rawWorkout.workout_exercises.map((we) => ({
+                id: we.id,
+                workout_id: rawWorkout.id,
+                exercise_id: we.exercise_id ?? "",
+                exercise: {
+                  id: we.exercise?.id ?? "",
+                  name: we.exercise?.name ?? "",
+                  primary_muscle_group: we.exercise?.primary_muscle_group ?? "",
+                  secondary_muscle_group: we.exercise?.secondary_muscle_group ?? null,
+                },
+                sets: Array.isArray(we.sets) ? we.sets : [],
+                created_at: we.created_at ?? "",
+              }))
+            : [];
+
+          return {
+            id: rawWorkout.id,
+            user_id: rawWorkout.user_id ?? "",
+            created_at: rawWorkout.created_at,
+            exercises,
+            utcDate: localDate,
+            date: localDate,
+            time: localTime,
+            totalVolume: exercises.reduce(
+              (sum, ex) => sum + ex.sets.reduce((setSum, set) => setSum + set.reps * set.weight_kg, 0),
+              0
+            ),
+          };
+        });
 
       setWorkouts(formattedWorkouts);
+    } catch (err) {
+      console.error("Error fetching workouts:", err);
+      setError("Failed to load workouts. Please try again.");
+    } finally {
+      setIsRefreshing(false);
     }
-    setIsRefreshing(false);
   };
 
-  const displayedWorkouts = selectedDate
-    ? workouts.filter((w) => {
-        const selectedUtc = new Date(selectedDate.toISOString().split('T')[0]);
-        const workoutUtc = new Date(w.utcDate);
-        return selectedUtc.getTime() === workoutUtc.getTime();
-      })
-    : workouts;
+  // Filter workouts based on selected date or show all if no date is selected
+  const displayedWorkouts = useMemo(() => {
+    if (!selectedDate) return workouts;
+    const selectedUtc = format(selectedDate, "yyyy-MM-dd");
+    return workouts.filter((w) => w.utcDate === selectedUtc);
+  }, [selectedDate, workouts]);
 
-  const workoutDates = new Set(workouts.map((w) => w.date));
+  const workoutDates = useMemo(() => new Set(workouts.map((w) => w.date)), [workouts]);
 
   const handleDeleteWorkout = async (workoutId: string) => {
     try {
-      const workout = workouts.find(w => w.id === workoutId);
+      const workout = workouts.find((w) => w.id === workoutId);
       if (!workout) return;
 
       const { error: exercisesError } = await supabase
-        .from('workout_exercises')
+        .from("workout_exercises")
         .delete()
-        .eq('workout_id', workoutId);
-
+        .eq("workout_id", workoutId);
       if (exercisesError) throw exercisesError;
 
       const { error: workoutError } = await supabase
-        .from('workouts')
+        .from("workouts")
         .delete()
-        .eq('id', workoutId);
-
+        .eq("id", workoutId);
       if (workoutError) throw workoutError;
 
-      const { error: statsError } = await supabase.rpc('update_user_stats_on_delete', {
+      const { error: statsError } = await supabase.rpc("update_user_stats_on_delete", {
         p_user_id: user!.id,
         p_volume: workout.totalVolume,
-        p_date: workout.utcDate
+        p_date: workout.utcDate,
       });
-
       if (statsError) throw statsError;
 
       setWorkouts(workouts.filter((w) => w.id !== workoutId));
     } catch (err) {
-      console.error("Error deleting workout:", err instanceof Error ? err.message : String(err));
+      console.error("Error deleting workout:", err);
+      setError("Failed to delete workout. Please try again.");
     }
   };
 
@@ -175,29 +176,23 @@ function HistoryPage() {
             <div className="pull-indicator" />
           </div>
         )}
+        {error && <div className="text-red-500 text-center">{error}</div>}
 
         <Calendar
-          currentDate={selectedDate || new Date()}
+          currentDate={selectedDate}
           workoutDates={workoutDates}
           onDateChange={setSelectedDate}
-          onDateSelect={(date) => {
-            const workout = displayedWorkouts.find((w) => w.date === date);
-            if (workout) setSelectedWorkout(workout);
-          }}
         />
 
         <WorkoutList
           workouts={displayedWorkouts}
           onWorkoutSelect={setSelectedWorkout}
           onWorkoutDelete={handleDeleteWorkout}
+          selectedDate={selectedDate} // Pass selectedDate to customize no-workouts message
         />
       </div>
 
-      <WorkoutDetails
-        workout={selectedWorkout}
-        onClose={() => setSelectedWorkout(null)}
-      />
-
+      <WorkoutDetails workout={selectedWorkout} onClose={() => setSelectedWorkout(null)} />
       <BottomNav />
     </div>
   );
