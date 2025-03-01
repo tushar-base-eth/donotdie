@@ -34,11 +34,11 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  gender: z.enum(["Male", "Female", "Other"]),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  gender: z.enum(["Male", "Female", "Other"]).optional(),
+  dateOfBirth: z.string().optional(),
   unitPreference: z.enum(["metric", "imperial"]),
-  weight: z.number().positive("Weight must be greater than 0"),
-  height: z.number().positive("Height must be greater than 0"),
+  weight: z.number().positive("Weight must be greater than 0").optional(),
+  height: z.number().positive("Height must be greater than 0").optional(),
   bodyFat: z.number().min(0).max(100).optional(),
 });
 
@@ -90,6 +90,7 @@ function SettingsPage() {
       if (data.name !== user.name) {
         // If name was changed, update state
       }
+      form.reset(data); // Reset form with saved data to mark it as not dirty
     } catch (error) {
       console.error("Error saving profile:", error);
     } finally {
@@ -97,7 +98,6 @@ function SettingsPage() {
     }
   };
 
-  // Remove auto-save effect
   useEffect(() => {
     if (!user && !isLoading) {
       router.push("/auth");
@@ -120,8 +120,8 @@ function SettingsPage() {
         height: user.height || 170,
         bodyFat: user.bodyFat || 0,
       };
-      
-      form.reset(resetValues);
+
+      form.reset(resetValues); // Reset form with user data
     }
   }, [user, isLoading, form, router]);
 
@@ -383,7 +383,10 @@ function SettingsPage() {
                 />
                 */}
 
-                <Button type="submit" disabled={isSaving}>
+                <Button
+                  type="submit"
+                  disabled={isSaving || !form.formState.isDirty}
+                >
                   {isSaving
                     ? "Saving..."
                     : isNewProfile
