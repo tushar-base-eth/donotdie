@@ -20,63 +20,55 @@ export function WorkoutExercises({
   const { formatWeight } = useUnitPreference();
 
   return (
-    <ScrollArea className="h-[calc(100vh-13rem)]">
+    <ScrollArea className="h-[calc(100vh-13rem)] px-4">
       <AnimatePresence initial={false}>
         {exercises.map((exercise, index) => (
           <motion.div
             key={exercise.instance_id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             layout
             className="mb-4"
           >
             <motion.div
-              drag="x"
-              dragConstraints={{ left: -100, right: 0 }}
-              dragElastic={0.1}
+              drag="x"  // Restrict drag to horizontal direction
+              dragConstraints={{ left: -120, right: 0 }}  // Limit drag distance
+              dragElastic={0.8}  // Increased to 0.8 to reduce sensitivity
               onDragEnd={(e, { offset }) => {
-                if (offset.x < -50) {
+                if (offset.x < -60) {  // Delete threshold remains unchanged
                   onExerciseRemove(index);
                 }
               }}
-              whileDrag={{ scale: 1.02 }}
+              whileDrag={{ scale: 1.03 }}
               whileHover={{ scale: 1.01 }}
-              onTap={() => onExerciseSelect(exercise)}
-              className="relative cursor-grab active:cursor-grabbing overflow-hidden rounded-xl"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="relative cursor-grab active:cursor-grabbing"
             >
-              {/* Delete indicator */}
+              {/* Delete Indicator */}
               <motion.div
-                className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-destructive to-transparent flex items-center justify-end pr-4"
-                style={{
-                  borderTopRightRadius: "0.5rem",
-                  borderBottomRightRadius: "0.5rem",
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0 }}
-                whileDrag={{ opacity: 1, transition: { duration: 0.2 } }}
+                className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-red-500/90 to-transparent flex items-center justify-end pr-3 pointer-events-none"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 0, x: 20 }}
+                whileDrag={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2 }}
               >
-                <span className="text-destructive-foreground font-medium">
-                  Delete
-                </span>
+                <span className="text-white font-medium text-sm">Delete</span>
               </motion.div>
-              {/* Exercise card */}
-              <Card className="relative z-10">
+
+              {/* Exercise Card */}
+              <Card
+                className="relative z-10 bg-background shadow-md border-none rounded-lg overflow-hidden cursor-pointer hover:bg-accent/10 transition-colors duration-200"
+                onClick={() => onExerciseSelect(exercise)}
+              >
                 <CardContent className="p-4">
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="text-lg font-semibold text-foreground tracking-tight">
                     {exercise.exercise.name}
                   </h3>
-                  <p className="text-muted-foreground">
-                    {exercise.exercise.primary_muscle_group} •{" "}
-                    {exercise.sets.length} set
-                    {exercise.sets.length !== 1 ? "s" : ""} •{" "}
-                    {formatWeight(
-                      exercise.sets.reduce(
-                        (acc, set) => acc + set.weight_kg * set.reps,
-                        0
-                      )
-                    )}
+                  <p className="text-sm text-muted-foreground">
+                    {exercise.exercise.primary_muscle_group} • {exercise.sets.length} sets •{" "}
+                    {formatWeight(exercise.sets.reduce((acc, set) => acc + set.weight_kg * set.reps, 0))}
                   </p>
                 </CardContent>
               </Card>
