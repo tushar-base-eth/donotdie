@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
+import { format } from "date-fns";
 
 interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
@@ -45,10 +46,10 @@ export function WorkoutList({
               </div>
             </div>
             <p className="text-lg font-medium">
-              Welcome! No workouts yet?
+              Welcome! WTF!?
             </p>
             <p className="text-sm">
-              Start your fitness journey by logging your first workout!
+              You better start your first workout!
             </p>
           </div>
         )}
