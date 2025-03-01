@@ -21,7 +21,7 @@ export interface WorkoutExercise extends Tables<"workout_exercises"> {
   exercise_id: string | null;
   created_at: string | null;
   exercise: Exercise;
-  sets: Set[];
+  sets: { reps: number; weight_kg: number }[];
 }
 
 export interface UIWorkoutExercise extends WorkoutExercise {
