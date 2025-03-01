@@ -27,7 +27,6 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
-import { BottomNav } from "@/components/navigation/bottom-nav";
 import { useAuth } from "@/contexts/auth-context";
 import type { UserProfile } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -66,7 +65,6 @@ function SettingsPage() {
     },
   });
 
-  // Convert cm to feet and inches
   const cmToFeetInches = (cm: number) => {
     const totalInches = cm / 2.54;
     const feet = Math.floor(totalInches / 12);
@@ -74,12 +72,10 @@ function SettingsPage() {
     return { feet, inches };
   };
 
-  // Convert feet and inches to cm
   const feetInchesToCm = (feet: number, inches: number) => {
     return Math.round((feet * 12 + inches) * 2.54);
   };
 
-  // Handle manual form submission
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     if (!user) return;
 
@@ -88,9 +84,8 @@ function SettingsPage() {
       await updateProfile(data as UserProfile);
       setIsNewProfile(false);
       if (data.name !== user.name) {
-        // If name was changed, update state
       }
-      form.reset(data); // Reset form with saved data to mark it as not dirty
+      form.reset(data);
     } catch (error) {
       console.error("Error saving profile:", error);
     } finally {
@@ -102,10 +97,8 @@ function SettingsPage() {
     if (!user && !isLoading) {
       router.push("/auth");
     } else if (user) {
-      // Check if this might be a new profile setup
       setIsNewProfile(!user.isProfileComplete);
 
-      // Set initial form values from user profile
       const height = user.height || 170;
       const { feet, inches } = cmToFeetInches(height);
       setFeetPart(feet);
@@ -121,7 +114,7 @@ function SettingsPage() {
         bodyFat: user.bodyFat || 0,
       };
 
-      form.reset(resetValues); // Reset form with user data
+      form.reset(resetValues);
     }
   }, [user, isLoading, form, router]);
 
@@ -134,7 +127,7 @@ function SettingsPage() {
   }
 
   return (
-    <div className="pb-20">
+    <>
       <PageHeader
         title="Settings"
         rightContent={
@@ -398,9 +391,7 @@ function SettingsPage() {
           </CardContent>
         </Card>
       </div>
-
-      <BottomNav />
-    </div>
+    </>
   );
 }
 

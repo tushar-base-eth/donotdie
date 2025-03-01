@@ -26,6 +26,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              scroll={false}
               className={`inline-flex flex-col items-center justify-center px-5 group ${
                 isActive ? 'text-[#4B7BFF] dark:text-red-500' : 'text-muted-foreground'
               }`}

@@ -4,11 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
-import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton"; // Import skeleton
+import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
@@ -107,7 +106,6 @@ function HistoryPage() {
   const workoutDates = useMemo(() => new Set(workouts.map((w) => w.date)), [workouts]);
 
   const handleDeleteWorkout = async (workoutId: string) => {
-    // Existing delete logic preserved...
     try {
       const workout = workouts.find((w) => w.id === workoutId);
       if (!workout) return;
@@ -134,7 +132,6 @@ function HistoryPage() {
     setIsRefreshing(false);
   };
 
-  // Show skeleton loader during initial fetch
   if (isRefreshing && workouts.length === 0) {
     return (
       <div className="p-4">
@@ -144,7 +141,7 @@ function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">"
+    <div className="min-h-screen bg-background">
       <div className="p-4 space-y-6">
         {isRefreshing && (
           <div className="flex justify-center">
@@ -165,7 +162,6 @@ function HistoryPage() {
         />
       </div>
       <WorkoutDetails workout={selectedWorkout} onClose={() => setSelectedWorkout(null)} />
-      <BottomNav />
     </div>
   );
 }

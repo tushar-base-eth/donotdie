@@ -1,18 +1,19 @@
-import type React from "react"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from "@/contexts/auth-context"
-import { WorkoutProvider } from "@/contexts/workout-context"
-import { Toaster } from "@/components/ui/toaster"
-import { cn } from "@/lib/utils"
-import "./globals.css"
+import type React from "react";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/auth-context";
+import { WorkoutProvider } from "@/contexts/workout-context";
+import { Toaster } from "@/components/ui/toaster";
+import { cn } from "@/lib/utils";
+import { ConditionalBottomNav } from '@/components/navigation/conditional-bottom-nav';
+import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -25,20 +26,15 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <AuthProvider>
             <WorkoutProvider>
-              {children}
+              <div className="pb-20">
+                {children}
+              </div>
+              <ConditionalBottomNav />
               <Toaster />
             </WorkoutProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
-
-
-
-import './globals.css'
-
-export const metadata = {
-      generator: 'v0.dev'
-    };

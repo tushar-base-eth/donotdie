@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
-import { BottomNav } from "@/components/navigation/bottom-nav";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import type { Database } from "@/types/database";
@@ -30,7 +29,6 @@ export default function DashboardPage() {
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
 
-  // Fetch data when user or time range changes
   useEffect(() => {
     if (!user && !isLoading) {
       router.push("/auth");
@@ -39,12 +37,10 @@ export default function DashboardPage() {
     }
   }, [user, isLoading, timeRange, router, user?.unitPreference]);
 
-  // Fetch dashboard data from Supabase
   const fetchDashboardData = async () => {
     if (!user) return;
 
     try {
-      // Fetch user stats
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("total_volume, total_workouts")
@@ -56,7 +52,6 @@ export default function DashboardPage() {
       setTotalVolume(userData.total_volume ?? 0);
       setTotalWorkouts(userData.total_workouts ?? 0);
 
-      // Fetch volume data based on time range
       const daysToFetch = timeRange === "7days" ? 7 : timeRange === "8weeks" ? 56 : 365;
       const { data: volumeByDay, error: volumeError } = await supabase.rpc(
         "get_volume_by_day",
@@ -69,14 +64,12 @@ export default function DashboardPage() {
       const today = new Date();
 
       if (timeRange === "7days") {
-        // Format data for last 7 days
         const days = eachDayOfInterval({ start: subDays(today, 6), end: today });
         formattedVolumeData = days.map(day => ({
           date: format(day, 'MMM d'),
           volume: volumeByDay?.find(d => isSameDay(new Date(d.date), day))?.volume || 0,
         }));
       } else if (timeRange === "8weeks") {
-        // Format data for last 8 weeks
         const weeks = eachWeekOfInterval({ start: subDays(today, 55), end: today }, { weekStartsOn: 1 });
         formattedVolumeData = weeks.map(weekStart => {
           const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
@@ -86,7 +79,6 @@ export default function DashboardPage() {
           return { date: format(weekStart, 'MMM d'), volume: weekVolume };
         });
       } else {
-        // Format data for last 12 months
         const months = eachMonthOfInterval({ start: subDays(today, 364), end: today });
         formattedVolumeData = months.map(monthStart => {
           const monthEnd = endOfMonth(monthStart);
@@ -105,14 +97,11 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background pb-20">
-        {/* Dashboard content */}
-        <div className="p-4 space-y-6 w-full"> {/* Updated to w-full for wider chart */}
+      <div className="min-h-screen bg-background">
+        <div className="p-4 space-y-6 w-full">
           <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
           <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
         </div>
-
-        <BottomNav />
       </div>
     </ProtectedRoute>
   );
