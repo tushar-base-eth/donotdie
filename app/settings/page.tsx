@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
@@ -44,7 +44,7 @@ const settingsSchema = z.object({
 function SettingsPage() {
   const { state, logout, updateProfile } = useAuth();
   const { user } = state;
-  const isLoading = state.status === 'loading';
+  const isLoading = state.status === "loading";
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
@@ -136,6 +136,7 @@ function SettingsPage() {
               variant="ghost"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? (
                 <Sun className="h-5 w-5" />
@@ -143,7 +144,12 @@ function SettingsPage() {
                 <Moon className="h-5 w-5" />
               )}
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              aria-label="Log out"
+            >
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -185,7 +191,7 @@ function SettingsPage() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input value={user?.email || ''} readOnly disabled />
+                    <Input value={user?.email || ""} readOnly disabled />
                   </FormControl>
                 </FormItem>
                 {/* Gender field - temporarily hidden
@@ -243,13 +249,19 @@ function SettingsPage() {
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue defaultValue={field.value}>
-                              {field.value === 'metric' ? 'Metric (kg/cm)' : field.value === 'imperial' ? 'Imperial (lb/ft-in)' : 'Select units'}
+                              {field.value === "metric"
+                                ? "Metric (kg/cm)"
+                                : field.value === "imperial"
+                                ? "Imperial (lb/ft-in)"
+                                : "Select units"}
                             </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="metric">Metric (kg/cm)</SelectItem>
-                          <SelectItem value="imperial">Imperial (lb/ft-in)</SelectItem>
+                          <SelectItem value="imperial">
+                            Imperial (lb/ft-in)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -317,10 +329,9 @@ function SettingsPage() {
                             }}
                           />
                         ) : (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 items-center">
                             <Input
                               type="number"
-                              placeholder="ft"
                               className="w-20"
                               value={feetPart}
                               onChange={(e) => {
@@ -330,20 +341,23 @@ function SettingsPage() {
                                 field.onChange(feetInchesToCm(ft, inchesPart));
                               }}
                             />
+                            <span className="text-sm text-muted-foreground">
+                              ft
+                            </span>
                             <Input
                               type="number"
-                              placeholder="in"
                               className="w-20"
                               value={inchesPart}
                               onChange={(e) => {
                                 const inches =
                                   Number.parseFloat(e.target.value) || 0;
                                 setInchesPart(inches);
-                                field.onChange(
-                                  feetInchesToCm(feetPart, inches)
-                                );
+                                field.onChange(feetInchesToCm(feetPart, inches));
                               }}
                             />
+                            <span className="text-sm text-muted-foreground">
+                              in
+                            </span>
                           </div>
                         )}
                       </FormControl>
@@ -376,16 +390,18 @@ function SettingsPage() {
                 />
                 */}
 
-                <Button
-                  type="submit"
-                  disabled={isSaving || !form.formState.isDirty}
-                >
-                  {isSaving
-                    ? "Saving..."
-                    : isNewProfile
-                    ? "Complete Profile"
-                    : "Save Changes"}
-                </Button>
+                <div className="flex justify-left">
+                  <Button
+                    type="submit"
+                    disabled={isSaving || !form.formState.isDirty}
+                  >
+                    {isSaving
+                      ? "Saving..."
+                      : isNewProfile
+                      ? "Complete Profile"
+                      : "Save Changes"}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>
