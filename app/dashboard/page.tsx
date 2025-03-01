@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import type { Database } from "@/types/database";
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isSameDay, isSameWeek, isSameMonth } from 'date-fns';
 
 interface VolumeData {
   date: string;
@@ -27,10 +28,9 @@ export default function DashboardPage() {
   const [totalVolume, setTotalVolume] = useState<number>(0);
   const [totalWorkouts, setTotalWorkouts] = useState<number>(0);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
-  const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">(
-    "7days"
-  );
+  const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
 
+  // Fetch data when user or time range changes
   useEffect(() => {
     if (!user && !isLoading) {
       router.push("/auth");
@@ -39,6 +39,7 @@ export default function DashboardPage() {
     }
   }, [user, isLoading, timeRange, router, user?.unitPreference]);
 
+  // Fetch dashboard data from Supabase
   const fetchDashboardData = async () => {
     if (!user) return;
 
@@ -50,207 +51,78 @@ export default function DashboardPage() {
         .eq("id", user.id)
         .single();
 
-      if (userError) {
-        console.error("Error fetching user stats:", userError.message);
-        return;
-      }
+      if (userError) throw new Error(userError.message);
 
       setTotalVolume(userData.total_volume ?? 0);
       setTotalWorkouts(userData.total_workouts ?? 0);
 
-      // Fetch volume data
-      const daysToFetch =
-        timeRange === "7days" ? 7 : timeRange === "8weeks" ? 56 : 365;
-
-      const { data: volumeByDay, error: volumeError } = (await supabase.rpc(
+      // Fetch volume data based on time range
+      const daysToFetch = timeRange === "7days" ? 7 : timeRange === "8weeks" ? 56 : 365;
+      const { data: volumeByDay, error: volumeError } = await supabase.rpc(
         "get_volume_by_day",
-        {
-          p_user_id: user.id,
-          p_days: daysToFetch,
-        }
-      )) as {
-        data: Database["public"]["Functions"]["get_volume_by_day"]["Returns"];
-        error: any;
-      };
+        { p_user_id: user.id, p_days: daysToFetch }
+      ) as { data: Database["public"]["Functions"]["get_volume_by_day"]["Returns"]; error: any };
 
-      if (volumeError) {
-        console.error("Error fetching volume by day:", volumeError.message);
-        return;
-      }
+      if (volumeError) throw new Error(volumeError.message);
 
       let formattedVolumeData: VolumeData[] = [];
-      if (timeRange === "7days") {
-        // Create array of last 7 days
-        const days = Array.from({ length: 7 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (6 - i));
-          return date.toISOString().split('T')[0];
-        });
+      const today = new Date();
 
-        // Map each day to its volume, using 0 for days without data
+      if (timeRange === "7days") {
+        // Format data for last 7 days
+        const days = eachDayOfInterval({ start: subDays(today, 6), end: today });
         formattedVolumeData = days.map(day => ({
-          date: new Date(day).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          }),
-          volume: volumeByDay?.find(d => d.date === day)?.volume || 0,
+          date: format(day, 'MMM d'),
+          volume: volumeByDay?.find(d => isSameDay(new Date(d.date), day))?.volume || 0,
         }));
       } else if (timeRange === "8weeks") {
-        // Create array of last 8 weeks
-        const weeks = Array.from({ length: 8 }, (_, i) => {
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() - (i * 7));
-          const startDate = new Date(endDate);
-          startDate.setDate(startDate.getDate() - 6);
-          return {
-            start: startDate.toISOString().split('T')[0],
-            end: endDate.toISOString().split('T')[0],
-            displayDate: startDate.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            }),
-          };
-        }).reverse();
-
-        formattedVolumeData = weeks.map(week => ({
-          date: week.displayDate,
-          volume: volumeByDay
-            ?.filter(d => d.date >= week.start && d.date <= week.end)
-            .reduce((sum, day) => sum + day.volume, 0) || 0,
-        }));
-      } else {
-        // Create array of last 12 months
-        const months = Array.from({ length: 12 }, (_, i) => {
-          const date = new Date();
-          date.setMonth(date.getMonth() - (11 - i));
-          const year = date.getFullYear();
-          const month = date.getMonth();
-          return {
-            month: date.toLocaleString("en-US", {
-              month: "short",
-              year: "numeric",
-            }),
-            monthStart: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-            monthEnd: `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`,
-          };
+        // Format data for last 8 weeks
+        const weeks = eachWeekOfInterval({ start: subDays(today, 55), end: today }, { weekStartsOn: 1 });
+        formattedVolumeData = weeks.map(weekStart => {
+          const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+          const weekVolume = volumeByDay
+            ?.filter(d => isSameWeek(new Date(d.date), weekStart, { weekStartsOn: 1 }))
+            .reduce((sum, day) => sum + day.volume, 0) || 0;
+          return { date: format(weekStart, 'MMM d'), volume: weekVolume };
         });
-
-        formattedVolumeData = months.map(month => {
+      } else {
+        // Format data for last 12 months
+        const months = eachMonthOfInterval({ start: subDays(today, 364), end: today });
+        formattedVolumeData = months.map(monthStart => {
+          const monthEnd = endOfMonth(monthStart);
           const monthVolume = volumeByDay
-            ?.filter(d => d.date >= month.monthStart && d.date <= month.monthEnd)
-            .reduce((sum, day) => sum + (day.volume || 0), 0) || 0;
-          
-          return {
-            date: month.month,
-            volume: monthVolume,
-          };
+            ?.filter(d => isSameMonth(new Date(d.date), monthStart))
+            .reduce((sum, day) => sum + day.volume, 0) || 0;
+          return { date: format(monthStart, 'MMM yyyy'), volume: monthVolume };
         });
       }
 
       setVolumeData(formattedVolumeData);
     } catch (error) {
-      console.error("Error in fetchDashboardData:", error);
+      console.error("Error fetching dashboard data:", error);
     }
   };
-
-  const aggregateByWeek = (
-    data: Database["public"]["Functions"]["get_volume_by_day"]["Returns"],
-    weeks: number
-  ) => {
-    const result: VolumeData[] = [];
-    const daysPerWeek = 7;
-    const totalDays = weeks * daysPerWeek;
-    const sortedData = [...data].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    const latestDays = sortedData.slice(-totalDays);
-
-    for (let i = 0; i < weeks; i++) {
-      const startIdx = i * daysPerWeek;
-      const weekData = latestDays.slice(startIdx, startIdx + daysPerWeek);
-      const weekVolume = weekData.reduce((sum, day) => sum + day.volume, 0);
-      const weekStartDate =
-        weekData[0]?.date ||
-        new Date(
-          Date.now() - (weeks - i - 1) * daysPerWeek * 24 * 60 * 60 * 1000
-        )
-          .toISOString()
-          .split("T")[0];
-      result.push({
-        date: `${new Date(weekStartDate).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })}`,
-        volume: weekVolume,
-      });
-    }
-    return result.reverse();
-  };
-
-  const aggregateByMonth = (
-    data: Database["public"]["Functions"]["get_volume_by_day"]["Returns"],
-    months: number
-  ) => {
-    const result: VolumeData[] = [];
-    const sortedData = [...data].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    const latestDays = sortedData.slice(-months * 30);
-    const monthlyData: { [key: string]: number } = {};
-    latestDays.forEach((entry) => {
-      const date = new Date(entry.date);
-      const monthKey = date.toLocaleString("en-US", {
-        month: "short",
-        year: "numeric",
-      });
-      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + entry.volume;
-    });
-    Object.entries(monthlyData)
-      .slice(-months)
-      .forEach(([month, volume]) => {
-        result.push({ date: month, volume });
-      });
-    return result.reverse();
-  };
-
-  if (isLoading) {
-    return <div className="min-h-screen bg-background p-4">Loading...</div>;
-  }
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background pb-20">
+        {/* Header with theme toggle and settings */}
         <div className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg">
           <h1 className="text-xl font-semibold">Dashboard</h1>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
+            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/settings")}
-            >
+            <Button variant="ghost" size="icon" onClick={() => router.push("/settings")}>
               <Settings className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        <div className="p-4 space-y-6">
+        {/* Dashboard content */}
+        <div className="p-4 space-y-6 w-full"> {/* Updated to w-full for wider chart */}
           <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
-          <VolumeChart
-            data={volumeData}
-            timeRange={timeRange}
-            onTimeRangeChange={setTimeRange}
-          />
+          <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
         </div>
 
         <BottomNav />
