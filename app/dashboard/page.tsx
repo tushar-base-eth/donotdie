@@ -106,19 +106,6 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background pb-20">
-        {/* Header with theme toggle and settings */}
-        <div className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg">
-          <h1 className="text-xl font-semibold">Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push("/settings")}>
-              <Settings className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
         {/* Dashboard content */}
         <div className="p-4 space-y-6 w-full"> {/* Updated to w-full for wider chart */}
           <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
