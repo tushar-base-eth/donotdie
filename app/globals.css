@@ -284,3 +284,13 @@
   animation: gradient 8s ease infinite;
 }
 
+.dark {
+  --color-destructive: 0 85% 60%; /* Vivid red for dark mode */
+  --color-destructive-foreground: 0 0% 100%; /* White text */
+}
+
+.dark {
+  --card: 215 20% 22%; /* Lighter, more vibrant gray */
+  --card-foreground: 0 0% 95%; /* Near-white text */
+  --border: 215 20% 30%; /* Slightly lighter border */
+}

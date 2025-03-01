@@ -23,12 +23,9 @@ export function WorkoutExercises({
     <ScrollArea className="h-[calc(100vh-13rem)] px-4">
       <AnimatePresence initial={false}>
         {exercises.map((exercise, index) => {
-          // Track the swipe distance
           const dragX = useMotionValue(0);
-          // Map swipe distance to opacity (fully visible at -60px, hidden at 0px)
-          const opacity = useTransform(dragX, [-60, 0], [1, 0]);
-          // Map swipe distance to position (shifts slightly for effect)
-          const xTransform = useTransform(dragX, [-60, 0], [0, 20]);
+          const opacity = useTransform(dragX, [-120, 0], [1, 0]); // Fade in DELETE as dragged
+          const xTransform = useTransform(dragX, [-120, 0], [0, 40]); // Slide DELETE into view
 
           return (
             <motion.div
@@ -42,41 +39,39 @@ export function WorkoutExercises({
             >
               <motion.div
                 drag="x"
-                dragConstraints={{ left: -120, right: 0 }} // Limit swipe to left direction
-                dragElastic={0.2} // Add slight elasticity to swipe
+                dragConstraints={{ left: -120, right: 0 }}
+                dragElastic={0.2}
                 onDragEnd={(e, { offset }) => {
-                  if (offset.x < -60) { // Trigger delete if swiped past threshold
+                  if (offset.x < -60) {
                     onExerciseRemove(index);
                   }
                 }}
-                whileDrag={{ scale: 1.03 }} // Slight scale-up during drag
-                whileHover={{ scale: 1.01 }} // Subtle hover effect
+                whileDrag={{ scale: 1.03 }}
+                whileHover={{ scale: 1.01 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className="relative cursor-grab active:cursor-grabbing"
-                style={{ x: dragX }} // Bind drag position
+                style={{ x: dragX }}
               >
                 {/* DELETE Indicator */}
                 <motion.div
-                  className="absolute inset-y-0 right-0 w-20 flex items-center justify-end pr-3 pointer-events-none"
+                  className="absolute inset-y-0 right-0 w-24 flex items-center justify-end pr-4 pointer-events-none rounded-r-lg"
                   style={{
-                    opacity, // Fade in/out based on swipe
-                    x: xTransform, // Move slightly with swipe
-                    background: "linear-gradient(to left, var(--color-destructive), transparent)", // Gradient for smooth transition
-                    color: "var(--color-destructive-foreground)", // Theme-aware text color
-                    borderTopRightRadius: "0.5rem",
-                    borderBottomRightRadius: "0.5rem",
+                    opacity,
+                    x: xTransform,
+                    backgroundColor: "var(--color-destructive)", // Vivid red in dark mode
+                    color: "var(--color-destructive-foreground)", // White text
                   }}
                 >
-                  <span className="font-medium text-sm">DELETE</span>
+                  <span className="font-semibold text-sm tracking-wide">DELETE</span>
                 </motion.div>
 
                 {/* Exercise Card */}
                 <Card
-                  className="relative z-10 bg-background shadow-md border-none rounded-lg overflow-hidden cursor-pointer hover:bg-accent/10 transition-colors duration-200"
-                  onClick={() => onExerciseSelect(exercise)} // Tap to edit
+                  className="relative z-10 bg-[var(--card)] text-[var(--card-foreground)] border-[var(--border)] shadow-lg rounded-lg overflow-hidden cursor-pointer hover:bg-[var(--card)]/90 transition-all duration-200"
+                  onClick={() => onExerciseSelect(exercise)}
                 >
                   <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold text-foreground tracking-tight">
+                    <h3 className="text-lg font-semibold tracking-tight">
                       {exercise.exercise.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
