@@ -1,26 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell } from "lucide-react";
 import Workout from "@/components/workout/workout";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useWorkout } from "@/contexts/workout-context";
 
 export default function HomePage() {
-  const [hasExercises, setHasExercises] = useState(false);
+  const { state } = useWorkout();
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background pb-20">
-        {/* <div className="p-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-[#4B7BFF] dark:text-red-500">Do Not Die</h1>
-          </div>
-        </div> */}
-
         <AnimatePresence mode="wait">
-          {!hasExercises && (
+          {state.currentWorkout.exercises.length === 0 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -70,9 +64,9 @@ export default function HomePage() {
           )}
         </AnimatePresence>
 
-        <Workout onExercisesChange={(exercises) => setHasExercises(exercises.length > 0)} />
+        <Workout />
         <BottomNav />
       </div>
     </ProtectedRoute>
   );
-} 
+}

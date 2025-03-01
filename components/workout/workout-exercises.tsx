@@ -1,26 +1,26 @@
-"use client"
+"use client";
 
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import type { UIExtendedWorkout } from "@/types/workouts"
-import { useUnitPreference } from "@/lib/hooks/use-unit-preference"
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { UIWorkoutExercise } from "@/types/workouts";
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface WorkoutExercisesProps {
-  exercises: UIExtendedWorkout["exercises"]
-  onExerciseSelect: (exercise: UIExtendedWorkout["exercises"][0]) => void
-  onExerciseRemove: (exerciseIndex: number) => void
+  exercises: UIWorkoutExercise[];
+  onExerciseSelect: (exercise: UIWorkoutExercise) => void;
+  onExerciseRemove: (exerciseIndex: number) => void;
 }
 
 export function WorkoutExercises({ exercises, onExerciseSelect, onExerciseRemove }: WorkoutExercisesProps) {
-  const { formatWeight } = useUnitPreference()
+  const { formatWeight } = useUnitPreference();
 
   return (
     <ScrollArea className="h-[calc(100vh-13rem)]">
       <AnimatePresence initial={false}>
         {exercises.map((exercise, index) => (
           <motion.div
-            key={exercise.exercise_id}
+            key={exercise.instance_id}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -45,6 +45,5 @@ export function WorkoutExercises({ exercises, onExerciseSelect, onExerciseRemove
         ))}
       </AnimatePresence>
     </ScrollArea>
-  )
+  );
 }
-

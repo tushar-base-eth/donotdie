@@ -16,7 +16,7 @@ interface ExerciseSelectorProps {
   onOpenChange: (open: boolean) => void;
   selectedExercises: string[];
   onExerciseToggle: (id: string) => void;
-  onAddExercises: (selected: Exercise[]) => void; // Updated to pass Exercise[]
+  onAddExercises: (selected: Exercise[]) => void;
 }
 
 export function ExerciseSelector({
@@ -29,33 +29,23 @@ export function ExerciseSelector({
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(
-    null
-  );
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
 
-  // Fetch exercises when the modal opens
+  // Fetch exercises once on mount and cache in state
   useEffect(() => {
-    if (open) {
-      setSearchQuery("");
-      inputRef.current?.blur();
-      async function fetchExercises() {
-        const { data, error } = await supabase
-          .from("available_exercises")
-          .select("*");
-        if (error) {
-          console.error("Error fetching exercises:", error.message);
-        } else {
-          setAvailableExercises(data || []);
-        }
+    async function fetchExercises() {
+      const { data, error } = await supabase.from("available_exercises").select("*");
+      if (error) {
+        console.error("Error fetching exercises:", error.message);
+      } else {
+        setAvailableExercises(data || []);
       }
-      fetchExercises();
     }
-  }, [open]);
+    fetchExercises();
+  }, []);
 
-  const muscleGroups = Array.from(
-    new Set(availableExercises.map((ex) => ex.primary_muscle_group))
-  );
+  const muscleGroups = Array.from(new Set(availableExercises.map((ex) => ex.primary_muscle_group)));
 
   const filteredExercises = Object.entries(
     availableExercises.reduce((acc, ex) => {
@@ -79,18 +69,16 @@ export function ExerciseSelector({
   }, {} as Record<string, Exercise[]>);
 
   const handleAdd = () => {
-    const selected = availableExercises.filter((ex) =>
-      selectedExercises.includes(ex.id)
-    );
+    const selected = availableExercises.filter((ex) => selectedExercises.includes(ex.id));
     onAddExercises(selected);
     onOpenChange(false); // Close the modal
   };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="bottom" 
-        className="h-[80vh] px-0" 
+      <SheetContent
+        side="bottom"
+        className="h-[80vh] px-0"
         aria-describedby="exercise-selector-description"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
@@ -137,13 +125,9 @@ export function ExerciseSelector({
                   {muscleGroups.map((muscle) => (
                     <Button
                       key={muscle}
-                      variant={
-                        selectedMuscleGroup === muscle ? "default" : "outline"
-                      }
+                      variant={selectedMuscleGroup === muscle ? "default" : "outline"}
                       onClick={() =>
-                        setSelectedMuscleGroup(
-                          selectedMuscleGroup === muscle ? null : muscle
-                        )
+                        setSelectedMuscleGroup(selectedMuscleGroup === muscle ? null : muscle)
                       }
                       className="rounded-full"
                       size="sm"
@@ -172,8 +156,7 @@ export function ExerciseSelector({
                             <div>{exercise.name}</div>
                             <div className="text-sm text-muted-foreground">
                               {exercise.primary_muscle_group}
-                              {exercise.secondary_muscle_group &&
-                                `, ${exercise.secondary_muscle_group}`}
+                              {exercise.secondary_muscle_group && `, ${exercise.secondary_muscle_group}`}
                             </div>
                           </div>
                           <div
@@ -201,8 +184,7 @@ export function ExerciseSelector({
               disabled={selectedExercises.length === 0}
               className="w-full bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-xl h-12"
             >
-              Add {selectedExercises.length} Exercise
-              {selectedExercises.length !== 1 ? "s" : ""}
+              Add {selectedExercises.length} Exercise{selectedExercises.length !== 1 ? "s" : ""}
             </Button>
           </div>
         </div>

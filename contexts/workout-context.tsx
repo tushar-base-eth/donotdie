@@ -1,36 +1,31 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
+import { createContext, useContext, useReducer, useEffect } from "react";
+import type { Set, UIWorkoutExercise, UIExtendedWorkout } from "@/types/workouts";
 
-import { createContext, useContext, useReducer, useEffect } from "react"
-import type { WorkoutExercise } from "@/types/exercises"
-import type { Workout } from "@/types/workouts"
-
-// Define the state shape
 interface WorkoutState {
   currentWorkout: {
-    exercises: WorkoutExercise[]
-    selectedExerciseIds: string[]
-    selectedExercise: WorkoutExercise | null
-  }
+    exercises: UIWorkoutExercise[];
+    selectedExerciseIds: string[];
+    selectedExercise: UIWorkoutExercise | null;
+  };
   history: {
-    workouts: Workout[]
-    selectedWorkout: Workout | null
-  }
+    workouts: UIExtendedWorkout[];
+    selectedWorkout: UIExtendedWorkout | null;
+  };
 }
 
-// Define action types
 type WorkoutAction =
-  | { type: "SET_EXERCISES"; exercises: WorkoutExercise[] }
+  | { type: "SET_EXERCISES"; exercises: UIWorkoutExercise[] }
   | { type: "SET_SELECTED_EXERCISE_IDS"; ids: string[] }
-  | { type: "SET_SELECTED_EXERCISE"; exercise: WorkoutExercise | null }
+  | { type: "SET_SELECTED_EXERCISE"; exercise: UIWorkoutExercise | null }
   | { type: "UPDATE_EXERCISE_SETS"; exerciseIndex: number; sets: Set[] }
-  | { type: "SAVE_WORKOUT"; workout: Workout }
+  | { type: "SAVE_WORKOUT"; workout: UIExtendedWorkout }
   | { type: "DELETE_WORKOUT"; workoutId: string }
-  | { type: "SET_SELECTED_WORKOUT"; workout: Workout | null }
-  | { type: "LOAD_WORKOUTS"; workouts: Workout[] }
+  | { type: "SET_SELECTED_WORKOUT"; workout: UIExtendedWorkout | null }
+  | { type: "LOAD_WORKOUTS"; workouts: UIExtendedWorkout[] };
 
-// Initial state
 const initialState: WorkoutState = {
   currentWorkout: {
     exercises: [],
@@ -41,15 +36,13 @@ const initialState: WorkoutState = {
     workouts: [],
     selectedWorkout: null,
   },
-}
+};
 
-// Create context
 const WorkoutContext = createContext<{
-  state: WorkoutState
-  dispatch: React.Dispatch<WorkoutAction>
-} | null>(null)
+  state: WorkoutState;
+  dispatch: React.Dispatch<WorkoutAction>;
+} | null>(null);
 
-// Reducer function
 function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutState {
   switch (action.type) {
     case "SET_EXERCISES":
@@ -59,7 +52,7 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
           ...state.currentWorkout,
           exercises: action.exercises,
         },
-      }
+      };
     case "SET_SELECTED_EXERCISE_IDS":
       return {
         ...state,
@@ -67,7 +60,7 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
           ...state.currentWorkout,
           selectedExerciseIds: action.ids,
         },
-      }
+      };
     case "SET_SELECTED_EXERCISE":
       return {
         ...state,
@@ -75,24 +68,29 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
           ...state.currentWorkout,
           selectedExercise: action.exercise,
         },
+      };
+    case "UPDATE_EXERCISE_SETS": {
+      const { exerciseIndex, sets } = action;
+      if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
+        throw new Error(`Invalid exercise index: ${exerciseIndex}`);
       }
-    case "UPDATE_EXERCISE_SETS":
-      const updatedExercises = [...state.currentWorkout.exercises]
-      updatedExercises[action.exerciseIndex] = {
-        ...updatedExercises[action.exerciseIndex],
-        sets: action.sets,
-      }
+      const updatedExercises = [...state.currentWorkout.exercises];
+      updatedExercises[exerciseIndex] = {
+        ...updatedExercises[exerciseIndex],
+        sets,
+      };
       return {
         ...state,
         currentWorkout: {
           ...state.currentWorkout,
           exercises: updatedExercises,
           selectedExercise:
-            state.currentWorkout.selectedExercise?.exercise.id === updatedExercises[action.exerciseIndex].exercise.id
-              ? updatedExercises[action.exerciseIndex]
+            state.currentWorkout.selectedExercise?.instance_id === updatedExercises[exerciseIndex].instance_id
+              ? updatedExercises[exerciseIndex]
               : state.currentWorkout.selectedExercise,
         },
-      }
+      };
+    }
     case "SAVE_WORKOUT":
       return {
         ...state,
@@ -105,7 +103,7 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
           ...state.history,
           workouts: [action.workout, ...state.history.workouts],
         },
-      }
+      };
     case "DELETE_WORKOUT":
       return {
         ...state,
@@ -115,7 +113,7 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
           selectedWorkout:
             state.history.selectedWorkout?.id === action.workoutId ? null : state.history.selectedWorkout,
         },
-      }
+      };
     case "SET_SELECTED_WORKOUT":
       return {
         ...state,
@@ -123,7 +121,7 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
           ...state.history,
           selectedWorkout: action.workout,
         },
-      }
+      };
     case "LOAD_WORKOUTS":
       return {
         ...state,
@@ -131,36 +129,31 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
           ...state.history,
           workouts: action.workouts,
         },
-      }
+      };
     default:
-      return state
+      return state;
   }
 }
 
-// Provider component
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(workoutReducer, initialState)
+  const [state, dispatch] = useReducer(workoutReducer, initialState);
 
-  // Load workouts from localStorage on mount
   useEffect(() => {
-    const savedWorkouts = JSON.parse(localStorage.getItem("workouts") || "[]")
-    dispatch({ type: "LOAD_WORKOUTS", workouts: savedWorkouts })
-  }, [])
+    const savedWorkouts = JSON.parse(localStorage.getItem("workouts") || "[]");
+    dispatch({ type: "LOAD_WORKOUTS", workouts: savedWorkouts });
+  }, []);
 
-  // Save workouts to localStorage when they change
   useEffect(() => {
-    localStorage.setItem("workouts", JSON.stringify(state.history.workouts))
-  }, [state.history.workouts])
+    localStorage.setItem("workouts", JSON.stringify(state.history.workouts));
+  }, [state.history.workouts]);
 
-  return <WorkoutContext.Provider value={{ state, dispatch }}>{children}</WorkoutContext.Provider>
+  return <WorkoutContext.Provider value={{ state, dispatch }}>{children}</WorkoutContext.Provider>;
 }
 
-// Custom hook to use the workout context
 export function useWorkout() {
-  const context = useContext(WorkoutContext)
+  const context = useContext(WorkoutContext);
   if (!context) {
-    throw new Error("useWorkout must be used within a WorkoutProvider")
+    throw new Error("useWorkout must be used within a WorkoutProvider");
   }
-  return context
+  return context;
 }
-

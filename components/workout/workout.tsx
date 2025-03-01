@@ -14,7 +14,8 @@ import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout, Set } from "@/types/workouts";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { useWorkout } from "@/contexts/workout-context"
+import { useWorkout } from "@/contexts/workout-context";
+import { toast } from "@/components/ui/use-toast";
 
 interface WorkoutProps {
   onExercisesChange?: (exercises: UIExtendedWorkout["exercises"]) => void;
@@ -39,6 +40,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     state.currentWorkout.exercises.length > 0 &&
     state.currentWorkout.exercises.every(
       (exercise) =>
+        exercise.exercise_id &&
         exercise.sets.length > 0 &&
         exercise.sets.every((set) => set.reps > 0 && set.weight_kg > 0)
     );
@@ -56,15 +58,18 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   const handleExerciseToggle = (id: string) => {
-    dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: state.currentWorkout.selectedExerciseIds.includes(id) 
-      ? state.currentWorkout.selectedExerciseIds.filter(x => x !== id)
-      : [...state.currentWorkout.selectedExerciseIds, id]
+    dispatch({
+      type: "SET_SELECTED_EXERCISE_IDS",
+      ids: state.currentWorkout.selectedExerciseIds.includes(id)
+        ? state.currentWorkout.selectedExerciseIds.filter((x) => x !== id)
+        : [...state.currentWorkout.selectedExerciseIds, id],
     });
   };
 
   const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
       const newExercises = selected.map((exercise) => ({
+        instance_id: generateUUID(),
         id: generateUUID(),
         workout_id: "",
         exercise_id: exercise.id,
@@ -86,11 +91,10 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
-  const handleUpdateSets = (
-    exerciseIndex: number,
-    newSets: UIExtendedWorkout["exercises"][0]["sets"]
-  ) => {
-    if (exerciseIndex === -1) return;
+  const handleUpdateSets = (exerciseIndex: number, newSets: Set[]) => {
+    if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
+      throw new Error(`Invalid exercise index: ${exerciseIndex}`);
+    }
     dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: newSets });
   };
 
@@ -106,7 +110,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
     startTransition(async () => {
       try {
-        // Create the workout first
         const { data: workoutData, error: workoutError } = await supabase
           .from("workouts")
           .insert([{ user_id: user.id }])
@@ -116,58 +119,48 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
         const workoutId = workoutData.id;
 
-        // Insert all workout exercises and their sets
-        for (const ex of state.currentWorkout.exercises) {
-          const { data: workoutExData, error: workoutExError } = await supabase
-            .from("workout_exercises")
-            .insert([{ workout_id: workoutId, exercise_id: ex.exercise_id }])
-            .select()
-            .single();
-          if (workoutExError) throw new Error(workoutExError.message);
+        const exercisesData = state.currentWorkout.exercises.map((ex) => ({
+          workout_id: workoutId,
+          exercise_id: ex.exercise_id,
+          created_at: new Date().toISOString(),
+        }));
 
-          const workoutExerciseId = workoutExData.id;
-          const setsData = ex.sets.map((set: Set) => ({
-            workout_exercise_id: workoutExerciseId,
+        const { data: workoutExercisesData, error: exercisesError } = await supabase
+          .from("workout_exercises")
+          .insert(exercisesData)
+          .select();
+        if (exercisesError) throw new Error(exercisesError.message);
+
+        const setsData = state.currentWorkout.exercises.flatMap((ex, index) =>
+          ex.sets.map((set) => ({
+            workout_exercise_id: workoutExercisesData[index].id,
             reps: set.reps,
             weight_kg: set.weight_kg,
-          }));
-          const { error: setsError } = await supabase
-            .from("sets")
-            .insert(setsData);
-          if (setsError) throw new Error(setsError.message);
-        }
+            created_at: new Date().toISOString(),
+          }))
+        );
 
-        // Update user stats with the total volume
+        const { error: setsError } = await supabase.from("sets").insert(setsData);
+        if (setsError) throw new Error(setsError.message);
+
         const totalVolume = calculateTotalVolume(state.currentWorkout.exercises);
         const { error: statsError } = await supabase.rpc('update_user_stats', {
           p_user_id: user.id,
           p_volume: totalVolume,
-          p_date: new Date().toISOString().split('T')[0] // Store date in UTC
+          p_date: new Date().toISOString().split('T')[0],
         });
         if (statsError) throw new Error(statsError.message);
 
         dispatch({ type: "SET_EXERCISES", exercises: [] });
       } catch (error: any) {
         console.error("Error saving workout:", error.message);
+        toast({
+          title: "Error",
+          description: "Failed to save workout. Please try again.",
+          variant: "destructive",
+        });
       }
     });
-  };
-
-  const handleDeleteWorkout = async (workout: UIExtendedWorkout) => {
-    try {
-      const volumeToSubtract = calculateTotalVolume(workout.exercises);
-      const { error: statsError } = await supabase.rpc('update_user_stats_on_delete', {
-        p_user_id: user!.id,
-        p_volume: volumeToSubtract,
-        p_date: workout.utcDate // Use the stored UTC date
-      });
-      
-      if (statsError) throw statsError;
-      
-      // ... rest of delete logic
-    } catch (err) {
-      console.error("Error deleting workout:", err instanceof Error ? err.message : String(err));
-    }
   };
 
   if (isLoading) {
@@ -228,7 +221,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             onClose={() => dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null })}
             onUpdateSets={handleUpdateSets}
             exerciseIndex={state.currentWorkout.exercises.findIndex(
-              (ex) => ex.exercise.id === state.currentWorkout.selectedExercise?.exercise.id
+              (ex) => ex.instance_id === state.currentWorkout.selectedExercise?.instance_id
             )}
           />
         )}

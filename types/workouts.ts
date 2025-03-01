@@ -1,4 +1,3 @@
-// types/workouts.ts
 import type { Tables } from "./database";
 
 export interface Exercise {
@@ -25,6 +24,10 @@ export interface WorkoutExercise extends Tables<"workout_exercises"> {
   sets: Set[];
 }
 
+export interface UIWorkoutExercise extends WorkoutExercise {
+  instance_id: string;
+}
+
 export interface Workout extends Tables<"workouts"> {
   id: string;
   user_id: string | null;
@@ -32,10 +35,9 @@ export interface Workout extends Tables<"workouts"> {
   exercises: WorkoutExercise[];
 }
 
-// UI-extended type for HistoryPage and WorkoutDetails
 export interface UIExtendedWorkout extends Workout {
   date: string;
   time: string;
   totalVolume: number;
-  utcDate: string; // Raw UTC date string for consistent comparisons
+  utcDate: string;
 }
