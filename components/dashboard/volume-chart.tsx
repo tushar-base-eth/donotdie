@@ -49,7 +49,7 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
                   tickFormatter={(value) => {
                     if (timeRange === "12months") {
                       const [month, year] = value.split(" "); // Abbreviate months (e.g., "Mar '24")
-                      return `${month} '${year.slice(-2)}`;
+                      return `${month} ${year.slice(-2)}`;
                     }
                     return value;
                   }}
