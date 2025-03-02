@@ -31,15 +31,12 @@ import { useAuth } from "@/contexts/auth-context";
 import type { UserProfile } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
+import { debounce } from "lodash"; // Install lodash if not already present
 
+// Define the schema for validation
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  gender: z.enum(["Male", "Female", "Other"]).optional(),
-  dateOfBirth: z.string().optional(),
   unitPreference: z.enum(["metric", "imperial"]),
-  weight: z.number().positive("Weight must be greater than 0").optional(),
-  height: z.number().positive("Height must be greater than 0").optional(),
-  bodyFat: z.number().min(0).max(100).optional(),
 });
 
 function SettingsPage() {
@@ -49,76 +46,46 @@ function SettingsPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
-  const [feetPart, setFeetPart] = useState(0);
-  const [inchesPart, setInchesPart] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
 
+  // Initialize the form with default values from the user profile
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: user?.name || "",
-      gender: (user?.gender as "Male" | "Female" | "Other") || "Male",
-      dateOfBirth: user?.dateOfBirth || "",
       unitPreference: user?.unitPreference || "metric",
-      weight: user?.weight || 70,
-      height: user?.height || 170,
-      bodyFat: user?.bodyFat || 0,
     },
   });
 
-  const cmToFeetInches = (cm: number) => {
-    const totalInches = cm / 2.54;
-    const feet = Math.floor(totalInches / 12);
-    const inches = Math.round(totalInches % 12);
-    return { feet, inches };
-  };
-
-  const feetInchesToCm = (feet: number, inches: number) => {
-    return Math.round((feet * 12 + inches) * 2.54);
-  };
-
-  const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
-    if (!user) return;
-
-    setIsSaving(true);
+  // Debounce the save function to avoid excessive API calls
+  const debounceSave = debounce(async (data: Partial<UserProfile>) => {
     try {
-      await updateProfile(data as UserProfile);
-      setIsNewProfile(false);
-      form.reset(data);
+      await updateProfile(data); // Save to backend
     } catch (error) {
-      console.error("Error saving profile:", error);
-    } finally {
-      setIsSaving(false);
+      console.error("Error saving profile:", error); // Silent error handling
     }
+  }, 500); // 500ms delay
+
+  // Handle changes to fields and trigger save
+  const handleFieldChange = (field: keyof UserProfile, value: string) => {
+    form.setValue(field, value); // Update form state
+    debounceSave({ [field]: value }); // Trigger debounced save
   };
 
+  // Sync form with user data and handle routing
   useEffect(() => {
     if (!user && !isLoading) {
-      router.push("/auth");
+      router.push("/auth"); // Redirect if not authenticated
     } else if (user) {
       setIsNewProfile(!user.isProfileComplete);
-
-      const height = user.height || 170;
-      const { feet, inches } = cmToFeetInches(height);
-      setFeetPart(feet);
-      setInchesPart(inches);
-
-      const resetValues = {
+      form.reset({
         name: user.name || "New User",
-        gender: (user.gender as "Male" | "Female" | "Other") || "Other",
-        dateOfBirth: user.dateOfBirth || "",
         unitPreference: user.unitPreference || "metric",
-        weight: user.weight || 70,
-        height: user.height || 170,
-        bodyFat: user.bodyFat || 0,
-      };
-
-      form.reset(resetValues);
+      });
     }
   }, [user, isLoading, form, router]);
 
   const handleLogout = () => {
-    logout();
+    logout(); // Logout function from auth context
   };
 
   if (isLoading) {
@@ -138,11 +105,7 @@ function SettingsPage() {
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {theme === "dark" ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
               <Button
                 variant="ghost"
@@ -181,7 +144,8 @@ function SettingsPage() {
             <Card className="border-0 glass shadow-md">
               <CardContent className="p-4">
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <form className="space-y-6">
+                    {/* Name Field */}
                     <FormField
                       control={form.control}
                       name="name"
@@ -189,25 +153,43 @@ function SettingsPage() {
                         <FormItem>
                           <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} className="rounded-xl" />
+                            <Input
+                              {...field}
+                              onChange={(e) => handleFieldChange("name", e.target.value)}
+                              className="rounded-xl"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {/* Email Field (Read-Only) */}
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input value={user?.email || ""} readOnly disabled className="rounded-xl" />
+                        <Input
+                          value={user?.email || ""}
+                          readOnly
+                          disabled
+                          className="rounded-xl"
+                        />
                       </FormControl>
                     </FormItem>
+
+                    {/* Unit Preference Dropdown */}
                     <FormField
                       control={form.control}
                       name="unitPreference"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unit Preference</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={(value) =>
+                              handleFieldChange("unitPreference", value)
+                            }
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger className="rounded-xl">
                                 <SelectValue>
@@ -228,19 +210,6 @@ function SettingsPage() {
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-left">
-                      <Button
-                        type="submit"
-                        disabled={isSaving || !form.formState.isDirty}
-                        className="rounded-xl"
-                      >
-                        {isSaving
-                          ? "Saving..."
-                          : isNewProfile
-                          ? "Complete Profile"
-                          : "Save Changes"}
-                      </Button>
-                    </div>
                   </form>
                 </Form>
               </CardContent>
