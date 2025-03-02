@@ -19,14 +19,14 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
 
   return (
     <Sheet open={!!workout} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg p-0 glass" aria-describedby="workout-details-description">
-        {/* Header with glassmorphism */}
-        <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
+      <SheetContent
+        className="w-full sm:max-w-lg p-0 bg-background z-50"
+        style={{ maxHeight: "calc(100vh - 60px)", overflowY: "auto" }} // Key change here
+      >
+        {/* Header */}
+        <div className="p-4 border-b sticky top-0 bg-background z-10">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-xl">Workout Details</SheetTitle>
-            <span id="workout-details-description" className="sr-only">
-              View details of your workout, including exercises, sets, reps, and weights.
-            </span>
+            <SheetTitle className="text-xl text-foreground">Workout Details</SheetTitle>
             <Button
               size="icon"
               variant="ghost"
