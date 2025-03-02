@@ -32,6 +32,7 @@ import type { UserProfile } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 
+// Schema for form validation
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   gender: z.enum(["Male", "Female", "Other"]).optional(),
@@ -66,25 +67,13 @@ function SettingsPage() {
     },
   });
 
-  const cmToFeetInches = (cm: number) => {
-    const totalInches = cm / 2.54;
-    const feet = Math.floor(totalInches / 12);
-    const inches = Math.round(totalInches % 12);
-    return { feet, inches };
-  };
-
-  const feetInchesToCm = (feet: number, inches: number) => {
-    return Math.round((feet * 12 + inches) * 2.54);
-  };
-
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     if (!user) return;
 
     setIsSaving(true);
     try {
       await updateProfile(data as UserProfile);
-      setIsNewProfile(false);
-      form.reset(data);
+      form.reset(data); // Reset form state to mark it as unchanged
     } catch (error) {
       console.error("Error saving profile:", error);
     } finally {
@@ -119,6 +108,13 @@ function SettingsPage() {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const cmToFeetInches = (cm: number) => {
+    const totalInches = cm / 2.54;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return { feet, inches };
   };
 
   if (isLoading) {
@@ -234,11 +230,7 @@ function SettingsPage() {
                         disabled={isSaving || !form.formState.isDirty}
                         className="rounded-xl"
                       >
-                        {isSaving
-                          ? "Saving..."
-                          : isNewProfile
-                          ? "Complete Profile"
-                          : "Save Changes"}
+                        {isSaving ? "Saving..." : "Save"}
                       </Button>
                     </div>
                   </form>
