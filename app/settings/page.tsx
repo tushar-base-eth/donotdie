@@ -24,12 +24,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
 import type { UserProfile } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { motion } from "framer-motion";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -83,8 +84,6 @@ function SettingsPage() {
     try {
       await updateProfile(data as UserProfile);
       setIsNewProfile(false);
-      if (data.name !== user.name) {
-      }
       form.reset(data);
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -123,298 +122,134 @@ function SettingsPage() {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background p-4">Loading...</div>;
+    return <div className="min-h-screen bg-background pb-16">Loading...</div>;
   }
 
   return (
-    <>
-      <PageHeader
-        title="Settings"
-        rightContent={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              aria-label="Log out"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        }
-      />
-
-      <div className="p-4 space-y-6">
-        {isNewProfile && (
-          <Alert variant="default">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Profile Setup</AlertTitle>
-            <AlertDescription>
-              Please complete your profile information to get the most out of
-              the app.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <Card>
-          <CardContent className="p-4">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input value={user?.email || ""} readOnly disabled />
-                  </FormControl>
-                </FormItem>
-                {/* Gender field - temporarily hidden
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Gender</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                */}
-                {/* Date of Birth field - temporarily hidden
-                <FormField
-                  control={form.control}
-                  name="dateOfBirth"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date of Birth</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                */}
-                <FormField
-                  control={form.control}
-                  name="unitPreference"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unit Preference</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue defaultValue={field.value}>
-                              {field.value === "metric"
-                                ? "Metric (kg/cm)"
-                                : field.value === "imperial"
-                                ? "Imperial (lb/ft-in)"
-                                : "Select units"}
-                            </SelectValue>
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="metric">Metric (kg/cm)</SelectItem>
-                          <SelectItem value="imperial">
-                            Imperial (lb/ft-in)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {/* Weight field - temporarily hidden
-                <FormField
-                  control={form.control}
-                  name="weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Weight (
-                        {form.watch("unitPreference") === "metric"
-                          ? "kg"
-                          : "lb"}
-                        )
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          {...field}
-                          onChange={(e) => {
-                            let value = Number.parseFloat(e.target.value);
-                            // If imperial, convert to kg for storage
-                            if (form.watch("unitPreference") === "imperial") {
-                              value = value / 2.20462;
-                            }
-                            field.onChange(value);
-                          }}
-                          value={
-                            form.watch("unitPreference") === "imperial"
-                              ? Math.round(field.value * 2.20462 * 10) / 10
-                              : field.value
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                */}
-                {/* Height field - temporarily hidden
-                <FormField
-                  control={form.control}
-                  name="height"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Height (
-                        {form.watch("unitPreference") === "metric"
-                          ? "cm"
-                          : "ft/in"}
-                        )
-                      </FormLabel>
-                      <FormControl>
-                        {form.watch("unitPreference") === "metric" ? (
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(Number.parseFloat(e.target.value));
-                            }}
-                          />
-                        ) : (
-                          <div className="flex gap-2 items-center">
-                            <Input
-                              type="number"
-                              className="w-20"
-                              value={feetPart}
-                              onChange={(e) => {
-                                const ft =
-                                  Number.parseFloat(e.target.value) || 0;
-                                setFeetPart(ft);
-                                field.onChange(feetInchesToCm(ft, inchesPart));
-                              }}
-                            />
-                            <span className="text-sm text-muted-foreground">
-                              ft
-                            </span>
-                            <Input
-                              type="number"
-                              className="w-20"
-                              value={inchesPart}
-                              onChange={(e) => {
-                                const inches =
-                                  Number.parseFloat(e.target.value) || 0;
-                                setInchesPart(inches);
-                                field.onChange(feetInchesToCm(feetPart, inches));
-                              }}
-                            />
-                            <span className="text-sm text-muted-foreground">
-                              in
-                            </span>
-                          </div>
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                */}
-                {/* Body Fat field - temporarily hidden
-                <FormField
-                  control={form.control}
-                  name="bodyFat"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Body Fat %</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(Number.parseFloat(e.target.value));
-                          }}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                */}
-
-                <div className="flex justify-left">
-                  <Button
-                    type="submit"
-                    disabled={isSaving || !form.formState.isDirty}
-                  >
-                    {isSaving
-                      ? "Saving..."
-                      : isNewProfile
-                      ? "Complete Profile"
-                      : "Save Changes"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
-}
-
-export default function Settings() {
-  return (
     <ProtectedRoute>
-      <SettingsPage />
+      <div className="min-h-screen bg-background pb-16">
+        <PageHeader
+          title="Settings"
+          rightContent={
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                aria-label="Log out"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          }
+        />
+
+        <div className="p-4 space-y-6">
+          {isNewProfile && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Alert variant="default" className="glass shadow-md">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Profile Setup</AlertTitle>
+                <AlertDescription>
+                  Please complete your profile information to get the most out of the app.
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card className="border-0 glass shadow-md">
+              <CardContent className="p-4">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="rounded-xl" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input value={user?.email || ""} readOnly disabled className="rounded-xl" />
+                      </FormControl>
+                    </FormItem>
+                    <FormField
+                      control={form.control}
+                      name="unitPreference"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unit Preference</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="rounded-xl">
+                                <SelectValue>
+                                  {field.value === "metric"
+                                    ? "Metric (kg/cm)"
+                                    : field.value === "imperial"
+                                    ? "Imperial (lb/ft-in)"
+                                    : "Select units"}
+                                </SelectValue>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="metric">Metric (kg/cm)</SelectItem>
+                              <SelectItem value="imperial">Imperial (lb/ft-in)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-left">
+                      <Button
+                        type="submit"
+                        disabled={isSaving || !form.formState.isDirty}
+                        className="rounded-xl"
+                      >
+                        {isSaving
+                          ? "Saving..."
+                          : isNewProfile
+                          ? "Complete Profile"
+                          : "Save Changes"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
     </ProtectedRoute>
   );
 }
+
+export default SettingsPage;

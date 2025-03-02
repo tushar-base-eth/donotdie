@@ -13,6 +13,7 @@ import { parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { WorkoutExercise } from "@/types/workouts";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 function HistoryPage() {
   const { state } = useAuth();
@@ -141,25 +142,37 @@ function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16">
       <div className="p-4 space-y-6">
         {isRefreshing && (
           <div className="flex justify-center">
             <div className="pull-indicator" />
           </div>
         )}
-        {error && <div className="text-red-500 text-center">{error}</div>}
-        <Calendar
-          currentDate={selectedDate}
-          workoutDates={workoutDates}
-          onDateChange={setSelectedDate}
-        />
-        <WorkoutList
-          workouts={displayedWorkouts}
-          onWorkoutSelect={setSelectedWorkout}
-          onWorkoutDelete={handleDeleteWorkout}
-          selectedDate={selectedDate}
-        />
+        {error && <div className="text-destructive text-center">{error}</div>}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Calendar
+            currentDate={selectedDate}
+            workoutDates={workoutDates}
+            onDateChange={setSelectedDate}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <WorkoutList
+            workouts={displayedWorkouts}
+            onWorkoutSelect={setSelectedWorkout}
+            onWorkoutDelete={handleDeleteWorkout}
+            selectedDate={selectedDate}
+          />
+        </motion.div>
       </div>
       <WorkoutDetails workout={selectedWorkout} onClose={() => setSelectedWorkout(null)} />
     </div>

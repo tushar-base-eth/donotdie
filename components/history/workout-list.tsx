@@ -29,13 +29,12 @@ export function WorkoutList({
           <div>
             <div className="mb-4">
               <div className="rounded-full bg-muted p-4 inline-block">
-                <span role="img" aria-label="Sad face" className="text-4xl">😔</span>
+                <span role="img" aria-label="Sad face" className="text-4xl">🤨</span>
               </div>
             </div>
             <p className="text-lg font-medium">
-              No workouts logged on {format(selectedDate, "MMMM d, yyyy")}.
+              You were LASY on this day!
             </p>
-            <p className="text-sm">Log a workout to get started!</p>
           </div>
         ) : (
           // Fun UI for new users with no workouts overall

@@ -38,7 +38,8 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     <Sheet open={true} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0" aria-describedby="exercise-editor-description">
         <div className="flex flex-col h-full">
-          <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10">
+          {/* Header with glassmorphism */}
+          <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl">{exercise.exercise.name}</SheetTitle>
               <span id="exercise-editor-description" className="sr-only">
@@ -75,12 +76,14 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                       }}
                       className="relative"
                     >
+                      {/* Delete indicator */}
                       <div className="absolute right-0 top-0 bottom-0 w-[50px] bg-destructive/10 rounded-r-xl flex items-center justify-center">
                         <Trash className="h-4 w-4 text-destructive" />
                       </div>
 
+                      {/* Set card with glassmorphism */}
                       <motion.div 
-                        className="relative bg-background rounded-xl"
+                        className="relative bg-background rounded-xl glass"
                         style={{ x: 0 }}
                       >
                         <div className="px-4 py-3">
@@ -92,7 +95,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                           <div className="flex flex-col gap-3">
                             <div className="flex gap-3">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-[#4B7BFF]/10 dark:bg-red-500/10 flex items-center justify-center text-[#4B7BFF] dark:text-red-500 font-medium flex-shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium flex-shrink-0">
                                   {setIndex + 1}
                                 </div>
                                 <Input
@@ -135,6 +138,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                 ))}
               </AnimatePresence>
 
+              {/* Add Set button */}
               <motion.div layout>
                 <div className="px-4">
                   <div className="flex gap-3">
@@ -152,7 +156,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                         const newSets = [...exercise.sets, newSet];
                         onUpdateSets(exerciseIndex, newSets);
                       }}
-                      className="rounded-xl h-10 px-6 dark:bg-red-500 dark:text-white dark:hover:bg-red-600 dark:border-transparent"
+                      className="rounded-xl h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       Add Set
                     </Button>
@@ -166,4 +170,3 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     </Sheet>
   )
 }
-

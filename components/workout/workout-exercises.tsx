@@ -24,8 +24,8 @@ export function WorkoutExercises({
       <AnimatePresence initial={false}>
         {exercises.map((exercise, index) => {
           const dragX = useMotionValue(0);
-          const opacity = useTransform(dragX, [-120, 0], [1, 0]); // Fade in DELETE as dragged
-          const xTransform = useTransform(dragX, [-120, 0], [0, 40]); // Slide DELETE into view
+          const opacity = useTransform(dragX, [-120, 0], [1, 0]);
+          const xTransform = useTransform(dragX, [-120, 0], [0, 40]);
 
           return (
             <motion.div
@@ -52,22 +52,20 @@ export function WorkoutExercises({
                 className="relative cursor-grab active:cursor-grabbing"
                 style={{ x: dragX }}
               >
-                {/* DELETE Indicator */}
                 <motion.div
                   className="absolute inset-y-0 right-0 w-24 flex items-center justify-end pr-4 pointer-events-none rounded-r-lg"
                   style={{
                     opacity,
                     x: xTransform,
-                    backgroundColor: "var(--color-destructive)", // Vivid red in dark mode
-                    color: "var(--color-destructive-foreground)", // White text
+                    backgroundColor: "hsl(var(--destructive))",
+                    color: "hsl(var(--destructive-foreground))",
                   }}
                 >
                   <span className="font-semibold text-sm tracking-wide">DELETE</span>
                 </motion.div>
 
-                {/* Exercise Card */}
                 <Card
-                  className="relative z-10 bg-[var(--card)] text-[var(--card-foreground)] border-[var(--border)] shadow-lg rounded-lg overflow-hidden cursor-pointer hover:bg-[var(--card)]/90 transition-all duration-200"
+                  className="relative z-10 border-0 glass glass-hover transition-all duration-200"
                   onClick={() => onExerciseSelect(exercise)}
                 >
                   <CardContent className="p-4">

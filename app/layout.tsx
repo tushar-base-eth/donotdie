@@ -5,7 +5,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { WorkoutProvider } from "@/contexts/workout-context";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
-import { ConditionalBottomNav } from '@/components/navigation/conditional-bottom-nav';
+import { ConditionalBottomNav } from "@/components/navigation/conditional-bottom-nav";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,12 +23,15 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={true} disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={true}
+          disableTransitionOnChange
+        >
           <AuthProvider>
             <WorkoutProvider>
-              <div className="pb-20">
-                {children}
-              </div>
+              <div className="pb-16">{children}</div> {/* Padding matches nav height */}
               <ConditionalBottomNav />
               <Toaster />
             </WorkoutProvider>

@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Moon, Settings, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import type { Database } from "@/types/database";
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isSameDay, isSameWeek, isSameMonth } from 'date-fns';
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isSameDay, isSameWeek, isSameMonth } from "date-fns";
+import { motion } from "framer-motion";
 
 interface VolumeData {
   date: string;
@@ -21,8 +19,7 @@ interface VolumeData {
 export default function DashboardPage() {
   const { state } = useAuth();
   const { user } = state;
-  const isLoading = state.status === 'loading';
-  const { theme, setTheme } = useTheme();
+  const isLoading = state.status === "loading";
   const router = useRouter();
   const [totalVolume, setTotalVolume] = useState<number>(0);
   const [totalWorkouts, setTotalWorkouts] = useState<number>(0);
@@ -66,7 +63,7 @@ export default function DashboardPage() {
       if (timeRange === "7days") {
         const days = eachDayOfInterval({ start: subDays(today, 6), end: today });
         formattedVolumeData = days.map(day => ({
-          date: format(day, 'MMM d'),
+          date: format(day, "MMM d"),
           volume: volumeByDay?.find(d => isSameDay(new Date(d.date), day))?.volume || 0,
         }));
       } else if (timeRange === "8weeks") {
@@ -76,7 +73,7 @@ export default function DashboardPage() {
           const weekVolume = volumeByDay
             ?.filter(d => isSameWeek(new Date(d.date), weekStart, { weekStartsOn: 1 }))
             .reduce((sum, day) => sum + day.volume, 0) || 0;
-          return { date: format(weekStart, 'MMM d'), volume: weekVolume };
+          return { date: format(weekStart, "MMM d"), volume: weekVolume };
         });
       } else {
         const months = eachMonthOfInterval({ start: subDays(today, 364), end: today });
@@ -85,7 +82,7 @@ export default function DashboardPage() {
           const monthVolume = volumeByDay
             ?.filter(d => isSameMonth(new Date(d.date), monthStart))
             .reduce((sum, day) => sum + day.volume, 0) || 0;
-          return { date: format(monthStart, 'MMM yyyy'), volume: monthVolume };
+          return { date: format(monthStart, "MMM yyyy"), volume: monthVolume };
         });
       }
 
@@ -97,10 +94,24 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
-        <div className="p-4 space-y-6 w-full">
-          <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
-          <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+      <div className="min-h-screen bg-background pb-16">
+        <div className="p-4 space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="glass p-4 rounded-lg shadow-md"
+          >
+            <MetricsCards totalWorkouts={totalWorkouts} totalVolume={totalVolume} />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="glass p-4 rounded-lg shadow-md"
+          >
+            <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+          </motion.div>
         </div>
       </div>
     </ProtectedRoute>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
+import { motion } from "framer-motion";
 
 interface WorkoutDetailsProps {
   workout: UIExtendedWorkout | null;
@@ -18,8 +19,9 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
 
   return (
     <Sheet open={!!workout} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg p-0" aria-describedby="workout-details-description">
-        <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10">
+      <SheetContent className="w-full sm:max-w-lg p-0 glass" aria-describedby="workout-details-description">
+        {/* Header with glassmorphism */}
+        <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-xl">Workout Details</SheetTitle>
             <span id="workout-details-description" className="sr-only">
@@ -35,14 +37,20 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
             </Button>
           </div>
         </div>
-        <div className="p-4 space-y-6">
+        {/* Animated content */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="p-4 space-y-6"
+        >
           {workout.exercises.map((exercise, index) => (
             <div key={index} className="space-y-4">
-              <h3 className="text-lg font-semibold">{exercise.exercise.name}</h3>
+              <h3 className="text-lg font-semibold text-primary">{exercise.exercise.name}</h3>
               {exercise.sets.map((set, setIndex) => (
                 <div key={setIndex} className="flex items-center gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-[#4B7BFF]/10 dark:bg-red-500/10 flex items-center justify-center text-[#4B7BFF] dark:text-red-500 font-medium">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
                       {setIndex + 1}
                     </div>
                     <span className="text-muted-foreground">{set.reps} reps</span>
@@ -52,7 +60,7 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
               ))}
             </div>
           ))}
-        </div>
+        </motion.div>
       </SheetContent>
     </Sheet>
   );
