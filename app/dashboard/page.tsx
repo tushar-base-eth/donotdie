@@ -38,7 +38,6 @@ export default function DashboardPage() {
     if (!user) return;
 
     try {
-      // Updated to fetch from "profiles" instead of "users" to match the revised schema
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("total_volume, total_workouts")

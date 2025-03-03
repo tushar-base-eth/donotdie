@@ -8,14 +8,14 @@ import { WorkoutExercises } from "@/components/workout/workout-exercises";
 import { ExerciseSelector } from "@/components/workout/exercise-selector";
 import { ExerciseEditor } from "@/components/workout/exercise-editor";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
-import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout, Set } from "@/types/workouts";
 import { useRouter } from "next/navigation";
-import ProtectedRoute from "@/components/auth/protected-route"; 
+import ProtectedRoute from "@/components/auth/protected-route";
 import { useWorkout } from "@/contexts/workout-context";
 import { toast } from "@/components/ui/use-toast";
+import { saveWorkout } from "@/lib/supabaseUtils"; // Import the utility function
 
 interface WorkoutProps {
   onExercisesChange?: (exercises: UIExtendedWorkout["exercises"]) => void;
@@ -25,7 +25,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const { state, dispatch } = useWorkout();
   const { state: authState } = useAuth();
   const { user } = authState;
-  const isLoading = authState.status === 'loading';
+  const isLoading = authState.status === "loading";
   const router = useRouter();
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -44,18 +44,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         exercise.sets.length > 0 &&
         exercise.sets.every((set) => set.reps > 0 && set.weight_kg > 0)
     );
-
-  const calculateTotalVolume = (exercises: UIExtendedWorkout["exercises"]) => {
-    return exercises.reduce(
-      (total, exercise) =>
-        total +
-        exercise.sets.reduce<number>(
-          (setTotal, set: Set) => setTotal + set.weight_kg * set.reps,
-          0
-        ),
-      0
-    );
-  };
 
   const handleExerciseToggle = (id: string) => {
     dispatch({
@@ -85,14 +73,20 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         ],
         created_at: "",
       }));
-      dispatch({ type: "SET_EXERCISES", exercises: [...state.currentWorkout.exercises, ...newExercises] });
+      dispatch({
+        type: "SET_EXERCISES",
+        exercises: [...state.currentWorkout.exercises, ...newExercises],
+      });
       dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });
       setShowExerciseModal(false);
     });
   };
 
   const handleUpdateSets = (exerciseIndex: number, newSets: Set[]) => {
-    if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
+    if (
+      exerciseIndex < 0 ||
+      exerciseIndex >= state.currentWorkout.exercises.length
+    ) {
       throw new Error(`Invalid exercise index: ${exerciseIndex}`);
     }
     dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: newSets });
@@ -100,58 +94,36 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
-      const newExercises = state.currentWorkout.exercises.filter((_, i) => i !== index);
+      const newExercises = state.currentWorkout.exercises.filter(
+        (_, i) => i !== index
+      );
       dispatch({ type: "SET_EXERCISES", exercises: newExercises });
     });
   };
 
   const handleSaveWorkout = async () => {
     if (!isWorkoutValid || !user || isLoading) return;
-
+  
     startTransition(async () => {
       try {
-        const { data: workoutData, error: workoutError } = await supabase
-          .from("workouts")
-          .insert([{ user_id: user.id }])
-          .select()
-          .single();
-        if (workoutError) throw new Error(workoutError.message);
-
-        const workoutId = workoutData.id;
-
-        const exercisesData = state.currentWorkout.exercises.map((ex) => ({
-          workout_id: workoutId,
-          exercise_id: ex.exercise_id,
-          created_at: new Date().toISOString(),
-        }));
-
-        const { data: workoutExercisesData, error: exercisesError } = await supabase
-          .from("workout_exercises")
-          .insert(exercisesData)
-          .select();
-        if (exercisesError) throw new Error(exercisesError.message);
-
-        const setsData = state.currentWorkout.exercises.flatMap((ex, index) =>
-          ex.sets.map((set) => ({
-            workout_exercise_id: workoutExercisesData[index].id,
-            reps: set.reps,
-            weight_kg: set.weight_kg,
-            created_at: new Date().toISOString(),
-          }))
-        );
-
-        const { error: setsError } = await supabase.from("sets").insert(setsData);
-        if (setsError) throw new Error(setsError.message);
-
-        const totalVolume = calculateTotalVolume(state.currentWorkout.exercises);
-        const { error: statsError } = await supabase.rpc('update_user_stats', {
-          p_user_id: user.id,
-          p_volume: totalVolume,
-          p_date: new Date().toISOString().split('T')[0],
-        });
-        if (statsError) throw new Error(statsError.message);
-
+        const newWorkout = {
+          user_id: user.id,
+          exercises: state.currentWorkout.exercises.map((ex) => ({
+            exercise_id: ex.exercise_id!, // Assert non-null
+            sets: ex.sets.map((set) => ({ reps: set.reps, weight_kg: set.weight_kg })),
+          })),
+        };
+        await saveWorkout(newWorkout);
+  
         dispatch({ type: "SET_EXERCISES", exercises: [] });
+        dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });
+        dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null });
+  
+        toast({
+          title: "Success",
+          description: "Workout saved successfully.",
+          variant: "default",
+        });
       } catch (error: any) {
         console.error("Error saving workout:", error.message);
         toast({
@@ -175,7 +147,9 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         ) : (
           <WorkoutExercises
             exercises={state.currentWorkout.exercises}
-            onExerciseSelect={(exercise) => dispatch({ type: "SET_SELECTED_EXERCISE", exercise })}
+            onExerciseSelect={(exercise) =>
+              dispatch({ type: "SET_SELECTED_EXERCISE", exercise })
+            }
             onExerciseRemove={handleRemoveExercise}
           />
         )}
@@ -218,10 +192,14 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         {state.currentWorkout.selectedExercise && (
           <ExerciseEditor
             exercise={state.currentWorkout.selectedExercise}
-            onClose={() => dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null })}
+            onClose={() =>
+              dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null })
+            }
             onUpdateSets={handleUpdateSets}
             exerciseIndex={state.currentWorkout.exercises.findIndex(
-              (ex) => ex.instance_id === state.currentWorkout.selectedExercise?.instance_id
+              (ex) =>
+                ex.instance_id ===
+                state.currentWorkout.selectedExercise?.instance_id
             )}
           />
         )}

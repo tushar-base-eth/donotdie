@@ -4,16 +4,13 @@ import { useState, useEffect, useMemo } from "react";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
-import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
-import ProtectedRoute from "@/components/auth/protected-route"; 
+import ProtectedRoute from "@/components/auth/protected-route";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import type { UIExtendedWorkout } from "@/types/workouts";
-import { parseISO } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
-import { WorkoutExercise } from "@/types/workouts";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { fetchWorkouts, deleteWorkout } from "@/lib/supabaseUtils";
 
 function HistoryPage() {
   const { state } = useAuth();
@@ -25,70 +22,15 @@ function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) fetchWorkouts();
+    if (user) fetchWorkoutsData();
   }, [user]);
 
-  const fetchWorkouts = async () => {
+  const fetchWorkoutsData = async () => {
     if (!user) return;
     setIsRefreshing(true);
     setError(null);
     try {
-      const { data, error } = await supabase
-        .from("workouts")
-        .select(`
-          id, user_id, created_at,
-          workout_exercises!fk_workout (
-            id, exercise_id, created_at,
-            exercise:available_exercises(*),
-            sets!fk_workout_exercise (*)
-          )
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw new Error(error.message);
-
-      const formattedWorkouts: UIExtendedWorkout[] = data
-      .filter((rawWorkout) => rawWorkout.created_at !== null)
-      .map((rawWorkout) => {
-        const utcDate = parseISO(rawWorkout.created_at as string);
-        const localDate = formatInTimeZone(utcDate, "UTC", "yyyy-MM-dd");
-        const localTime = formatInTimeZone(utcDate, "UTC", "hh:mm a");
-
-        const exercises = Array.isArray(rawWorkout.workout_exercises)
-          ? rawWorkout.workout_exercises.map((we) => ({
-              id: we.id,
-              workout_id: rawWorkout.id,
-              exercise_id: we.exercise_id ?? "",
-              exercise: {
-                id: we.exercise?.id ?? "",
-                name: we.exercise?.name ?? "",
-                primary_muscle_group: we.exercise?.primary_muscle_group ?? "",
-                secondary_muscle_group: we.exercise?.secondary_muscle_group ?? null,
-              },
-              sets: Array.isArray(we.sets) ? we.sets : [],
-              created_at: we.created_at ?? "",
-            }))
-          : [];
-
-        return {
-          id: rawWorkout.id,
-          user_id: rawWorkout.user_id ?? "",
-          created_at: rawWorkout.created_at,
-          exercises,
-          utcDate: localDate,
-          date: localDate,
-          time: localTime,
-          totalVolume: exercises.reduce(
-            (sum: number, ex: WorkoutExercise) => sum + ex.sets.reduce(
-              (setSum: number, set: { reps: number; weight_kg: number }) => setSum + set.reps * set.weight_kg,
-              0
-            ),
-            0
-          ),
-        };
-      });
-
+      const formattedWorkouts = await fetchWorkouts(user.id);
       setWorkouts(formattedWorkouts);
     } catch (err) {
       console.error("Error fetching workouts:", err);
@@ -108,18 +50,7 @@ function HistoryPage() {
 
   const handleDeleteWorkout = async (workoutId: string) => {
     try {
-      const workout = workouts.find((w) => w.id === workoutId);
-      if (!workout) return;
-
-      const { error: exercisesError } = await supabase
-        .from("workout_exercises")
-        .delete()
-        .eq("workout_id", workoutId);
-      if (exercisesError) throw exercisesError;
-
-      const { error: workoutError } = await supabase.from("workouts").delete().eq("id", workoutId);
-      if (workoutError) throw workoutError;
-
+      await deleteWorkout(workoutId);
       setWorkouts(workouts.filter((w) => w.id !== workoutId));
     } catch (err) {
       console.error("Error deleting workout:", err);
@@ -129,7 +60,7 @@ function HistoryPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchWorkouts();
+    await fetchWorkoutsData();
     setIsRefreshing(false);
   };
 

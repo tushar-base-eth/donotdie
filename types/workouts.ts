@@ -41,3 +41,11 @@ export interface UIExtendedWorkout extends Workout {
   totalVolume: number;
   utcDate: string;
 }
+
+export interface NewWorkout {
+  user_id: string;
+  exercises: {
+    exercise_id: string;
+    sets: { reps: number; weight_kg: number }[];
+  }[];
+}
