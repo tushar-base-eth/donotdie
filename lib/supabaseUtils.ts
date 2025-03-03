@@ -3,6 +3,11 @@ import type { UIExtendedWorkout, NewWorkout, WorkoutExercise, Set } from "@/type
 import { parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 
+/**
+ * Fetches all workouts for a user, including exercises and sets, formatted for UI display.
+ * @param userId - The ID of the user whose workouts to fetch.
+ * @returns A promise resolving to an array of formatted workouts.
+ */
 export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]> {
   const { data, error } = await supabase
     .from("workouts")
@@ -54,10 +59,12 @@ export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]
         date: localDate,
         time: localTime,
         totalVolume: exercises.reduce(
-          (sum: number, ex: WorkoutExercise) => sum + ex.sets.reduce(
-            (setSum: number, set: { reps: number; weight_kg: number }) => setSum + set.reps * set.weight_kg,
-            0
-          ),
+          (sum: number, ex: WorkoutExercise) =>
+            sum +
+            ex.sets.reduce(
+              (setSum: number, set: { reps: number; weight_kg: number }) => setSum + set.reps * set.weight_kg,
+              0
+            ),
           0
         ),
       };
@@ -66,9 +73,14 @@ export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]
   return formattedWorkouts;
 }
 
+/**
+ * Saves a new workout, including its exercises and sets. Stats updates are handled by database triggers.
+ * @param workout - The workout data to save.
+ * @returns A promise that resolves when the workout is saved.
+ */
 export async function saveWorkout(workout: NewWorkout): Promise<void> {
   try {
-    // Insert workout
+    // Insert the workout
     const { data: workoutData, error: workoutError } = await supabase
       .from("workouts")
       .insert({ user_id: workout.user_id })
@@ -79,7 +91,7 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
 
     const workoutId = workoutData.id;
 
-    // Insert workout_exercises and sets
+    // Insert workout_exercises and their sets
     for (const ex of workout.exercises) {
       const { data: weData, error: weError } = await supabase
         .from("workout_exercises")
@@ -101,35 +113,23 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
 
       if (setsError) throw setsError;
     }
-
-    // Calculate total volume
-    const totalVolume = workout.exercises.reduce(
-      (sum: number, ex: { exercise_id: string; sets: { reps: number; weight_kg: number }[] }) => 
-        sum + ex.sets.reduce(
-          (setSum: number, set: { reps: number; weight_kg: number }) => setSum + set.reps * set.weight_kg,
-          0
-        ),
-      0
-    );
-
-    // Update user stats
-    const { error: statsError } = await supabase.rpc("update_user_stats", {
-      p_user_id: workout.user_id,
-      p_volume: totalVolume,
-    });
-
-    if (statsError) throw statsError;
+    // Note: No manual volume calculation or stats update needed here;
+    // triggers on the sets and workouts tables handle this automatically.
   } catch (error) {
     console.error("Error saving workout:", error);
     throw error;
   }
 }
 
+/**
+ * Deletes a workout by ID. Stats updates are handled by database triggers.
+ * @param workoutId - The ID of the workout to delete.
+ * @returns A promise that resolves when the workout is deleted.
+ */
 export async function deleteWorkout(workoutId: string): Promise<void> {
-  const { error } = await supabase
-    .from("workouts")
-    .delete()
-    .eq("id", workoutId);
+  const { error } = await supabase.from("workouts").delete().eq("id", workoutId);
 
   if (error) throw error;
+  // Note: Cascading deletes remove workout_exercises and sets,
+  // triggering volume adjustments via the sets table triggers.
 }
