@@ -8,16 +8,19 @@ export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]
     .from("workouts")
     .select(`
       id, user_id, created_at,
-      workout_exercises!fk_workout (
+      workout_exercises (
         id, exercise_id, created_at,
         exercise:available_exercises(*),
-        sets!fk_workout_exercise (*)
+        sets (*)
       )
     `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("Supabase error:", error);
+    throw new Error(error.message);
+  }
 
   const formattedWorkouts: UIExtendedWorkout[] = data
     .filter((rawWorkout) => rawWorkout.created_at !== null)
@@ -26,7 +29,7 @@ export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]
       const localDate = formatInTimeZone(utcDate, "UTC", "yyyy-MM-dd");
       const localTime = formatInTimeZone(utcDate, "UTC", "hh:mm a");
 
-      const exercises = Array.isArray(rawWorkout.workout_exercises)
+      const exercises = rawWorkout.workout_exercises
         ? rawWorkout.workout_exercises.map((we) => ({
             id: we.id,
             workout_id: rawWorkout.id,
@@ -37,7 +40,7 @@ export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]
               primary_muscle_group: we.exercise?.primary_muscle_group ?? "",
               secondary_muscle_group: we.exercise?.secondary_muscle_group ?? null,
             },
-            sets: Array.isArray(we.sets) ? we.sets.map((set: Set) => ({ reps: set.reps, weight_kg: set.weight_kg })) : [],
+            sets: we.sets ? we.sets.map((set: Set) => ({ reps: set.reps, weight_kg: set.weight_kg })) : [],
             created_at: we.created_at ?? "",
           }))
         : [];
