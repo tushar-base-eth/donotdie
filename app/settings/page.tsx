@@ -29,7 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
 import type { UserProfile } from "@/contexts/auth-context";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import ProtectedRoute from "@/components/auth/protected-route"; 
 import { motion } from "framer-motion";
 
 // Schema for form validation

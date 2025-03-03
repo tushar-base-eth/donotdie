@@ -6,7 +6,7 @@ import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import ProtectedRoute from "@/components/auth/protected-route"; 
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { parseISO } from "date-fns";

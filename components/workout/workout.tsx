@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout, Set } from "@/types/workouts";
 import { useRouter } from "next/navigation";
-import { ProtectedRoute } from '@/components/auth/protected-route';
+import ProtectedRoute from "@/components/auth/protected-route"; 
 import { useWorkout } from "@/contexts/workout-context";
 import { toast } from "@/components/ui/use-toast";
 

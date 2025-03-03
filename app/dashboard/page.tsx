@@ -7,7 +7,7 @@ import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/auth-context";
 import type { Database } from "@/types/database";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import ProtectedRoute from "@/components/auth/protected-route"; 
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isSameDay, isSameWeek, isSameMonth } from "date-fns";
 import { motion } from "framer-motion";
 
