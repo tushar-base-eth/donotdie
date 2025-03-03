@@ -87,7 +87,10 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
       .select("id")
       .single();
 
-    if (workoutError) throw workoutError;
+    if (workoutError) {
+      console.error("Error inserting workout:", workoutError);
+      throw workoutError;
+    }
 
     const workoutId = workoutData.id;
 
@@ -99,7 +102,10 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
         .select("id")
         .single();
 
-      if (weError) throw weError;
+      if (weError) {
+        console.error("Error inserting workout_exercise:", weError);
+        throw weError;
+      }
 
       const weId = weData.id;
 
@@ -111,7 +117,10 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
 
       const { error: setsError } = await supabase.from("sets").insert(setsToInsert);
 
-      if (setsError) throw setsError;
+      if (setsError) {
+        console.error("Error inserting sets:", setsError);
+        throw setsError;
+      }
     }
     // Note: No manual volume calculation or stats update needed here;
     // triggers on the sets and workouts tables handle this automatically.

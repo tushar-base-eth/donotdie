@@ -63,7 +63,7 @@ CREATE TABLE public.profiles (
 -- Create workouts table to store workout instances
 CREATE TABLE public.workouts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -78,15 +78,15 @@ CREATE TABLE public.available_exercises (
 -- Create workout_exercises table to link workouts to exercises
 CREATE TABLE public.workout_exercises (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  workout_id UUID REFERENCES public.workouts(id) ON DELETE CASCADE,
-  exercise_id UUID REFERENCES public.available_exercises(id),
+  workout_id UUID NOT NULL REFERENCES public.workouts(id) ON DELETE CASCADE,
+  exercise_id UUID NOT NULL REFERENCES public.available_exercises(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create sets table to store individual sets for exercises
 CREATE TABLE public.sets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  workout_exercise_id UUID REFERENCES public.workout_exercises(id) ON DELETE CASCADE,
+  workout_exercise_id UUID NOT NULL REFERENCES public.workout_exercises(id) ON DELETE CASCADE,
   reps INTEGER NOT NULL,
   weight_kg FLOAT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -190,16 +190,9 @@ CREATE POLICY "Users can view their own sets"
     )
   );
 
-CREATE POLICY "Users can create sets for their own workout exercises"
-  ON public.sets FOR INSERT TO authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.workout_exercises
-      JOIN public.workouts ON public.workouts.id = public.workout_exercises.workout_id
-      WHERE public.workout_exercises.id = public.sets.workout_exercise_id
-      AND public.workouts.user_id = auth.uid()
-    )
-  );
+CREATE POLICY "Authenticated users can insert sets" ON public.sets
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = (SELECT user_id FROM public.workouts WHERE id = (SELECT workout_id FROM public.workout_exercises WHERE id = workout_exercise_id)));
 
 -- RLS policies for daily_volume table
 CREATE POLICY "Users can view their own daily volume"
@@ -221,31 +214,36 @@ CREATE OR REPLACE FUNCTION update_volume_on_set_insert()
 RETURNS TRIGGER AS $$
 DECLARE
     workout_id UUID;
-    user_id UUID;
+    func_user_id UUID;  -- Renamed to avoid ambiguity
     workout_date DATE;
     set_volume NUMERIC;
 BEGIN
+    -- Check for null workout_exercise_id
+    IF NEW.workout_exercise_id IS NULL THEN
+        RAISE EXCEPTION 'workout_exercise_id cannot be null';
+    END IF;
+
     -- Get workout_id from workout_exercises
     SELECT we.workout_id INTO workout_id
     FROM public.workout_exercises we
     WHERE we.id = NEW.workout_exercise_id;
 
     -- Get user_id and date from workouts
-    SELECT w.user_id, w.created_at::DATE INTO user_id, workout_date
+    SELECT w.user_id, w.created_at::DATE INTO func_user_id, workout_date
     FROM public.workouts w
     WHERE w.id = workout_id;
 
-    -- Calculate volume for this set (reps * weight_kg)
+    -- Calculate volume for this set
     set_volume := NEW.reps * NEW.weight_kg;
 
     -- Update total_volume in profiles
     UPDATE public.profiles
     SET total_volume = total_volume + set_volume
-    WHERE id = user_id;
+    WHERE id = func_user_id;
 
     -- Update or insert daily_volume
     INSERT INTO public.daily_volume (user_id, date, volume)
-    VALUES (user_id, workout_date, set_volume)
+    VALUES (func_user_id, workout_date, set_volume)
     ON CONFLICT (user_id, date)
     DO UPDATE SET volume = public.daily_volume.volume + set_volume;
 
@@ -258,7 +256,7 @@ CREATE OR REPLACE FUNCTION update_volume_on_set_delete()
 RETURNS TRIGGER AS $$
 DECLARE
     workout_id UUID;
-    user_id UUID;
+    func_user_id UUID;  -- Renamed to avoid ambiguity
     workout_date DATE;
     set_volume NUMERIC;
 BEGIN
@@ -268,7 +266,7 @@ BEGIN
     WHERE we.id = OLD.workout_exercise_id;
 
     -- Get user_id and date from workouts
-    SELECT w.user_id, w.created_at::DATE INTO user_id, workout_date
+    SELECT w.user_id, w.created_at::DATE INTO func_user_id, workout_date
     FROM public.workouts w
     WHERE w.id = workout_id;
 
@@ -278,12 +276,12 @@ BEGIN
     -- Update total_volume in profiles
     UPDATE public.profiles
     SET total_volume = total_volume - set_volume
-    WHERE id = user_id;
+    WHERE id = func_user_id;
 
     -- Update daily_volume
     UPDATE public.daily_volume
     SET volume = volume - set_volume
-    WHERE user_id = user_id AND date = workout_date;
+    WHERE user_id = func_user_id AND date = workout_date;
 
     RETURN OLD;
 END;
@@ -294,7 +292,7 @@ CREATE OR REPLACE FUNCTION update_volume_on_set_update()
 RETURNS TRIGGER AS $$
 DECLARE
     workout_id UUID;
-    user_id UUID;
+    func_user_id UUID;  -- Renamed to avoid ambiguity
     workout_date DATE;
     old_volume NUMERIC;
     new_volume NUMERIC;
@@ -311,7 +309,7 @@ BEGIN
     WHERE we.id = NEW.workout_exercise_id;
 
     -- Get user_id and date from workouts
-    SELECT w.user_id, w.created_at::DATE INTO user_id, workout_date
+    SELECT w.user_id, w.created_at::DATE INTO func_user_id, workout_date
     FROM public.workouts w
     WHERE w.id = workout_id;
 
@@ -323,12 +321,12 @@ BEGIN
     -- Update total_volume in profiles
     UPDATE public.profiles
     SET total_volume = total_volume + volume_diff
-    WHERE id = user_id;
+    WHERE id = func_user_id;
 
     -- Update daily_volume
     UPDATE public.daily_volume
     SET volume = volume + volume_diff
-    WHERE user_id = user_id AND date = workout_date;
+    WHERE user_id = func_user_id AND date = workout_date;
 
     RETURN NEW;
 END;
