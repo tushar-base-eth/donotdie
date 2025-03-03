@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // Updated import
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -46,13 +46,12 @@ type FormSchema = LoginSchema & Partial<SignupSchema>;
 export default function AuthPage() {
   const { state, login, signup } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams(); // Added to get query params
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Add new states for email confirmation
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
-  const [resendEmail, setResendEmail] = useState('');
+  const [resendEmail, setResendEmail] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   const form = useForm<FormSchema>({
@@ -66,12 +65,16 @@ export default function AuthPage() {
   });
 
   useEffect(() => {
-    if (state.status === 'authenticated') {
-      router.replace('/');
+    if (state.status === "authenticated") {
+      router.replace("/");
     }
-  }, [state.status, router]);
+    const error = searchParams.get("error"); // Check for error param
+    if (error) {
+      setMessage({ text: `Authentication failed: ${error}`, isError: true });
+    }
+  }, [state.status, router, searchParams]);
 
-  if (state.status === 'loading' || state.status === 'authenticated') {
+  if (state.status === "loading" || state.status === "authenticated") {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -90,11 +93,11 @@ export default function AuthPage() {
         await login(data.email, data.password);
       }
     } catch (error: any) {
-      if (error.message.includes('Email not confirmed')) {
+      if (error.message.includes("Email not confirmed")) {
         setShowResendConfirmation(true);
         setResendEmail(data.email);
       } else {
-        setMessage({ text: error.message || 'An error occurred', isError: true });
+        setMessage({ text: error.message || "An error occurred", isError: true });
       }
     } finally {
       setIsLoading(false);
@@ -106,13 +109,16 @@ export default function AuthPage() {
     setMessage(null);
     try {
       const { error } = await supabase.auth.resend({
-        type: 'signup',
+        type: "signup",
         email: resendEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
       if (error) throw error;
-      setMessage({ text: 'Confirmation email resent. Please check your email.', isError: false });
+      setMessage({ text: "Confirmation email resent. Please check your email.", isError: false });
     } catch (error: any) {
-      setMessage({ text: error.message || 'Failed to resend confirmation email', isError: true });
+      setMessage({ text: error.message || "Failed to resend confirmation email", isError: true });
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +128,7 @@ export default function AuthPage() {
     return (
       <div className="text-center p-8">
         <h2 className="text-2xl font-bold mb-4">Check your email</h2>
-        <p className="mb-4">We've sent a confirmation email to {form.getValues('email')}.</p>
+        <p className="mb-4">We've sent a confirmation email to {form.getValues("email")}.</p>
         <p className="mb-4">Please click the link in that email to confirm your account.</p>
         <Button onClick={() => { setShowConfirmationMessage(false); setIsLogin(true); setMessage(null); }}>
           Back to Login
@@ -130,19 +136,19 @@ export default function AuthPage() {
       </div>
     );
   }
-  
+
   if (showResendConfirmation) {
     return (
       <div className="text-center p-8">
         <h2 className="text-2xl font-bold mb-4">Email not confirmed</h2>
         <p className="mb-4">Please confirm your email before logging in.</p>
         {message && (
-          <p className={`mb-4 ${message.isError ? 'text-red-600' : 'text-green-600'}`}>
+          <p className={`mb-4 ${message.isError ? "text-red-600" : "text-green-600"}`}>
             {message.text}
           </p>
         )}
         <Button onClick={handleResendConfirmation} disabled={isLoading}>
-          {isLoading ? 'Sending...' : 'Resend Confirmation Email'}
+          {isLoading ? "Sending..." : "Resend Confirmation Email"}
         </Button>
         <Button variant="outline" onClick={() => { setShowResendConfirmation(false); setMessage(null); }} className="mt-2">
           Back to Login
@@ -167,11 +173,7 @@ export default function AuthPage() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-6"
-                >
-                  {/* Email and Password fields */}
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="email"
@@ -201,9 +203,7 @@ export default function AuthPage() {
                         <FormControl>
                           <Input
                             type="password"
-                            autoComplete={
-                              isLogin ? "current-password" : "new-password"
-                            }
+                            autoComplete={isLogin ? "current-password" : "new-password"}
                             {...field}
                           />
                         </FormControl>
@@ -211,8 +211,6 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
-
-                  {/* Signup-only fields */}
                   {!isLogin && (
                     <>
                       <FormField
@@ -234,10 +232,7 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Unit Preference</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select units" />
@@ -254,14 +249,8 @@ export default function AuthPage() {
                       />
                     </>
                   )}
-
-                  {/* Form actions */}
                   <div className="space-y-4">
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isLoading}
-                    >
+                    <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Loading..." : isLogin ? "Login" : "Sign Up"}
                     </Button>
                     <Button
@@ -274,20 +263,16 @@ export default function AuthPage() {
                       }}
                       disabled={isLoading}
                     >
-                      {isLogin
-                        ? "Create an account"
-                        : "Already have an account?"}
+                      {isLogin ? "Create an account" : "Already have an account?"}
                     </Button>
                   </div>
-
-                  {/* Form error message */}
-                  {form.formState.errors.root && (
+                  {message && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-sm font-medium text-destructive text-center"
+                      className={`text-sm font-medium text-center ${message.isError ? "text-destructive" : "text-green-600"}`}
                     >
-                      {form.formState.errors.root.message}
+                      {message.text}
                     </motion.div>
                   )}
                 </form>

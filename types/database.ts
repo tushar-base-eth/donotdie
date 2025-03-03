@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       available_exercises: {
@@ -79,32 +54,56 @@ export type Database = {
             foreignKeyName: "daily_volume_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      rate_limits: {
+      profiles: {
         Row: {
-          endpoint: string
+          body_fat_percentage: number | null
+          created_at: string | null
+          date_of_birth: string | null
+          gender: string | null
+          height_cm: number | null
           id: string
-          ip_address: string
-          requests: number | null
-          window_start: string | null
+          name: string
+          theme_preference: string | null
+          total_volume: number | null
+          total_workouts: number | null
+          unit_preference: string | null
+          updated_at: string | null
+          weight_kg: number | null
         }
         Insert: {
-          endpoint: string
-          id?: string
-          ip_address: string
-          requests?: number | null
-          window_start?: string | null
+          body_fat_percentage?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          gender?: string | null
+          height_cm?: number | null
+          id: string
+          name: string
+          theme_preference?: string | null
+          total_volume?: number | null
+          total_workouts?: number | null
+          unit_preference?: string | null
+          updated_at?: string | null
+          weight_kg?: number | null
         }
         Update: {
-          endpoint?: string
+          body_fat_percentage?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          gender?: string | null
+          height_cm?: number | null
           id?: string
-          ip_address?: string
-          requests?: number | null
-          window_start?: string | null
+          name?: string
+          theme_preference?: string | null
+          total_volume?: number | null
+          total_workouts?: number | null
+          unit_preference?: string | null
+          updated_at?: string | null
+          weight_kg?: number | null
         }
         Relationships: []
       }
@@ -139,57 +138,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      users: {
-        Row: {
-          body_fat_percentage: number | null
-          created_at: string | null
-          date_of_birth: string
-          email: string
-          gender: string
-          height_cm: number
-          id: string
-          name: string
-          theme_preference: string | null
-          total_volume: number | null
-          total_workouts: number | null
-          unit_preference: string | null
-          updated_at: string | null
-          weight_kg: number
-        }
-        Insert: {
-          body_fat_percentage?: number | null
-          created_at?: string | null
-          date_of_birth: string
-          email: string
-          gender: string
-          height_cm: number
-          id?: string
-          name: string
-          theme_preference?: string | null
-          total_volume?: number | null
-          total_workouts?: number | null
-          unit_preference?: string | null
-          updated_at?: string | null
-          weight_kg: number
-        }
-        Update: {
-          body_fat_percentage?: number | null
-          created_at?: string | null
-          date_of_birth?: string
-          email?: string
-          gender?: string
-          height_cm?: number
-          id?: string
-          name?: string
-          theme_preference?: string | null
-          total_volume?: number | null
-          total_workouts?: number | null
-          unit_preference?: string | null
-          updated_at?: string | null
-          weight_kg?: number
-        }
-        Relationships: []
       }
       workout_exercises: {
         Row: {
@@ -248,7 +196,7 @@ export type Database = {
             foreignKeyName: "workouts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -258,30 +206,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_rate_limit: {
-        Args: {
-          p_ip_address: string
-          p_endpoint: string
-          p_max_requests: number
-          p_window_minutes: number
-        }
-        Returns: boolean
-      }
-      create_user_with_profile: {
-        Args: {
-          user_email: string
-          user_password: string
-          user_name: string
-          user_gender: string
-          user_dob: string
-          user_weight: number
-          user_height: number
-          user_bf: number
-          user_unit: string
-          user_theme: string
-        }
-        Returns: string
-      }
       get_total_volume: {
         Args: {
           p_user_id: string
@@ -302,15 +226,6 @@ export type Database = {
         Args: {
           p_user_id: string
           p_volume: number
-          p_date: string
-        }
-        Returns: undefined
-      }
-      update_user_stats_on_delete: {
-        Args: {
-          p_user_id: string
-          p_volume: number
-          p_date: string
         }
         Returns: undefined
       }

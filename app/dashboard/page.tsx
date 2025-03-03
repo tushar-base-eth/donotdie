@@ -38,16 +38,17 @@ export default function DashboardPage() {
     if (!user) return;
 
     try {
-      const { data: userData, error: userError } = await supabase
-        .from("users")
+      // Updated to fetch from "profiles" instead of "users" to match the revised schema
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
         .select("total_volume, total_workouts")
         .eq("id", user.id)
         .single();
 
-      if (userError) throw new Error(userError.message);
+      if (profileError) throw new Error(profileError.message);
 
-      setTotalVolume(userData.total_volume ?? 0);
-      setTotalWorkouts(userData.total_workouts ?? 0);
+      setTotalVolume(profileData.total_volume ?? 0);
+      setTotalWorkouts(profileData.total_workouts ?? 0);
 
       const daysToFetch = timeRange === "7days" ? 7 : timeRange === "8weeks" ? 56 : 365;
       const { data: volumeByDay, error: volumeError } = await supabase.rpc(
