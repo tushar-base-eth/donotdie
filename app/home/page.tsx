@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell } from "lucide-react";
 import Workout from "@/components/workout/workout";
-import ProtectedRoute from "@/components/auth/protected-route"; // Change from named to default import
+import ProtectedRoute from "@/components/auth/protected-route";
 import { useWorkout } from "@/contexts/workout-context";
 
 export default function HomePage() {

@@ -3,21 +3,24 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { ReactNode } from "react";
 
-export default function ProtectedRoute({ children }: { children: ReactNode }) {
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { state } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (state.status === "unauthenticated") {
-      router.push("/auth");
+      router.replace("/auth");
     }
   }, [state.status, router]);
 
   if (state.status === "loading") {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
-  return state.status === "authenticated" ? children : null;
+  if (state.status === "unauthenticated") {
+    return null; // Redirect happens in useEffect
+  }
+
+  return <>{children}</>;
 }

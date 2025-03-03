@@ -28,11 +28,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
-import type { UserProfile } from "@/contexts/auth-context";
-import ProtectedRoute from "@/components/auth/protected-route"; 
+import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 
-// Schema for form validation
+// Form validation schema
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   gender: z.enum(["Male", "Female", "Other"]).optional(),
@@ -43,27 +42,24 @@ const settingsSchema = z.object({
   bodyFat: z.number().min(0).max(100).optional(),
 });
 
-function SettingsPage() {
+export default function SettingsPage() {
   const { state, logout, updateProfile } = useAuth();
   const { user } = state;
-  const isLoading = state.status === "loading";
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
-  const [feetPart, setFeetPart] = useState(0);
-  const [inchesPart, setInchesPart] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: user?.name || "",
-      gender: (user?.gender as "Male" | "Female" | "Other") || "Male",
+      gender: user?.gender || undefined,
       dateOfBirth: user?.dateOfBirth || "",
       unitPreference: user?.unitPreference || "metric",
-      weight: user?.weight || 70,
-      height: user?.height || 170,
-      bodyFat: user?.bodyFat || 0,
+      weight: user?.weight || undefined,
+      height: user?.height || undefined,
+      bodyFat: user?.bodyFat || undefined,
     },
   });
 
@@ -72,8 +68,8 @@ function SettingsPage() {
 
     setIsSaving(true);
     try {
-      await updateProfile(data as UserProfile);
-      form.reset(data); // Reset form state to mark it as unchanged
+      await updateProfile(data);
+      form.reset(data);
     } catch (error) {
       console.error("Error saving profile:", error);
     } finally {
@@ -82,44 +78,23 @@ function SettingsPage() {
   };
 
   useEffect(() => {
-    if (!user && !isLoading) {
-      router.push("/auth");
-    } else if (user) {
-      setIsNewProfile(!user.isProfileComplete);
-
-      const height = user.height || 170;
-      const { feet, inches } = cmToFeetInches(height);
-      setFeetPart(feet);
-      setInchesPart(inches);
-
-      const resetValues = {
-        name: user.name || "New User",
-        gender: (user.gender as "Male" | "Female" | "Other") || "Other",
+    if (user) {
+      setIsNewProfile(user.name === "New User");
+      form.reset({
+        name: user.name,
+        gender: user.gender || undefined,
         dateOfBirth: user.dateOfBirth || "",
-        unitPreference: user.unitPreference || "metric",
-        weight: user.weight || 70,
-        height: user.height || 170,
-        bodyFat: user.bodyFat || 0,
-      };
-
-      form.reset(resetValues);
+        unitPreference: user.unitPreference,
+        weight: user.weight || undefined,
+        height: user.height || undefined,
+        bodyFat: user.bodyFat || undefined,
+      });
     }
-  }, [user, isLoading, form, router]);
+  }, [user, form]);
 
   const handleLogout = () => {
     logout();
   };
-
-  const cmToFeetInches = (cm: number) => {
-    const totalInches = cm / 2.54;
-    const feet = Math.floor(totalInches / 12);
-    const inches = Math.round(totalInches % 12);
-    return { feet, inches };
-  };
-
-  if (isLoading) {
-    return <div className="min-h-screen bg-background pb-16">Loading...</div>;
-  }
 
   return (
     <ProtectedRoute>
@@ -134,11 +109,7 @@ function SettingsPage() {
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {theme === "dark" ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
               <Button
                 variant="ghost"
@@ -163,7 +134,7 @@ function SettingsPage() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Profile Setup</AlertTitle>
                 <AlertDescription>
-                  Please complete your profile information to get the most out of the app.
+                  Please complete your profile information to get started.
                 </AlertDescription>
               </Alert>
             </motion.div>
@@ -194,7 +165,12 @@ function SettingsPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input value={user?.email || ""} readOnly disabled className="rounded-xl" />
+                        <Input
+                          value={user?.email || ""}
+                          readOnly
+                          disabled
+                          className="rounded-xl"
+                        />
                       </FormControl>
                     </FormItem>
                     <FormField
@@ -207,11 +183,7 @@ function SettingsPage() {
                             <FormControl>
                               <SelectTrigger className="rounded-xl">
                                 <SelectValue>
-                                  {field.value === "metric"
-                                    ? "Metric (kg/cm)"
-                                    : field.value === "imperial"
-                                    ? "Imperial (lb/ft-in)"
-                                    : "Select units"}
+                                  {field.value === "metric" ? "Metric (kg/cm)" : "Imperial (lb/ft-in)"}
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
@@ -224,15 +196,13 @@ function SettingsPage() {
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-left">
-                      <Button
-                        type="submit"
-                        disabled={isSaving || !form.formState.isDirty}
-                        className="rounded-xl"
-                      >
-                        {isSaving ? "Saving..." : "Save"}
-                      </Button>
-                    </div>
+                    <Button
+                      type="submit"
+                      disabled={isSaving || !form.formState.isDirty}
+                      className="rounded-xl"
+                    >
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
                   </form>
                 </Form>
               </CardContent>
@@ -243,5 +213,3 @@ function SettingsPage() {
     </ProtectedRoute>
   );
 }
-
-export default SettingsPage;
