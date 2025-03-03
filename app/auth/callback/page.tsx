@@ -13,50 +13,104 @@ export default function Callback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Extract tokens from the URL hash
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
-        const type = params.get("type");
+        // Get the current URL
+        const url = window.location.href;
+        setStatus("Verifying email confirmation...");
 
-        // Validate the parameters
-        if (!accessToken || !refreshToken || type !== "signup") {
-          throw new Error("Invalid or missing confirmation link parameters");
-        }
-
-        // Set the session with Supabase
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+        // Exchange code for session
+        const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(url);
 
         if (sessionError) {
-          throw new Error(`Session error: ${sessionError.message}`);
+          console.error("Session error:", sessionError);
+          throw new Error(`Authentication failed: ${sessionError.message}`);
         }
 
-        setStatus("Confirmation successful! You will be redirected to home shortly.");
+        if (!data.session || !data.user) {
+          throw new Error("Failed to establish session");
+        }
+
+        setStatus("Email confirmed! Creating profile...");
+        
+        // Check if profile exists
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Profile check error:", profileError);
+        }
+
+        // If profile doesn't exist, create one
+        if (!profileData) {
+          const metadata = data.user.user_metadata || {};
+          
+          // Create a profile using the user's metadata
+          const { error: createError } = await supabase
+            .from("profiles")
+            .insert({
+              id: data.user.id,
+              name: metadata.name || "New User",
+              unit_preference: metadata.unit_preference || "metric",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (createError) {
+            console.error("Profile creation error:", createError);
+            // If error is because profile already exists (from trigger), continue
+            if (!createError.message.includes("duplicate key")) {
+              throw new Error(`Failed to create profile: ${createError.message}`);
+            }
+          }
+        }
+
+        setStatus("Success! Redirecting to home...");
+        
+        // Add a delay to show the success message
+        setTimeout(() => {
+          router.push("/home");
+        }, 1500);
       } catch (err: any) {
-        console.error("Callback error:", err.message);
-        setError(err.message);
-        setStatus("An error occurred during confirmation.");
+        console.error("Callback error:", err);
+        setError(err.message || "An unknown error occurred");
+        setStatus("Authentication failed");
       }
     };
 
     handleCallback();
   }, [router]);
 
-  // Render error state if something goes wrong
-  if (error) {
-    return (
-      <div className="container max-w-lg p-4 text-center">
-        <h2 className="text-2xl font-bold mb-4">Confirmation Error</h2>
-        <p className="mb-4">{error}</p>
-        <Button onClick={() => router.push("/auth")}>Back to Login</Button>
+  return (
+    <div className="container flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="w-full max-w-md p-6 space-y-6 bg-white rounded-lg shadow-lg dark:bg-gray-800">
+        <h2 className="text-2xl font-bold text-center">Email Confirmation</h2>
+        
+        {error ? (
+          <>
+            <div className="p-4 text-red-700 bg-red-100 rounded-md dark:bg-red-900/30 dark:text-red-400">
+              <p>{error}</p>
+            </div>
+            <div className="flex justify-center">
+              <Button onClick={() => router.push("/auth")}>
+                Back to Login
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <p className="text-center">{status}</p>
+              {status.includes("Redirecting") || status.includes("Processing") || status.includes("Verifying") ? (
+                <div className="flex justify-center mt-4">
+                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : null}
+            </div>
+          </>
+        )}
       </div>
-    );
-  }
-
-  // Default rendering during processing or success
-  return <div className="container max-w-lg p-4 text-center">{status}</div>;
+    </div>
+  );
 }

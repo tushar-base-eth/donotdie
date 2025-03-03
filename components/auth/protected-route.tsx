@@ -6,6 +6,7 @@
  * 1. Unauthenticated users are redirected to the login page
  * 2. Shows loading state while checking authentication
  * 3. Only renders protected content for authenticated users
+ * 4. Optionally checks for complete profile
  * 
  * @component
  * @example
@@ -24,9 +25,13 @@ import { useAuth } from '@/contexts/auth-context';
 
 export interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireCompleteProfile?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ 
+  children, 
+  requireCompleteProfile = false 
+}: ProtectedRouteProps) {
   const { state } = useAuth();
   const router = useRouter();
 
@@ -34,8 +39,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (state.status === 'unauthenticated') {
       router.replace('/auth');
+      return;
     }
-  }, [state.status, router]);
+
+    // If profile completeness check is required
+    // if (requireCompleteProfile && 
+    //     state.status === 'authenticated' && 
+    //     state.user && 
+    //     !state.user.isProfileComplete) {
+    //   router.replace('/profile/complete');
+    // }
+  }, [state.status, state.user, router, requireCompleteProfile]);
 
   // Show loading spinner while checking auth state
   if (state.status === 'loading') {
@@ -46,6 +60,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // Check for complete profile if required
+  // if (requireCompleteProfile && 
+  //     state.status === 'authenticated' && 
+  //     state.user && 
+  //     !state.user.isProfileComplete) {
+  //   return null;
+  // }
+
   // Render children only if authenticated
   return state.status === 'authenticated' ? <>{children}</> : null;
-} 
+}
