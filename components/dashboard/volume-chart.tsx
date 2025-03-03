@@ -20,7 +20,6 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
         <CardTitle>Volume</CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Time range selector */}
         <Tabs value={timeRange} onValueChange={(value) => onTimeRangeChange(value as "7days" | "8weeks" | "12months")}>
           <TabsList className="w-full bg-muted/50 p-1">
             <TabsTrigger value="7days" className="flex-1">Days</TabsTrigger>
@@ -28,43 +27,39 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
             <TabsTrigger value="12months" className="flex-1">Months</TabsTrigger>
           </TabsList>
 
-          {/* Bar chart container */}
           <div className="mt-6 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={data}
-                margin={{ top: 20, right: 20, bottom: 60, left: 20 }} // Extra bottom margin for rotated labels
+                margin={{ top: 20, right: 20, bottom: 60, left: 20 }}
               >
-                {/* X-axis with decluttered labels */}
                 <XAxis
                   dataKey="date"
                   stroke="#888888"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  interval={timeRange === "12months" ? 1 : 0} // Show every second label for months
-                  angle={-60} // Steeper angle for readability
+                  interval={timeRange === "12months" ? 1 : 0}
+                  angle={-60}
                   textAnchor="end"
                   height={60}
                   tickFormatter={(value) => {
                     if (timeRange === "12months") {
-                      const [month, year] = value.split(" "); // Abbreviate months (e.g., "Mar '24")
+                      const [month, year] = value.split(" ");
                       return `${month} ${year.slice(-2)}`;
                     }
                     return value;
                   }}
                 />
-                {/* Y-axis with dynamic scaling */}
                 <YAxis
                   stroke="#888888"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `${value}${unitLabel}`} // Show actual volume values
+                  tickFormatter={(value) => formatWeight(value, 0)}
                   width={45}
                   padding={{ top: 20 }}
                 />
-                {/* Tooltip for detailed data */}
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -87,7 +82,6 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
                     return null;
                   }}
                 />
-                {/* Bar styling */}
                 <Bar
                   dataKey="volume"
                   fill="currentColor"
