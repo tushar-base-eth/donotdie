@@ -20,6 +20,7 @@ function HistoryPage() {
   const { user } = state;
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
+  const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
   const { mutate } = useSWRConfig();
 
   const getKey = (pageIndex: number, previousPageData: UIExtendedWorkout[] | null) => {
@@ -38,26 +39,26 @@ function HistoryPage() {
   const workouts = data ? ([] as UIExtendedWorkout[]).concat(...data) : [];
 
   const displayedWorkouts = useMemo(() => {
-    if (!selectedDate) return workouts;
+    const filtered = workouts.filter((w) => !pendingDeletions.includes(w.id));
+    if (!selectedDate) return filtered;
     const selectedUtc = format(selectedDate, "yyyy-MM-dd");
-    return workouts.filter((w) => w.utcDate === selectedUtc);
-  }, [selectedDate, workouts]);
+    return filtered.filter((w) => w.utcDate === selectedUtc);
+  }, [selectedDate, workouts, pendingDeletions]);
 
   const workoutDates = useMemo(() => new Set(workouts.map((w) => w.date)), [workouts]);
 
   const handleDeleteWorkout = async (workoutId: string) => {
+    setPendingDeletions((prev) => [...prev, workoutId]);
     try {
-      // Optimistically update the cache for each page
       mutate(
         (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user?.id,
         (currentPageData: UIExtendedWorkout[] | undefined) => {
           if (!currentPageData) return currentPageData;
           return currentPageData.filter((w) => w.id !== workoutId);
         },
-        false // Do not revalidate yet
+        false
       );
       await deleteWorkout(workoutId);
-      // Revalidate all pages after successful delete
       mutate(
         (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user?.id,
         undefined,
@@ -65,9 +66,10 @@ function HistoryPage() {
       );
       mutate(user ? ["profile", user.id] : null);
       await refreshProfile();
+      setPendingDeletions((prev) => prev.filter((id) => id !== workoutId));
     } catch (err) {
       console.error("Error deleting workout:", err);
-      // Revert optimistic update on failure
+      setPendingDeletions((prev) => prev.filter((id) => id !== workoutId));
       mutate(
         (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user?.id,
         undefined,
@@ -96,40 +98,38 @@ function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-16">
-      <div className="p-4 space-y-6">
-        <InfiniteScroll
-          dataLength={workouts.length}
-          next={() => setSize(size + 1)}
-          hasMore={data?.[data.length - 1]?.length === 10 || false}
-          loader={<p className="text-center">Loading...</p>}
-          endMessage={<p className="text-center">No more workouts to load.</p>}
+    <div className="h-full overflow-auto p-4 space-y-6">
+      <InfiniteScroll
+        dataLength={workouts.length}
+        next={() => setSize(size + 1)}
+        hasMore={data?.[data.length - 1]?.length === 10 || false}
+        loader={<p className="text-center">Loading...</p>}
+        endMessage={<p className="text-center">No more workouts to load.</p>}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Calendar
-              currentDate={selectedDate}
-              workoutDates={workoutDates}
-              onDateChange={setSelectedDate}
-            />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <WorkoutList
-              workouts={displayedWorkouts}
-              onWorkoutSelect={setSelectedWorkout}
-              onWorkoutDelete={handleDeleteWorkout}
-              selectedDate={selectedDate}
-            />
-          </motion.div>
-        </InfiniteScroll>
-      </div>
+          <Calendar
+            currentDate={selectedDate}
+            workoutDates={workoutDates}
+            onDateChange={setSelectedDate}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <WorkoutList
+            workouts={displayedWorkouts}
+            onWorkoutSelect={setSelectedWorkout}
+            onWorkoutDelete={handleDeleteWorkout}
+            selectedDate={selectedDate}
+          />
+        </motion.div>
+      </InfiniteScroll>
       <WorkoutDetails workout={selectedWorkout} onClose={() => setSelectedWorkout(null)} />
     </div>
   );

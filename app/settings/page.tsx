@@ -34,6 +34,7 @@ import { fetchProfileData } from "@/lib/supabaseUtils";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
+import { toast } from "@/components/ui/use-toast";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -96,8 +97,20 @@ export default function SettingsPage() {
       await updateProfile(data);
       mutate(user ? ["profile", user.id] : null, data, false);
       form.reset(data);
+      toast({
+        title: "Success",
+        description: "Profile saved successfully.",
+        variant: "default",
+        duration: 1000,
+      });
     } catch (error) {
       console.error("Error saving profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive",
+        duration: 2000,
+      });
     } finally {
       setIsSaving(false);
     }
