@@ -113,21 +113,21 @@ export type Database = {
           id: string
           reps: number
           weight_kg: number
-          workout_exercise_id: string | null
+          workout_exercise_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           reps: number
           weight_kg: number
-          workout_exercise_id?: string | null
+          workout_exercise_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           reps?: number
           weight_kg?: number
-          workout_exercise_id?: string | null
+          workout_exercise_id?: string
         }
         Relationships: [
           {
@@ -142,21 +142,21 @@ export type Database = {
       workout_exercises: {
         Row: {
           created_at: string | null
-          exercise_id: string | null
+          exercise_id: string
           id: string
-          workout_id: string | null
+          workout_id: string
         }
         Insert: {
           created_at?: string | null
-          exercise_id?: string | null
+          exercise_id: string
           id?: string
-          workout_id?: string | null
+          workout_id: string
         }
         Update: {
           created_at?: string | null
-          exercise_id?: string | null
+          exercise_id?: string
           id?: string
-          workout_id?: string | null
+          workout_id?: string
         }
         Relationships: [
           {
@@ -179,17 +179,17 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -206,29 +206,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_total_volume: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: number
-      }
-      get_volume_by_day: {
-        Args: {
-          p_user_id: string
-          p_days: number
-        }
-        Returns: {
-          date: string
-          volume: number
-        }[]
-      }
-      update_user_stats: {
-        Args: {
-          p_user_id: string
-          p_volume: number
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabaseClient";
+import useSWR from "swr"; // Import SWR for data fetching and caching
+import { fetchAvailableExercises } from "@/lib/supabaseUtils"; // Centralized fetch function
 import type { Exercise } from "@/types/workouts";
 
 interface ExerciseSelectorProps {
@@ -30,23 +31,38 @@ export function ExerciseSelector({
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
-  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
 
-  // Fetch exercises once on mount and cache in state
-  useEffect(() => {
-    async function fetchExercises() {
-      const { data, error } = await supabase.from("available_exercises").select("*");
-      if (error) {
-        console.error("Error fetching exercises:", error.message);
-      } else {
-        setAvailableExercises(data || []);
-      }
+  // Use SWR to fetch exercises with caching; key "available_exercises" ensures global caching
+  const { data: availableExercises, error } = useSWR<Exercise[]>(
+    "available_exercises",
+    fetchAvailableExercises,
+    {
+      revalidateOnFocus: false, // Prevent refetch on window focus (static data)
+      revalidateOnReconnect: false, // Prevent refetch on reconnect
     }
-    fetchExercises();
-  }, []);
+  );
 
+  // Handle error state: show retry option if fetch fails
+  if (error) {
+    return (
+      <div className="p-4">
+        Failed to load exercises.{" "}
+        <button onClick={() => mutate("available_exercises")} className="text-blue-500 underline">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Handle loading state: show a placeholder while data is being fetched
+  if (!availableExercises) {
+    return <div className="p-4">Loading exercises...</div>; // Could be enhanced with a skeleton loader
+  }
+
+  // Extract unique muscle groups from fetched exercises
   const muscleGroups = Array.from(new Set(availableExercises.map((ex) => ex.primary_muscle_group)));
 
+  // Filter exercises based on search query and selected muscle group
   const filteredExercises = Object.entries(
     availableExercises.reduce((acc, ex) => {
       const group = ex.primary_muscle_group || "Other";
@@ -68,6 +84,7 @@ export function ExerciseSelector({
     return acc;
   }, {} as Record<string, Exercise[]>);
 
+  // Handle adding selected exercises and closing the modal
   const handleAdd = () => {
     const selected = availableExercises.filter((ex) => selectedExercises.includes(ex.id));
     onAddExercises(selected);
@@ -83,6 +100,7 @@ export function ExerciseSelector({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col h-full">
+          {/* Header with title */}
           <div className="px-6 pb-6 flex items-center border-b">
             <SheetTitle className="text-xl">Add Exercise</SheetTitle>
             <span id="exercise-selector-description" className="sr-only">
@@ -90,6 +108,7 @@ export function ExerciseSelector({
             </span>
           </div>
 
+          {/* Search and tab navigation */}
           <div className="px-6 pt-4 space-y-4">
             <Input
               ref={inputRef}
@@ -118,6 +137,7 @@ export function ExerciseSelector({
             </Tabs>
           </div>
 
+          {/* Scrollable exercise list */}
           <ScrollArea className="flex-1">
             <div className="px-6 space-y-6 py-4">
               {selectedTab === "byMuscle" && (
@@ -178,6 +198,7 @@ export function ExerciseSelector({
             </div>
           </ScrollArea>
 
+          {/* Footer with Add button */}
           <div className="p-4 bg-background/80 backdrop-blur-sm border-t">
             <Button
               onClick={handleAdd}

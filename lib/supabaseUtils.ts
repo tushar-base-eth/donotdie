@@ -4,11 +4,15 @@ import { parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 
 /**
- * Fetches all workouts for a user, including exercises and sets, formatted for UI display.
+ * Fetches all workouts for a user with pagination, including exercises and sets, formatted for UI display.
  * @param userId - The ID of the user whose workouts to fetch.
+ * @param pageIndex - The page number (0-based) for pagination.
+ * @param pageSize - Number of workouts per page.
  * @returns A promise resolving to an array of formatted workouts.
  */
-export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]> {
+export async function fetchWorkouts(userId: string, pageIndex: number, pageSize: number): Promise<UIExtendedWorkout[]> {
+  const start = pageIndex * pageSize;
+  const end = start + pageSize - 1;
   const { data, error } = await supabase
     .from("workouts")
     .select(`
@@ -20,7 +24,8 @@ export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]
       )
     `)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(start, end);
 
   if (error) {
     console.error("Supabase error:", error);
@@ -80,7 +85,6 @@ export async function fetchWorkouts(userId: string): Promise<UIExtendedWorkout[]
  */
 export async function saveWorkout(workout: NewWorkout): Promise<void> {
   try {
-    // Insert the workout
     const { data: workoutData, error: workoutError } = await supabase
       .from("workouts")
       .insert({ user_id: workout.user_id })
@@ -94,7 +98,6 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
 
     const workoutId = workoutData.id;
 
-    // Insert workout_exercises and their sets
     for (const ex of workout.exercises) {
       const { data: weData, error: weError } = await supabase
         .from("workout_exercises")
@@ -122,8 +125,6 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
         throw setsError;
       }
     }
-    // Note: No manual volume calculation or stats update needed here;
-    // triggers on the sets and workouts tables handle this automatically.
   } catch (error) {
     console.error("Error saving workout:", error);
     throw error;
@@ -139,6 +140,47 @@ export async function deleteWorkout(workoutId: string): Promise<void> {
   const { error } = await supabase.from("workouts").delete().eq("id", workoutId);
 
   if (error) throw error;
-  // Note: Cascading deletes remove workout_exercises and sets,
-  // triggering volume adjustments via the sets table triggers.
+}
+
+/**
+ * Fetches profile data for a user.
+ * @param userId - The ID of the user.
+ * @returns A promise resolving to the profile data.
+ */
+export async function fetchProfileData(userId: string) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("total_volume, total_workouts, name, gender, date_of_birth, unit_preference, weight_kg, height_cm, body_fat_percentage")
+    .eq("id", userId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Fetches volume data by day for a user over a specified period.
+ * @param userId - The ID of the user.
+ * @param timeRange - The time range ("7days", "8weeks", "12months").
+ * @returns A promise resolving to the volume data array.
+ */
+export async function fetchVolumeData(userId: string, timeRange: string) {
+  const daysToFetch = timeRange === "7days" ? 7 : timeRange === "8weeks" ? 56 : 365;
+  const { data, error } = await supabase.rpc("get_volume_by_day", {
+    p_user_id: userId,
+    p_days: daysToFetch,
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Fetches all available exercises.
+ * @returns A promise resolving to an array of exercises.
+ */
+export async function fetchAvailableExercises() {
+  const { data, error } = await supabase.from("available_exercises").select("*");
+  if (error) throw error;
+  return data;
 }

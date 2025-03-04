@@ -15,7 +15,8 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useWorkout } from "@/contexts/workout-context";
 import { toast } from "@/components/ui/use-toast";
-import { saveWorkout } from "@/lib/supabaseUtils"; // Import the utility function
+import { saveWorkout } from "@/lib/supabaseUtils";
+import { useSWRConfig } from "swr";
 
 interface WorkoutProps {
   onExercisesChange?: (exercises: UIExtendedWorkout["exercises"]) => void;
@@ -29,6 +30,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const router = useRouter();
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { mutate } = useSWRConfig();
 
   useEffect(() => {
     if (!user && !isLoading) {
@@ -83,10 +85,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   const handleUpdateSets = (exerciseIndex: number, newSets: Set[]) => {
-    if (
-      exerciseIndex < 0 ||
-      exerciseIndex >= state.currentWorkout.exercises.length
-    ) {
+    if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
       throw new Error(`Invalid exercise index: ${exerciseIndex}`);
     }
     dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: newSets });
@@ -94,9 +93,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
-      const newExercises = state.currentWorkout.exercises.filter(
-        (_, i) => i !== index
-      );
+      const newExercises = state.currentWorkout.exercises.filter((_, i) => i !== index);
       dispatch({ type: "SET_EXERCISES", exercises: newExercises });
     });
   };
@@ -109,17 +106,20 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         const newWorkout = {
           user_id: user.id,
           exercises: state.currentWorkout.exercises.map((ex) => ({
-            exercise_id: ex.exercise_id!, // Assert non-null
+            exercise_id: ex.exercise_id!,
             sets: ex.sets.map((set) => ({ reps: set.reps, weight_kg: set.weight_kg })),
           })),
         };
         await saveWorkout(newWorkout);
 
+        // Invalidate caches to refetch updated data
+        mutate(["workouts", user.id]);
+        mutate(["profile", user.id]);
+
         dispatch({ type: "SET_EXERCISES", exercises: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null });
 
-        // Clear localStorage
         localStorage.removeItem("currentWorkout");
 
         toast({
@@ -139,7 +139,11 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background p-4">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <ExerciseSkeleton />
+      </div>
+    );
   }
 
   return (
@@ -195,14 +199,10 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         {state.currentWorkout.selectedExercise && (
           <ExerciseEditor
             exercise={state.currentWorkout.selectedExercise}
-            onClose={() =>
-              dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null })
-            }
+            onClose={() => dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null })}
             onUpdateSets={handleUpdateSets}
             exerciseIndex={state.currentWorkout.exercises.findIndex(
-              (ex) =>
-                ex.instance_id ===
-                state.currentWorkout.selectedExercise?.instance_id
+              (ex) => ex.instance_id === state.currentWorkout.selectedExercise?.instance_id
             )}
           />
         )}

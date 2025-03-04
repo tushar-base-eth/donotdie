@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import useSWR from "swr";
+import { useSWRConfig } from "swr";
 import { LogOut, Sun, Moon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,18 +30,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
+import { fetchProfileData } from "@/lib/supabaseUtils";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
+import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 
-// Form validation schema
+// Adjusted schema to match profile fields and make optional fields nullable
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  gender: z.enum(["Male", "Female", "Other"]).optional(),
-  dateOfBirth: z.string().optional(),
-  unitPreference: z.enum(["metric", "imperial"]),
-  weight: z.number().positive("Weight must be greater than 0").optional(),
-  height: z.number().positive("Height must be greater than 0").optional(),
-  bodyFat: z.number().min(0).max(100).optional(),
+  gender: z.enum(["Male", "Female", "Other"]).nullable().optional(),
+  date_of_birth: z.string().nullable().optional(),
+  unit_preference: z.enum(["metric", "imperial"]),
+  weight_kg: z.number().positive("Weight must be greater than 0").nullable().optional(),
+  height_cm: z.number().positive("Height must be greater than 0").nullable().optional(),
+  body_fat_percentage: z.number().min(0).max(100).nullable().optional(),
 });
 
 export default function SettingsPage() {
@@ -49,19 +53,42 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { mutate } = useSWRConfig();
+
+  // Fetch profile data with SWR, with null check for user
+  const { data: profileData, error: profileError } = useSWR(
+    user ? ["profile", user.id] : null,
+    () => user ? fetchProfileData(user.id) : null
+  );
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      name: user?.name || "",
-      gender: user?.gender || undefined,
-      dateOfBirth: user?.dateOfBirth || "",
-      unitPreference: user?.unitPreference || "metric",
-      weight: user?.weight || undefined,
-      height: user?.height || undefined,
-      bodyFat: user?.bodyFat || undefined,
+      name: "",
+      gender: null,
+      date_of_birth: "",
+      unit_preference: "metric",
+      weight_kg: null,
+      height_cm: null,
+      body_fat_percentage: null,
     },
   });
+
+  // Populate form when profileData is available, ensuring unit_preference is correctly typed
+  useEffect(() => {
+    if (profileData) {
+      setIsNewProfile(profileData.name === "New User");
+      form.reset({
+        name: profileData.name || "",
+        gender: profileData.gender as "Male" | "Female" | "Other" | null,
+        date_of_birth: profileData.date_of_birth || "",
+        unit_preference: profileData.unit_preference as "metric" | "imperial", // Explicitly cast to match schema
+        weight_kg: profileData.weight_kg || null,
+        height_cm: profileData.height_cm || null,
+        body_fat_percentage: profileData.body_fat_percentage || null,
+      });
+    }
+  }, [profileData, form]);
 
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     if (!user) return;
@@ -69,6 +96,8 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       await updateProfile(data);
+      // Update SWR cache optimistically with submitted data
+      mutate(user ? ["profile", user.id] : null, data, false);
       form.reset(data);
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -77,20 +106,28 @@ export default function SettingsPage() {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      setIsNewProfile(user.name === "New User");
-      form.reset({
-        name: user.name,
-        gender: user.gender || undefined,
-        dateOfBirth: user.dateOfBirth || "",
-        unitPreference: user.unitPreference,
-        weight: user.weight || undefined,
-        height: user.height || undefined,
-        bodyFat: user.bodyFat || undefined,
-      });
-    }
-  }, [user, form]);
+  // Handle errors with null check for user
+  if (profileError) {
+    return (
+      <div className="p-4">
+        Failed to load profile data.{" "}
+        <button onClick={() => user && mutate(["profile", user.id])} className="text-blue-500 underline">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Show skeleton while loading
+  if (!profileData) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background pb-16">
+          <ProfileSkeleton />
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   const handleLogout = () => {
     logout();
@@ -175,7 +212,7 @@ export default function SettingsPage() {
                     </FormItem>
                     <FormField
                       control={form.control}
-                      name="unitPreference"
+                      name="unit_preference"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unit Preference</FormLabel>

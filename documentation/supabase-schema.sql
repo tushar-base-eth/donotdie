@@ -2,12 +2,9 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Drop existing tables, triggers, functions, and policies (in reverse order due to dependencies)
+
+-- Drop triggers only on auth.users (managed by Supabase)
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP TRIGGER IF EXISTS trigger_on_workout_add ON public.workouts;
-DROP TRIGGER IF EXISTS trigger_on_workout_delete ON public.workouts;
-DROP TRIGGER IF EXISTS update_volume_after_set_insert ON public.sets;
-DROP TRIGGER IF EXISTS update_volume_after_set_delete ON public.sets;
-DROP TRIGGER IF EXISTS update_volume_after_set_update ON public.sets;
 
 DROP FUNCTION IF EXISTS public.handle_new_user();
 DROP FUNCTION IF EXISTS public.on_workout_add();
@@ -16,20 +13,6 @@ DROP FUNCTION IF EXISTS public.update_volume_on_set_insert();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_delete();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_update();
 
-DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
-DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
-DROP POLICY IF EXISTS "Allow auth admin to insert profiles" ON public.profiles;
-DROP POLICY IF EXISTS "Users can view their own workouts" ON public.workouts;
-DROP POLICY IF EXISTS "Users can create their own workouts" ON public.workouts;
-DROP POLICY IF EXISTS "Users can delete their own workouts" ON public.workouts;
-DROP POLICY IF EXISTS "Users can view their own workout exercises" ON public.workout_exercises;
-DROP POLICY IF EXISTS "Users can create workout exercises for their own workouts" ON public.workout_exercises;
-DROP POLICY IF EXISTS "Users can view their own sets" ON public.sets;
-DROP POLICY IF EXISTS "Users can create sets for their own workout exercises" ON public.sets;
-DROP POLICY IF EXISTS "Users can view their own daily volume" ON public.daily_volume;
-DROP POLICY IF EXISTS "Users can create their own daily volume" ON public.daily_volume;
-DROP POLICY IF EXISTS "Users can update their own daily volume" ON public.daily_volume;
-DROP POLICY IF EXISTS "Authenticated users can view available exercises" ON public.available_exercises;
 
 DROP TABLE IF EXISTS public.sets CASCADE;
 DROP TABLE IF EXISTS public.workout_exercises CASCADE;
