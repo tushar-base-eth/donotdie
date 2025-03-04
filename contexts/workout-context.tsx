@@ -100,14 +100,14 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     if (savedWorkout) {
       try {
         const parsed = JSON.parse(savedWorkout);
-        console.log("Restoring state:", parsed);
+        // console.log("Restoring state:", parsed);
         dispatch({ type: "SET_EXERCISES", exercises: parsed.exercises });
         dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: parsed.selectedExerciseIds });
       } catch (error) {
-        console.error("Error parsing saved workout:", error);
+        // console.error("Error parsing saved workout:", error);
       }
     } else {
-      console.log("No saved workout found in localStorage");
+      // console.log("No saved workout found in localStorage");
     }
     setIsRestored(true); // Mark restoration as complete
   }, []);
@@ -115,7 +115,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   // Save state to localStorage only after restoration is complete
   useEffect(() => {
     if (isRestored) {
-      console.log("Saving to localStorage:", state.currentWorkout);
+      // console.log("Saving to localStorage:", state.currentWorkout);
       localStorage.setItem(
         "currentWorkout",
         JSON.stringify({

@@ -6,7 +6,7 @@ import { WorkoutProvider } from "@/contexts/workout-context";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { ConditionalBottomNav } from "@/components/navigation/conditional-bottom-nav";
-import ErrorBoundary from "@/components/ErrorBoundary"; // Add this import
+import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,7 +33,7 @@ export default function RootLayout({
           <AuthProvider>
             <WorkoutProvider>
               <ErrorBoundary>
-                <div className="pb-16">{children}</div> {/* Padding matches nav height */}
+                <div className="h-[calc(100vh-64px)] overflow-hidden">{children}</div>
                 <ConditionalBottomNav />
               </ErrorBoundary>
               <Toaster />
