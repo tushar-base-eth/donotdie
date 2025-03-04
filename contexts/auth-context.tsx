@@ -40,7 +40,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, unitPreference: "metric" | "imperial") => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UpdatableProfile>) => Promise<void>;
-  refreshProfile: () => Promise<void>; // New function to refresh profile
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -112,91 +112,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         try {
-          const profile = await fetchUserProfile(session.user.id);
-          setState({ status: "authenticated", user: profile });
+          const userProfile = await fetchUserProfile(session.user.id);
+          setState({ status: "authenticated", user: userProfile });
         } catch (error) {
-          console.error("Error restoring session:", error);
+          console.error("Error fetching profile:", error);
           setState({ status: "unauthenticated", user: null });
         }
       } else {
         setState({ status: "unauthenticated", user: null });
       }
     };
-
     restoreSession();
+  }, []);
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setState({ status: "authenticated", user: profile });
+        fetchUserProfile(session.user.id).then((userProfile) => {
+          setState({ status: "authenticated", user: userProfile });
+        });
+      } else if (event === "TOKEN_REFRESHED") {
+        // Update session state without fetching profile again
+        setState((prev) => prev.user ? { ...prev, status: "authenticated" } : prev);
       } else if (event === "SIGNED_OUT") {
         setState({ status: "unauthenticated", user: null });
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => authListener?.subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  // Login function
+  const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
-  const signup = async (
-    email: string,
-    password: string,
-    name: string,
-    unitPreference: "metric" | "imperial"
-  ): Promise<void> => {
+  // Signup function
+  const signup = async (email: string, password: string, name: string, unitPreference: "metric" | "imperial") => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name, unit_preference: unitPreference } },
+      options: {
+        data: { name, unit_preference: unitPreference },
+      },
     });
     if (error) throw error;
   };
 
-  const logout = async (): Promise<void> => {
+  // Logout function
+  const logout = async () => {
     await supabase.auth.signOut();
   };
 
+  // Update profile function
   const updateProfile = async (updates: Partial<UpdatableProfile>) => {
-    if (!state.user) return;
-
-    const dbUpdates: { [key: string]: any } = {};
-    if (updates.name !== undefined) dbUpdates.name = updates.name;
-    if (updates.gender !== undefined) dbUpdates.gender = updates.gender;
-    if (updates.dateOfBirth !== undefined) dbUpdates.date_of_birth = updates.dateOfBirth;
-    if (updates.weight !== undefined) dbUpdates.weight_kg = updates.weight;
-    if (updates.height !== undefined) dbUpdates.height_cm = updates.height;
-    if (updates.bodyFat !== undefined) dbUpdates.body_fat_percentage = updates.bodyFat;
-    if (updates.unitPreference !== undefined) dbUpdates.unit_preference = updates.unitPreference;
-    if (updates.themePreference !== undefined) dbUpdates.theme_preference = updates.themePreference;
-    dbUpdates.updated_at = new Date().toISOString();
-
+    if (!state.user) throw new Error("No user logged in");
     const { error } = await supabase
       .from("profiles")
-      .update(dbUpdates)
+      .update(updates)
       .eq("id", state.user.id);
-
     if (error) throw error;
-
-    setState((prev) => ({
-      ...prev,
-      user: { ...prev.user!, ...updates, updatedAt: new Date().toISOString() },
-    }));
+    const updatedUser = { ...state.user, ...updates };
+    setState({ status: "authenticated", user: updatedUser });
   };
 
-  // Refresh profile function to fetch latest data
-  const refreshProfile = async (): Promise<void> => {
+  // Refresh profile function
+  const refreshProfile = async () => {
     if (!state.user) return;
-    try {
-      const profile = await fetchUserProfile(state.user.id);
-      setState((prev) => ({ ...prev, user: profile }));
-    } catch (error) {
-      console.error("Error refreshing profile:", error);
-    }
+    const updatedProfile = await fetchUserProfile(state.user.id);
+    setState({ status: "authenticated", user: updatedProfile });
   };
 
   return (
@@ -206,8 +192,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   return context;
-}
+};
