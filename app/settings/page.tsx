@@ -219,7 +219,11 @@ export default function SettingsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unit Preference</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            key={field.value} // Add key to force re-render
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger className="rounded-xl">
                                 <SelectValue placeholder="Select unit preference" />
