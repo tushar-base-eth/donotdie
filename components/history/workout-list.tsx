@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
@@ -10,7 +11,7 @@ interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
   onWorkoutSelect: (workout: UIExtendedWorkout) => void;
   onWorkoutDelete: (workoutId: string) => void;
-  selectedDate: Date | null; // Added to determine context for no-workouts message
+  selectedDate: Date | null;
 }
 
 export function WorkoutList({
@@ -20,36 +21,41 @@ export function WorkoutList({
   selectedDate,
 }: WorkoutListProps) {
   const { formatWeight } = useUnitPreference();
+  const [localWorkouts, setLocalWorkouts] = useState(workouts);
 
-  if (workouts.length === 0) {
+  // Sync localWorkouts with prop changes
+  useEffect(() => {
+    setLocalWorkouts(workouts);
+  }, [workouts]);
+
+  const handleDelete = (workoutId: string) => {
+    // Optimistically remove the workout from local state
+    setLocalWorkouts((prev) => prev.filter((w) => w.id !== workoutId));
+    // Call the parent delete function
+    onWorkoutDelete(workoutId);
+  };
+
+  if (localWorkouts.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
         {selectedDate ? (
-          // Message for a selected date with no workouts
           <div>
             <div className="mb-4">
               <div className="rounded-full bg-muted p-4 inline-block">
                 <span role="img" aria-label="Sad face" className="text-4xl">🤨</span>
               </div>
             </div>
-            <p className="text-lg font-medium">
-              You were LASY on this day!
-            </p>
+            <p className="text-lg font-medium">You were LASY on this day!</p>
           </div>
         ) : (
-          // Fun UI for new users with no workouts overall
           <div>
             <div className="mb-4">
               <div className="rounded-full bg-muted p-4 inline-block animate-bounce">
                 <span role="img" aria-label="Dumbbell" className="text-4xl">🏋️</span>
               </div>
             </div>
-            <p className="text-lg font-medium">
-              Welcome! WTF!?
-            </p>
-            <p className="text-sm">
-              You better start your first workout!
-            </p>
+            <p className="text-lg font-medium">Welcome! WTF!?</p>
+            <p className="text-sm">You better start your first workout!</p>
           </div>
         )}
       </div>
@@ -60,13 +66,13 @@ export function WorkoutList({
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
       <AnimatePresence initial={false}>
-        {workouts.map((workout) => (
+        {localWorkouts.map((workout) => (
           <motion.div
             key={workout.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, x: -100, height: 0 }} // Slide out left and collapse
+            transition={{ duration: 0.3 }}
             layout
           >
             <motion.div
@@ -75,7 +81,7 @@ export function WorkoutList({
               dragElastic={0.1}
               onDragEnd={(_, info) => {
                 if (info.offset.x < -50) {
-                  onWorkoutDelete(workout.id);
+                  handleDelete(workout.id);
                 }
               }}
               className="cursor-grab active:cursor-grabbing relative"

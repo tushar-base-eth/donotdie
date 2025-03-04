@@ -18,7 +18,8 @@ const formatNumber = (num: number): string => {
 export function MetricsCards({ totalWorkouts, totalVolume }: MetricsCardsProps) {
   const { convertFromKg, unitLabel } = useUnitPreference();
   const volumeInPreferredUnit = convertFromKg(totalVolume);
-  const formattedVolume = formatNumber(volumeInPreferredUnit) + " " + unitLabel;
+  const displayVolume = Math.abs(volumeInPreferredUnit) < 0.0001 ? 0 : volumeInPreferredUnit;
+  const formattedVolume = formatNumber(displayVolume) + " " + unitLabel;
 
   return (
     <div className="grid grid-cols-2 gap-4">

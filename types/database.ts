@@ -71,7 +71,7 @@ export type Database = {
           theme_preference: string | null
           total_volume: number | null
           total_workouts: number | null
-          unit_preference: string | null
+          unit_preference: string // Changed from string | null to string
           updated_at: string | null
           weight_kg: number | null
         }
@@ -86,7 +86,7 @@ export type Database = {
           theme_preference?: string | null
           total_volume?: number | null
           total_workouts?: number | null
-          unit_preference?: string | null
+          unit_preference: string // Changed from string | null to string
           updated_at?: string | null
           weight_kg?: number | null
         }

@@ -10,7 +10,7 @@ import { ExerciseEditor } from "@/components/workout/exercise-editor";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
-import type { Exercise, UIExtendedWorkout, Set } from "@/types/workouts";
+import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useWorkout } from "@/contexts/workout-context";
@@ -84,11 +84,24 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
-  const handleUpdateSets = (exerciseIndex: number, newSets: Set[]) => {
+  // Updated handleUpdateSets to fix type mismatch
+  const handleUpdateSets = (exerciseIndex: number, newSets: { reps: number; weight_kg: number }[]) => {
     if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
       throw new Error(`Invalid exercise index: ${exerciseIndex}`);
     }
-    dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: newSets });
+    // Get the existing exercise to access its current sets
+    const existingExercise = state.currentWorkout.exercises[exerciseIndex];
+    // Merge new sets with existing sets to preserve properties like id, workout_exercise_id, created_at
+    const updatedSets = newSets.map((newSet, i) => {
+      const existingSet = existingExercise.sets[i] || {}; // Use empty object if no existing set
+      return {
+        ...existingSet, // Retains id, workout_exercise_id, created_at if they exist
+        reps: newSet.reps, // Update with new reps
+        weight_kg: newSet.weight_kg, // Update with new weight_kg
+      };
+    });
+    // Dispatch the updated sets, which now satisfy the expected Set[] type
+    dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: updatedSets });
   };
 
   const handleRemoveExercise = (index: number) => {
@@ -112,9 +125,14 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         };
         await saveWorkout(newWorkout);
 
-        // Invalidate caches to refetch updated data
-        mutate(["workouts", user.id]);
-        mutate(["profile", user.id]);
+        // Invalidate all workout-related caches for this user
+        mutate(
+          (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user.id,
+          undefined,
+          { revalidate: true }
+        );
+        // Invalidate profile cache
+        mutate(["profile", user.id], undefined, { revalidate: true });
 
         dispatch({ type: "SET_EXERCISES", exercises: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });

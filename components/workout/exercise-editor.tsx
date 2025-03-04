@@ -1,44 +1,63 @@
-"use client"
+"use client";
 
-import { X, Trash } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { motion, AnimatePresence } from "framer-motion"
-import type { UIExtendedWorkout } from "@/types/workouts"
-import type { Set } from "@/types/workouts"
-import { useUnitPreference } from "@/lib/hooks/use-unit-preference"
+import { X, Trash } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { motion, AnimatePresence } from "framer-motion";
+import type { UIExtendedWorkout } from "@/types/workouts";
+import type { Set } from "@/types/workouts";
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface ExerciseEditorProps {
   exercise: UIExtendedWorkout["exercises"][0];
   onClose: () => void;
-  onUpdateSets: (exerciseIndex: number, sets: { reps: number; weight_kg: number }[]) => void; // Updated type
+  onUpdateSets: (exerciseIndex: number, sets: { reps: number; weight_kg: number }[]) => void;
   exerciseIndex: number;
 }
 
 export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex }: ExerciseEditorProps) {
-  const { formatWeight, parseInputToKg, convertFromKg, unitLabel } = useUnitPreference()
+  const { formatWeight, parseInputToKg, convertFromKg, unitLabel } = useUnitPreference();
 
   const handleNumberInput = (value: string) => {
-    // Allow only numbers and one decimal point
-    const regex = /^\d*\.?\d*$/
+    const regex = /^\d*\.?\d*$/;
     if (value === "" || regex.test(value)) {
-      const numValue = value === "" ? 0 : Number.parseFloat(value)
+      const numValue = value === "" ? 0 : parseFloat(value);
       if (numValue >= 0) {
-        return numValue
+        return numValue;
       }
     }
-    return null
-  }
+    return null;
+  };
+
+  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
+    const inputValue = e.target.value;
+    const parsedValue = handleNumberInput(inputValue);
+    if (parsedValue !== null) {
+      const weightInKg = parseInputToKg(inputValue); // Convert to kg if imperial
+      const newSets = [...exercise.sets];
+      newSets[setIndex] = { ...newSets[setIndex], weight_kg: weightInKg };
+      onUpdateSets(exerciseIndex, newSets);
+    }
+  };
+
+  const handleRepsChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
+    const inputValue = e.target.value;
+    const parsedValue = handleNumberInput(inputValue);
+    if (parsedValue !== null) {
+      const newSets = [...exercise.sets];
+      newSets[setIndex] = { ...newSets[setIndex], reps: parsedValue };
+      onUpdateSets(exerciseIndex, newSets);
+    }
+  };
 
   return (
     <Sheet open={true} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0" aria-describedby="exercise-editor-description">
         <div className="flex flex-col h-full">
-          {/* Header with glassmorphism */}
           <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl">{exercise.exercise.name}</SheetTitle>
@@ -54,41 +73,35 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-4">
               <AnimatePresence initial={false}>
-                {exercise.sets.map((set: { reps: number; weight_kg: number }, setIndex: number) => ( // Updated type
+                {exercise.sets.map((set: { reps: number; weight_kg: number }, setIndex: number) => (
                   <motion.div
-                    key={setIndex} // Changed to setIndex since set.id isn't available
+                    key={setIndex}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   >
-                    <motion.div 
-                      layout 
+                    <motion.div
+                      layout
                       drag="x"
                       dragConstraints={{ left: 0, right: 0 }}
                       dragElastic={{ left: 0.2, right: 0 }}
-                      onDragEnd={(e, { offset, velocity }) => {
-                        const swipe = offset.x;
-                        if (swipe < -100) {
+                      onDragEnd={(e, { offset }) => {
+                        if (offset.x < -100) {
                           const newSets = exercise.sets.filter((_, i) => i !== setIndex);
                           onUpdateSets(exerciseIndex, newSets);
                         }
                       }}
                       className="relative"
                     >
-                      {/* Delete indicator */}
                       <div className="absolute right-0 top-0 bottom-0 w-[50px] bg-destructive/10 rounded-r-xl flex items-center justify-center">
                         <Trash className="h-4 w-4 text-destructive" />
                       </div>
 
-                      {/* Set card with glassmorphism */}
-                      <motion.div 
-                        className="relative bg-background rounded-xl glass"
-                        style={{ x: 0 }}
-                      >
+                      <motion.div className="relative bg-background rounded-xl glass" style={{ x: 0 }}>
                         <div className="px-4 py-3">
                           <div className="flex gap-3 mb-1">
-                            <div className="w-8" /> {/* Spacer for set number */}
+                            <div className="w-8 text-left" />
                             <div className="w-[140px] text-left">Reps</div>
                             <div className="w-[140px] text-left">Weight ({unitLabel})</div>
                           </div>
@@ -103,14 +116,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                                   type="text"
                                   inputMode="decimal"
                                   value={set.reps || ""}
-                                  onChange={(e) => {
-                                    const newValue = handleNumberInput(e.target.value)
-                                    if (newValue !== null) {
-                                      const newSets = [...exercise.sets]
-                                      newSets[setIndex] = { ...set, reps: newValue }
-                                      onUpdateSets(exerciseIndex, newSets)
-                                    }
-                                  }}
+                                  onChange={(e) => handleRepsChange(e, setIndex)}
                                   className="rounded-xl bg-background text-foreground shadow-sm w-[140px]"
                                 />
                               </div>
@@ -119,14 +125,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                                 type="text"
                                 inputMode="decimal"
                                 value={convertFromKg(set.weight_kg) || ""}
-                                onChange={(e) => {
-                                  const newValue = handleNumberInput(e.target.value)
-                                  if (newValue !== null) {
-                                    const newSets = [...exercise.sets]
-                                    newSets[setIndex] = { ...set, weight_kg: parseInputToKg(e.target.value) }
-                                    onUpdateSets(exerciseIndex, newSets)
-                                  }
-                                }}
+                                onChange={(e) => handleWeightChange(e, setIndex)}
                                 className="rounded-xl bg-background text-foreground shadow-sm w-[140px]"
                               />
                             </div>
@@ -138,15 +137,14 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                 ))}
               </AnimatePresence>
 
-              {/* Add Set button */}
               <motion.div layout>
                 <div className="px-4">
                   <div className="flex gap-3">
-                    <div className="w-8" /> {/* Spacer for alignment with set number */}
+                    <div className="w-8" />
                     <Button
                       variant="outline"
                       onClick={() => {
-                        const newSet: { reps: number; weight_kg: number } = { // Updated type
+                        const newSet: { reps: number; weight_kg: number } = {
                           reps: 0,
                           weight_kg: 0,
                         };
@@ -165,5 +163,5 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 }

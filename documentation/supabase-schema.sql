@@ -2,18 +2,13 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Drop existing tables, triggers, functions, and policies (in reverse order due to dependencies)
-
--- Drop triggers only on auth.users (managed by Supabase)
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
 DROP FUNCTION IF EXISTS public.handle_new_user();
 DROP FUNCTION IF EXISTS public.on_workout_add();
 DROP FUNCTION IF EXISTS public.on_workout_delete();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_insert();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_delete();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_update();
-
-
 DROP TABLE IF EXISTS public.sets CASCADE;
 DROP TABLE IF EXISTS public.workout_exercises CASCADE;
 DROP TABLE IF EXISTS public.workouts CASCADE;
@@ -48,10 +43,8 @@ GRANT INSERT ON TABLE public.profiles TO supabase_auth_admin;
 -- RLS policies for profiles table
 CREATE POLICY "Users can view their own profile"
   ON public.profiles FOR SELECT TO authenticated USING (auth.uid() = id);
-
 CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
-
 CREATE POLICY "Allow auth admin to insert profiles"
   ON public.profiles FOR INSERT TO supabase_auth_admin WITH CHECK (true);
 
@@ -91,10 +84,8 @@ ALTER TABLE public.workouts ENABLE ROW LEVEL SECURITY;
 -- RLS policies for workouts table
 CREATE POLICY "Users can view their own workouts"
   ON public.workouts FOR SELECT TO authenticated USING (auth.uid() = user_id);
-
 CREATE POLICY "Users can create their own workouts"
   ON public.workouts FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-
 CREATE POLICY "Users can delete their own workouts"
   ON public.workouts FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -106,20 +97,20 @@ DECLARE
   workout_date DATE;
 BEGIN
   -- Calculate total volume for the workout (reps * weight_kg summed across all sets)
-  SELECT SUM(s.reps * s.weight_kg) INTO workout_volume
+  SELECT SUM(CAST(s.reps * s.weight_kg AS numeric)) INTO workout_volume
   FROM public.sets s
   JOIN public.workout_exercises we ON s.workout_exercise_id = we.id
   WHERE we.workout_id = NEW.id;
 
-  -- Handle case where workout_volume might be NULL (no sets yet)
-  workout_volume := COALESCE(workout_volume, 0);
+  -- Round to 2 decimal places to avoid precision issues
+  workout_volume := ROUND(COALESCE(workout_volume, 0), 2);
 
   -- Get the workout date
   workout_date := NEW.created_at::DATE;
 
   -- Update total_volume and total_workouts in profiles
   UPDATE public.profiles
-  SET total_volume = total_volume + workout_volume,
+  SET total_volume = ROUND(total_volume + workout_volume, 2),
       total_workouts = total_workouts + 1
   WHERE id = NEW.user_id;
 
@@ -127,7 +118,7 @@ BEGIN
   INSERT INTO public.daily_volume (user_id, date, volume)
   VALUES (NEW.user_id, workout_date, workout_volume)
   ON CONFLICT (user_id, date)
-  DO UPDATE SET volume = public.daily_volume.volume + workout_volume;
+  DO UPDATE SET volume = ROUND(public.daily_volume.volume + workout_volume, 2);
 
   RETURN NEW;
 END;
@@ -141,26 +132,26 @@ DECLARE
   workout_date DATE;
 BEGIN
   -- Calculate total volume for the workout being deleted
-  SELECT SUM(s.reps * s.weight_kg) INTO workout_volume
+  SELECT SUM(CAST(s.reps * s.weight_kg AS numeric)) INTO workout_volume
   FROM public.sets s
   JOIN public.workout_exercises we ON s.workout_exercise_id = we.id
   WHERE we.workout_id = OLD.id;
 
-  -- Handle case where workout_volume might be NULL (no sets)
-  workout_volume := COALESCE(workout_volume, 0);
+  -- Round to 2 decimal places
+  workout_volume := ROUND(COALESCE(workout_volume, 0), 2);
 
   -- Get the workout date
   workout_date := OLD.created_at::DATE;
 
   -- Update total_volume and total_workouts in profiles
   UPDATE public.profiles
-  SET total_volume = total_volume - workout_volume,
+  SET total_volume = ROUND(total_volume - workout_volume, 2),
       total_workouts = total_workouts - 1
   WHERE id = OLD.user_id;
 
   -- Update daily_volume (subtract the volume)
   UPDATE public.daily_volume
-  SET volume = volume - workout_volume
+  SET volume = ROUND(volume - workout_volume, 2)
   WHERE user_id = OLD.user_id AND date = workout_date;
 
   -- Clean up daily_volume entries with zero volume
@@ -175,7 +166,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_on_workout_add
   AFTER INSERT ON public.workouts
   FOR EACH ROW EXECUTE FUNCTION public.on_workout_add();
-
 CREATE TRIGGER trigger_on_workout_delete
   BEFORE DELETE ON public.workouts
   FOR EACH ROW EXECUTE FUNCTION public.on_workout_delete();
@@ -227,7 +217,6 @@ CREATE POLICY "Users can view their own workout exercises"
       AND public.workouts.user_id = auth.uid()
     )
   );
-
 CREATE POLICY "Users can create workout exercises for their own workouts"
   ON public.workout_exercises FOR INSERT TO authenticated
   WITH CHECK (
@@ -261,7 +250,6 @@ CREATE POLICY "Users can view their own sets"
       AND public.workouts.user_id = auth.uid()
     )
   );
-
 CREATE POLICY "Authenticated users can insert sets"
   ON public.sets FOR INSERT TO authenticated
   WITH CHECK (
@@ -298,19 +286,19 @@ BEGIN
   FROM public.workouts w
   WHERE w.id = workout_id;
 
-  -- Calculate volume for this set
-  set_volume := NEW.reps * NEW.weight_kg;
+  -- Calculate volume for this set and round to 2 decimal places
+  set_volume := ROUND(NEW.reps * NEW.weight_kg, 2);
 
   -- Update total_volume in profiles
   UPDATE public.profiles
-  SET total_volume = total_volume + set_volume
+  SET total_volume = ROUND(total_volume + set_volume, 2)
   WHERE id = func_user_id;
 
   -- Update or insert daily_volume
   INSERT INTO public.daily_volume (user_id, date, volume)
   VALUES (func_user_id, workout_date, set_volume)
   ON CONFLICT (user_id, date)
-  DO UPDATE SET volume = public.daily_volume.volume + set_volume;
+  DO UPDATE SET volume = ROUND(public.daily_volume.volume + set_volume, 2);
 
   RETURN NEW;
 END;
@@ -335,17 +323,17 @@ BEGIN
   FROM public.workouts w
   WHERE w.id = workout_id;
 
-  -- Calculate volume for this set
-  set_volume := OLD.reps * OLD.weight_kg;
+  -- Calculate volume for this set and round to 2 decimal places
+  set_volume := ROUND(CAST(OLD.reps * OLD.weight_kg AS numeric), 2);
 
   -- Update total_volume in profiles
   UPDATE public.profiles
-  SET total_volume = total_volume - set_volume
+  SET total_volume = ROUND(total_volume - set_volume, 2)
   WHERE id = func_user_id;
 
   -- Update daily_volume
   UPDATE public.daily_volume
-  SET volume = volume - set_volume
+  SET volume = ROUND(volume - set_volume, 2)
   WHERE user_id = func_user_id AND date = workout_date;
 
   RETURN OLD;
@@ -378,19 +366,19 @@ BEGIN
   FROM public.workouts w
   WHERE w.id = workout_id;
 
-  -- Calculate old and new volumes
-  old_volume := OLD.reps * OLD.weight_kg;
-  new_volume := NEW.reps * NEW.weight_kg;
+  -- Calculate old and new volumes and round to 2 decimal places
+  old_volume := ROUND(CAST(OLD.reps * OLD.weight_kg AS numeric), 2);
+  new_volume := ROUND(CAST(NEW.reps * NEW.weight_kg AS numeric), 2);
   volume_diff := new_volume - old_volume;
 
   -- Update total_volume in profiles
   UPDATE public.profiles
-  SET total_volume = total_volume + volume_diff
+  SET total_volume = ROUND(total_volume + volume_diff, 2)
   WHERE id = func_user_id;
 
   -- Update daily_volume
   UPDATE public.daily_volume
-  SET volume = volume + volume_diff
+  SET volume = ROUND(volume + volume_diff, 2)
   WHERE user_id = func_user_id AND date = workout_date;
 
   RETURN NEW;
@@ -401,11 +389,9 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_volume_after_set_insert
   AFTER INSERT ON public.sets
   FOR EACH ROW EXECUTE FUNCTION public.update_volume_on_set_insert();
-
 CREATE TRIGGER update_volume_after_set_delete
   AFTER DELETE ON public.sets
   FOR EACH ROW EXECUTE FUNCTION public.update_volume_on_set_delete();
-
 CREATE TRIGGER update_volume_after_set_update
   AFTER UPDATE ON public.sets
   FOR EACH ROW
@@ -430,10 +416,8 @@ ALTER TABLE public.daily_volume ENABLE ROW LEVEL SECURITY;
 -- RLS policies for daily_volume table
 CREATE POLICY "Users can view their own daily volume"
   ON public.daily_volume FOR SELECT TO authenticated USING (auth.uid() = user_id);
-
 CREATE POLICY "Users can create their own daily volume"
   ON public.daily_volume FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-
 CREATE POLICY "Users can update their own daily volume"
   ON public.daily_volume FOR UPDATE TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);

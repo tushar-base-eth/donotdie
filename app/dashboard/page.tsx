@@ -25,24 +25,20 @@ export default function DashboardPage() {
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
 
-  // Fetch profile data with SWR, with null check for user
   const { data: profileData, error: profileError, mutate: mutateProfile } = useSWR(
     user ? ["profile", user.id] : null,
     () => user ? fetchProfileData(user.id) : null
   );
 
-  // Fetch volume data with SWR, re-fetches when timeRange changes, with null check for user
   const { data: rawVolumeData, error: volumeError, mutate: mutateVolume } = useSWR(
     user ? ["volume", user.id, timeRange] : null,
     () => user ? fetchVolumeData(user.id, timeRange) : null
   );
 
-  // Redirect to auth if no user and not loading
   if (!user && !isLoading) {
     router.push("/auth");
   }
 
-  // Handle errors with a retry option
   if (profileError || volumeError) {
     return (
       <div className="p-4">
@@ -60,7 +56,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Show skeleton while loading initial data
   if (!profileData || !rawVolumeData) {
     return (
       <ProtectedRoute>
@@ -73,24 +68,22 @@ export default function DashboardPage() {
     );
   }
 
-  // Format volume data based on timeRange using local time zone
   const volumeData: VolumeData[] = (() => {
     const today = new Date();
     let formattedData: VolumeData[] = [];
 
-    // Convert rawVolumeData (UTC dates) to local dates
-    // Since Supabase stores dates in UTC as 'YYYY-MM-DD', we parse them as UTC and adjust to the user's local time zone
+    // Convert rawVolumeData (UTC dates) to local dates and round volume
     const localVolumeData = rawVolumeData.map((d) => {
-      const utcDate = parseISO(d.date + 'T00:00:00Z'); // Parse the UTC date string (e.g., '2023-10-15') as 00:00:00 UTC
-      const localDate = new Date(utcDate.getTime() - (new Date().getTimezoneOffset() * 60000)); // Shift to local time by adjusting for the timezone offset
-      return { date: localDate, volume: d.volume };
+      const utcDate = parseISO(d.date + 'T00:00:00Z');
+      const localDate = new Date(utcDate.getTime() - (new Date().getTimezoneOffset() * 60000));
+      return { date: localDate, volume: Math.round(d.volume * 100) / 100 }; // Round to 2 decimals
     });
 
     if (timeRange === "7days") {
       const days = eachDayOfInterval({ start: subDays(today, 6), end: today });
       formattedData = days.map((day) => {
         const dayVolume = localVolumeData
-          .filter((d) => isSameDay(d.date, day)) // Match local dates for the same day
+          .filter((d) => isSameDay(d.date, day))
           .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(day, "MMM d"), volume: dayVolume };
       });
@@ -98,7 +91,7 @@ export default function DashboardPage() {
       const weeks = eachWeekOfInterval({ start: subDays(today, 55), end: today }, { weekStartsOn: 1 });
       formattedData = weeks.map((weekStart) => {
         const weekVolume = localVolumeData
-          .filter((d) => isSameWeek(d.date, weekStart, { weekStartsOn: 1 })) // Match local dates within the same week
+          .filter((d) => isSameWeek(d.date, weekStart, { weekStartsOn: 1 }))
           .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(weekStart, "MMM d"), volume: weekVolume };
       });
@@ -106,7 +99,7 @@ export default function DashboardPage() {
       const months = eachMonthOfInterval({ start: subDays(today, 364), end: today });
       formattedData = months.map((monthStart) => {
         const monthVolume = localVolumeData
-          .filter((d) => isSameMonth(d.date, monthStart)) // Match local dates within the same month
+          .filter((d) => isSameMonth(d.date, monthStart))
           .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(monthStart, "MMM yyyy"), volume: monthVolume };
       });

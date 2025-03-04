@@ -18,7 +18,7 @@ type WorkoutAction =
   | { type: "SET_EXERCISES"; exercises: UIWorkoutExercise[] }
   | { type: "SET_SELECTED_EXERCISE_IDS"; ids: string[] }
   | { type: "SET_SELECTED_EXERCISE"; exercise: UIWorkoutExercise | null }
-  | { type: "UPDATE_EXERCISE_SETS"; exerciseIndex: number; sets: Set[] };
+  | { type: "UPDATE_EXERCISE_SETS"; exerciseIndex: number; sets: { reps: number; weight_kg: number }[] };
 
 // Initial state with empty workout data
 const initialState: WorkoutState = {

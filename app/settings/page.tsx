@@ -77,6 +77,7 @@ export default function SettingsPage() {
   // Populate form when profileData is available, ensuring unit_preference is correctly typed
   useEffect(() => {
     if (profileData) {
+      console.log("Profile data loaded:", profileData); // Debug log
       setIsNewProfile(profileData.name === "New User");
       form.reset({
         name: profileData.name || "",
