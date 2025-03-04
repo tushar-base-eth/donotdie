@@ -9,7 +9,7 @@ export interface Exercise {
 
 export interface Set extends Tables<"sets"> {
   id: string;
-  workout_exercise_id: string | null;
+  workout_exercise_id: string; // Changed from string | null to string
   reps: number;
   weight_kg: number;
   created_at: string | null;
@@ -17,8 +17,8 @@ export interface Set extends Tables<"sets"> {
 
 export interface WorkoutExercise extends Tables<"workout_exercises"> {
   id: string;
-  workout_id: string | null;
-  exercise_id: string | null;
+  workout_id: string; // Changed from string | null to string
+  exercise_id: string; // Changed from string | null to string
   created_at: string | null;
   exercise: Exercise;
   sets: { reps: number; weight_kg: number }[];
@@ -30,7 +30,7 @@ export interface UIWorkoutExercise extends WorkoutExercise {
 
 export interface Workout extends Tables<"workouts"> {
   id: string;
-  user_id: string | null;
+  user_id: string; // Changed from string | null to string
   created_at: string | null;
   exercises: WorkoutExercise[];
 }

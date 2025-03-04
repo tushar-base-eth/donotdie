@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { fetchProfileData, fetchVolumeData } from "@/lib/supabaseUtils";
 import type { Database } from "@/types/database";
 import ProtectedRoute from "@/components/auth/protected-route";
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isSameDay, isSameWeek, isSameMonth } from "date-fns";
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, parseISO, isSameDay, isSameWeek, isSameMonth } from "date-fns";
 import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
 
@@ -73,33 +73,41 @@ export default function DashboardPage() {
     );
   }
 
-  // Format volume data based on timeRange
+  // Format volume data based on timeRange using local time zone
   const volumeData: VolumeData[] = (() => {
     const today = new Date();
     let formattedData: VolumeData[] = [];
 
+    // Convert rawVolumeData (UTC dates) to local dates
+    // Since Supabase stores dates in UTC as 'YYYY-MM-DD', we parse them as UTC and adjust to the user's local time zone
+    const localVolumeData = rawVolumeData.map((d) => {
+      const utcDate = parseISO(d.date + 'T00:00:00Z'); // Parse the UTC date string (e.g., '2023-10-15') as 00:00:00 UTC
+      const localDate = new Date(utcDate.getTime() - (new Date().getTimezoneOffset() * 60000)); // Shift to local time by adjusting for the timezone offset
+      return { date: localDate, volume: d.volume };
+    });
+
     if (timeRange === "7days") {
       const days = eachDayOfInterval({ start: subDays(today, 6), end: today });
-      formattedData = days.map((day) => ({
-        date: format(day, "MMM d"),
-        volume: rawVolumeData?.find((d) => isSameDay(new Date(d.date), day))?.volume || 0,
-      }));
+      formattedData = days.map((day) => {
+        const dayVolume = localVolumeData
+          .filter((d) => isSameDay(d.date, day)) // Match local dates for the same day
+          .reduce((sum, d) => sum + d.volume, 0);
+        return { date: format(day, "MMM d"), volume: dayVolume };
+      });
     } else if (timeRange === "8weeks") {
       const weeks = eachWeekOfInterval({ start: subDays(today, 55), end: today }, { weekStartsOn: 1 });
       formattedData = weeks.map((weekStart) => {
-        const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-        const weekVolume = rawVolumeData
-          ?.filter((d) => isSameWeek(new Date(d.date), weekStart, { weekStartsOn: 1 }))
-          .reduce((sum, day) => sum + day.volume, 0) || 0;
+        const weekVolume = localVolumeData
+          .filter((d) => isSameWeek(d.date, weekStart, { weekStartsOn: 1 })) // Match local dates within the same week
+          .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(weekStart, "MMM d"), volume: weekVolume };
       });
     } else {
       const months = eachMonthOfInterval({ start: subDays(today, 364), end: today });
       formattedData = months.map((monthStart) => {
-        const monthEnd = endOfMonth(monthStart);
-        const monthVolume = rawVolumeData
-          ?.filter((d) => isSameMonth(new Date(d.date), monthStart))
-          .reduce((sum, day) => sum + day.volume, 0) || 0;
+        const monthVolume = localVolumeData
+          .filter((d) => isSameMonth(d.date, monthStart)) // Match local dates within the same month
+          .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(monthStart, "MMM yyyy"), volume: monthVolume };
       });
     }

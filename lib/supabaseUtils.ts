@@ -166,13 +166,20 @@ export async function fetchProfileData(userId: string) {
  */
 export async function fetchVolumeData(userId: string, timeRange: string) {
   const daysToFetch = timeRange === "7days" ? 7 : timeRange === "8weeks" ? 56 : 365;
-  const { data, error } = await supabase.rpc("get_volume_by_day", {
-    p_user_id: userId,
-    p_days: daysToFetch,
-  });
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysToFetch);
+
+  const { data, error } = await supabase
+    .from("daily_volume")
+    .select("date, volume")
+    .eq("user_id", userId)
+    .gte("date", startDate.toISOString().split('T')[0]) // 'YYYY-MM-DD' format
+    .order("date", { ascending: true });
 
   if (error) throw error;
-  return data;
+
+  // Ensure data is in the expected format: { date: string, volume: number }[]
+  return data.map(row => ({ date: row.date, volume: row.volume }));
 }
 
 /**

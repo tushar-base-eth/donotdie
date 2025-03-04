@@ -13,10 +13,10 @@ import type { Set } from "@/types/workouts"
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference"
 
 interface ExerciseEditorProps {
-  exercise: UIExtendedWorkout["exercises"][0]
-  onClose: () => void
-  onUpdateSets: (exerciseIndex: number, sets: Set[]) => void
-  exerciseIndex: number
+  exercise: UIExtendedWorkout["exercises"][0];
+  onClose: () => void;
+  onUpdateSets: (exerciseIndex: number, sets: { reps: number; weight_kg: number }[]) => void; // Updated type
+  exerciseIndex: number;
 }
 
 export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex }: ExerciseEditorProps) {
@@ -54,9 +54,9 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-4">
               <AnimatePresence initial={false}>
-                {exercise.sets.map((set: Set, setIndex: number) => (
+                {exercise.sets.map((set: { reps: number; weight_kg: number }, setIndex: number) => ( // Updated type
                   <motion.div
-                    key={set.id}
+                    key={setIndex} // Changed to setIndex since set.id isn't available
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
@@ -146,12 +146,9 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                     <Button
                       variant="outline"
                       onClick={() => {
-                        const newSet: Set = {
-                          id: Date.now().toString(),
-                          workout_exercise_id: null,
+                        const newSet: { reps: number; weight_kg: number } = { // Updated type
                           reps: 0,
                           weight_kg: 0,
-                          created_at: null
                         };
                         const newSets = [...exercise.sets, newSet];
                         onUpdateSets(exerciseIndex, newSets);
