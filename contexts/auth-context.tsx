@@ -40,6 +40,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, unitPreference: "metric" | "imperial") => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UpdatableProfile>) => Promise<void>;
+  refreshProfile: () => Promise<void>; // New function to refresh profile
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -187,8 +188,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  // Refresh profile function to fetch latest data
+  const refreshProfile = async (): Promise<void> => {
+    if (!state.user) return;
+    try {
+      const profile = await fetchUserProfile(state.user.id);
+      setState((prev) => ({ ...prev, user: profile }));
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ state, login, signup, logout, updateProfile }}>
+    <AuthContext.Provider value={{ state, login, signup, logout, updateProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

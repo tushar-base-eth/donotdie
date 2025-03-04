@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 import { fetchWorkouts, deleteWorkout } from "@/lib/supabaseUtils";
 
 function HistoryPage() {
-  const { state } = useAuth();
+  const { state, refreshProfile } = useAuth(); // Get refreshProfile from context
   const { user } = state;
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
@@ -52,6 +52,7 @@ function HistoryPage() {
     try {
       await deleteWorkout(workoutId);
       setWorkouts(workouts.filter((w) => w.id !== workoutId));
+      await refreshProfile(); // Refresh profile after deletion
     } catch (err) {
       console.error("Error deleting workout:", err);
       setError("Failed to delete workout. Please try again.");
