@@ -33,7 +33,7 @@ export default function RootLayout({
           <AuthProvider>
             <WorkoutProvider>
               <ErrorBoundary>
-                <div className="h-[calc(100vh-64px)] overflow-hidden">{children}</div>
+                <div className="h-[calc(100vh-64px)] overflow-auto">{children}</div>
                 <ConditionalBottomNav />
               </ErrorBoundary>
               <Toaster />

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { Dumbbell, Heart, BarChart } from "lucide-react";
 
-// Define feature data for the landing page
+// Feature data for the landing page
 const features = [
   { icon: Dumbbell, title: "Gym", description: "Log your exercises and sets with ease." },
   { icon: Heart, title: "Cardio", description: "Keep track of your heart rate, sleep, and nutrition." },
@@ -31,21 +31,22 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-background">
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="px-6 pt-12 pb-6 bg-gradient-to-br from-primary/10 via-background to-background w-full text-center"
-      >
-        <h1 className="text-4xl font-bold mb-2">Do Not Die 😺</h1>
-        <p className="text-xl text-muted-foreground mb-8">stay alive!</p>
-      </motion.div>
+    <main className="flex flex-col items-center min-h-screen bg-background space-y-4 p-8">
+      {/* Header and Call-to-Action Section */}
+      <div className="flex flex-col items-center text-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-4"
+        >
+          <h1 className="text-3xl font-bold">Do Not Die 😺</h1>
+          <p className="text-lg text-muted-foreground">stay alive!</p>
+        </motion.div>
+      </div>
 
       {/* Features Section */}
-      <div className="px-6 py-12 w-full max-w-4xl">
-        {/* <h2 className="text-3xl font-bold mb-8 text-center">Features</h2> */}
+      <div className="w-full max-w-4xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <motion.div
@@ -53,11 +54,11 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="p-6 rounded-3xl bg-card shadow-md"
+              className="p-4 rounded-3xl bg-card shadow-md"
             >
-              <feature.icon className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground">{feature.description}</p>
+              <feature.icon className="h-10 w-10 text-primary mb-2" />
+              <h3 className="text-lg font-semibold mb-1">{feature.title}</h3>
+              <p className="text-sm text-muted-foreground">{feature.description}</p>
             </motion.div>
           ))}
         </div>
