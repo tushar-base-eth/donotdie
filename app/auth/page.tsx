@@ -1,4 +1,4 @@
-"use client";
+"use client"; // Next.js client component (needed for hooks and browser APIs)
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -6,27 +6,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+
+// Project components
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/auth-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/lib/supabaseClient";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/auth-context";
+import { supabase } from "@/lib/supabaseClient";
 
-// Unified schema for both login and signup
+// Validation schema with improved error messages
 const authSchema = z
   .object({
-    email: z.string().email("Please enter a valid email"),
+    email: z.string().email("Please enter a valid email address"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().optional(),
     name: z.string().optional(),
     unitPreference: z.enum(["metric", "imperial"]).optional(),
   })
   .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: "Passwords do not match", // More natural language
     path: ["confirmPassword"],
   });
 
@@ -35,6 +37,7 @@ type AuthSchema = z.infer<typeof authSchema>;
 export default function AuthPage() {
   const { state, login, signup } = useAuth();
   const router = useRouter();
+  // State management with clearer initial values
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationState, setConfirmationState] = useState<"none" | "sent" | "resend">("none");
@@ -43,18 +46,25 @@ export default function AuthPage() {
 
   const form = useForm<AuthSchema>({
     resolver: zodResolver(authSchema),
-    defaultValues: { email: "", password: "", confirmPassword: "", name: "", unitPreference: "metric" },
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+      name: "",
+      unitPreference: "metric"
+    },
   });
 
-  // Redirect if already authenticated
+  // Authentication redirect effect
   useEffect(() => {
     if (state.status === "authenticated") router.replace("/home");
   }, [state.status, router]);
 
-  // Handle form submission
+  // Unified submit handler
   const onSubmit = async (data: AuthSchema) => {
     setIsLoading(true);
     setMessage(null);
+    
     try {
       if (isLogin) {
         await login(data.email, data.password);
@@ -69,7 +79,7 @@ export default function AuthPage() {
     }
   };
 
-  // Centralized error handling
+  // Error handling with status tracking
   const handleError = (error: any, email: string) => {
     if (error.message.includes("Email not confirmed")) {
       setConfirmationState("resend");
@@ -78,32 +88,34 @@ export default function AuthPage() {
       setMessage({
         text: error.message.includes("already registered")
           ? "This email is already registered. Please log in."
-          : error.message || "An error occurred",
+          : error.message || "An unexpected error occurred", // More user-friendly
         isError: true,
       });
     }
   };
 
-  // Resend confirmation email
+  // Resend confirmation flow
   const resendConfirmation = async () => {
     setIsLoading(true);
     setMessage(null);
+    
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: resendEmail,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
+      
       if (error) throw error;
-      setMessage({ text: "Confirmation email resent. Check your inbox.", isError: false });
+      setMessage({ text: "Confirmation email resent. Please check your inbox.", isError: false });
     } catch (error: any) {
-      setMessage({ text: error.message || "Failed to resend email", isError: true });
+      setMessage({ text: error.message || "Failed to resend confirmation email", isError: true });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Loading state
+  // Loading state with consistent spacing
   if (state.status === "loading") {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -112,24 +124,26 @@ export default function AuthPage() {
     );
   }
 
-  // Confirmation sent screen
+  // Confirmation success screen
   if (confirmationState === "sent") {
     return (
-      <div className="container max-w-lg p-8 text-center">
-        <CheckCircle2 className="h-12 w-12 text-green-500 mb-6 mx-auto" />
-        <h2 className="text-2xl font-bold mb-4">Check Your Email</h2>
-        <p className="mb-6">
-          We’ve sent a confirmation email to <span className="font-medium">{form.getValues("email")}</span>.
-          Click the link to confirm your account (valid for 24 hours).
-        </p>
+      <div className="container max-w-lg p-8 text-center space-y-6"> {/* Consistent spacing */}
+        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Check Your Email</h2>
+          <p className="text-muted-foreground">
+            We've sent a confirmation link to <span className="font-medium text-foreground">{form.getValues("email")}</span>.
+            The link will expire in 24 hours.
+          </p>
+        </div>
         <Button
           onClick={() => {
             setConfirmationState("none");
             setIsLogin(true);
           }}
-          className="w-full hover-lift"
+          className="w-full"
         >
-          Back to Login
+          Return to Login
         </Button>
       </div>
     );
@@ -138,22 +152,28 @@ export default function AuthPage() {
   // Resend confirmation screen
   if (confirmationState === "resend") {
     return (
-      <div className="container max-w-lg p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-yellow-500 mb-6 mx-auto" />
-        <h2 className="text-2xl font-bold mb-4">Email Not Confirmed</h2>
-        <p className="mb-6">
-          Your email <span className="font-medium">{resendEmail}</span> needs confirmation.
-        </p>
+      <div className="container max-w-lg p-8 text-center space-y-6">
+        <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto" />
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Confirmation Required</h2>
+          <p className="text-muted-foreground">
+            Please confirm your email address <span className="font-medium text-foreground">{resendEmail}</span>
+          </p>
+        </div>
+
         {message && (
-          <Alert className={`mb-6 ${message.isError ? "bg-red-50" : "bg-green-50"}`}>
-            <AlertDescription className={message.isError ? "text-red-600" : "text-green-600"}>
-              {message.text}
-            </AlertDescription>
+          <Alert variant={message.isError ? "destructive" : "default"}>
+            <AlertDescription>{message.text}</AlertDescription>
           </Alert>
         )}
+
         <div className="space-y-3">
-          <Button onClick={resendConfirmation} className="w-full hover-lift" disabled={isLoading}>
-            {isLoading ? "Sending..." : "Resend Confirmation Email"}
+          <Button 
+            onClick={resendConfirmation} 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? "Sending..." : "Resend Confirmation"}
           </Button>
           <Button
             variant="outline"
@@ -161,7 +181,7 @@ export default function AuthPage() {
               setConfirmationState("none");
               setIsLogin(true);
             }}
-            className="w-full hover-lift"
+            className="w-full"
           >
             Back to Login
           </Button>
@@ -170,7 +190,7 @@ export default function AuthPage() {
     );
   }
 
-  // Main auth form
+  // Main auth form with animation
   return (
     <div className="container max-w-lg p-4">
       <AnimatePresence mode="wait">
@@ -181,20 +201,21 @@ export default function AuthPage() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="mt-8 glass">
-            <CardHeader>
-              <CardTitle>{isLogin ? "Login" : "Create an Account"}</CardTitle>
+          <Card className="mt-8">
+            <CardHeader className="pb-4">
+              <CardTitle>{isLogin ? "Welcome Back" : "Create Account"}</CardTitle>
             </CardHeader>
+            
             <CardContent>
               {message && (
-                <Alert className={`mb-6 ${message.isError ? "bg-red-50" : "bg-green-50"}`}>
-                  <AlertDescription className={message.isError ? "text-red-600" : "text-green-600"}>
-                    {message.text}
-                  </AlertDescription>
+                <Alert variant={message.isError ? "destructive" : "default"} className="mb-6">
+                  <AlertDescription>{message.text}</AlertDescription>
                 </Alert>
               )}
+
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  {/* Email Field */}
                   <FormField
                     control={form.control}
                     name="email"
@@ -202,12 +223,19 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="email@example.com" type="email" {...field} />
+                          <Input 
+                            placeholder="email@example.com" 
+                            type="email" 
+                            autoComplete="email"
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {/* Password Field */}
                   <FormField
                     control={form.control}
                     name="password"
@@ -215,14 +243,21 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Password</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input 
+                            type="password" 
+                            autoComplete="current-password"
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {/* Conditional Signup Fields */}
                   {!isLogin && (
                     <>
+                      {/* Confirm Password */}
                       <FormField
                         control={form.control}
                         name="confirmPassword"
@@ -230,12 +265,18 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Confirm Password</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <Input 
+                                type="password" 
+                                autoComplete="new-password"
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+
+                      {/* Full Name */}
                       <FormField
                         control={form.control}
                         name="name"
@@ -243,27 +284,37 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Full Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="John Doe" {...field} />
+                              <Input 
+                                placeholder="John Doe" 
+                                autoComplete="name"
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+
+                      {/* Unit Preference */}
                       <FormField
                         control={form.control}
                         name="unitPreference"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Unit Preference</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel>Measurement System</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select units" />
+                                  <SelectValue placeholder="Select system" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="metric">Metric (kg/cm)</SelectItem>
-                                <SelectItem value="imperial">Imperial (lb/in)</SelectItem>
+                                <SelectItem value="metric">Metric (kg, cm)</SelectItem>
+                                <SelectItem value="imperial">Imperial (lb, in)</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -272,20 +323,29 @@ export default function AuthPage() {
                       />
                     </>
                   )}
-                  <Button type="submit" className="w-full hover-lift" disabled={isLoading}>
-                    {isLoading ? "Processing..." : isLogin ? "Login" : "Create Account"}
+
+                  {/* Submit Button */}
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
                   </Button>
+
+                  {/* Toggle Button */}
                   <Button
                     variant="outline"
-                    className="w-full hover-lift"
+                    className="w-full"
                     onClick={() => {
                       setIsLogin(!isLogin);
                       form.reset();
                       setMessage(null);
                     }}
                     disabled={isLoading}
+                    type="button"
                   >
-                    {isLogin ? "Need an account? Sign up" : "Already have an account? Log in"}
+                    {isLogin ? "Create New Account" : "Already Have an Account?"}
                   </Button>
                 </form>
               </Form>
