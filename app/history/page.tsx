@@ -22,14 +22,12 @@ function HistoryPage() {
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const { mutate } = useSWRConfig();
 
-  // Define the key function for infinite scrolling
   const getKey = (pageIndex: number, previousPageData: UIExtendedWorkout[] | null) => {
     if (!user) return null;
-    if (previousPageData && !previousPageData.length) return null; // No more data
+    if (previousPageData && !previousPageData.length) return null;
     return ["workouts", user.id, pageIndex, 10];
   };
 
-  // Fetch workouts with SWR Infinite, casting pageIndex and pageSize to numbers
   const { data, error, size, setSize, isLoading } = useSWRInfinite(
     getKey,
     ([_, userId, pageIndex, pageSize]: [string, string, number, number]) =>
@@ -37,7 +35,6 @@ function HistoryPage() {
     { initialSize: 1, revalidateFirstPage: false }
   );
 
-  // Flatten the paginated data into a single array
   const workouts = data ? ([] as UIExtendedWorkout[]).concat(...data) : [];
 
   const displayedWorkouts = useMemo(() => {
@@ -50,10 +47,19 @@ function HistoryPage() {
 
   const handleDeleteWorkout = async (workoutId: string) => {
     try {
-      await deleteWorkout(workoutId);
-      // Invalidate all workout-related caches with null check
+      // Optimistically update the cache for each page
       mutate(
-        (key: any[]) => user && Array.isArray(key) && key[0] === "workouts" && key[1] === user.id,
+        (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user?.id,
+        (currentPageData: UIExtendedWorkout[] | undefined) => {
+          if (!currentPageData) return currentPageData;
+          return currentPageData.filter((w) => w.id !== workoutId);
+        },
+        false // Do not revalidate yet
+      );
+      await deleteWorkout(workoutId);
+      // Revalidate all pages after successful delete
+      mutate(
+        (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user?.id,
         undefined,
         { revalidate: true }
       );
@@ -61,10 +67,15 @@ function HistoryPage() {
       await refreshProfile();
     } catch (err) {
       console.error("Error deleting workout:", err);
+      // Revert optimistic update on failure
+      mutate(
+        (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user?.id,
+        undefined,
+        { revalidate: true }
+      );
     }
   };
 
-  // Handle initial loading and errors
   if (error) {
     return (
       <div className="p-4">
@@ -90,7 +101,7 @@ function HistoryPage() {
         <InfiniteScroll
           dataLength={workouts.length}
           next={() => setSize(size + 1)}
-          hasMore={data?.[data.length - 1]?.length === 10 || false} // Ensure hasMore is always boolean
+          hasMore={data?.[data.length - 1]?.length === 10 || false}
           loader={<p className="text-center">Loading...</p>}
           endMessage={<p className="text-center">No more workouts to load.</p>}
         >

@@ -35,7 +35,6 @@ import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 
-// Adjusted schema to match profile fields and make optional fields nullable
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   gender: z.enum(["Male", "Female", "Other"]).nullable().optional(),
@@ -55,7 +54,6 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const { mutate } = useSWRConfig();
 
-  // Fetch profile data with SWR, with null check for user
   const { data: profileData, error: profileError } = useSWR(
     user ? ["profile", user.id] : null,
     () => user ? fetchProfileData(user.id) : null
@@ -74,16 +72,15 @@ export default function SettingsPage() {
     },
   });
 
-  // Populate form when profileData is available, ensuring unit_preference is correctly typed
   useEffect(() => {
     if (profileData) {
-      console.log("Profile data loaded:", profileData); // Debug log
+      console.log("Profile data loaded:", profileData);
       setIsNewProfile(profileData.name === "New User");
       form.reset({
         name: profileData.name || "",
         gender: profileData.gender as "Male" | "Female" | "Other" | null,
         date_of_birth: profileData.date_of_birth || "",
-        unit_preference: profileData.unit_preference as "metric" | "imperial", // Explicitly cast to match schema
+        unit_preference: profileData.unit_preference as "metric" | "imperial",
         weight_kg: profileData.weight_kg || null,
         height_cm: profileData.height_cm || null,
         body_fat_percentage: profileData.body_fat_percentage || null,
@@ -97,7 +94,6 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       await updateProfile(data);
-      // Update SWR cache optimistically with submitted data
       mutate(user ? ["profile", user.id] : null, data, false);
       form.reset(data);
     } catch (error) {
@@ -107,7 +103,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Handle errors with null check for user
   if (profileError) {
     return (
       <div className="p-4">
@@ -119,7 +114,6 @@ export default function SettingsPage() {
     );
   }
 
-  // Show skeleton while loading
   if (!profileData) {
     return (
       <ProtectedRoute>
@@ -220,9 +214,7 @@ export default function SettingsPage() {
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="rounded-xl">
-                                <SelectValue>
-                                  {field.value === "metric" ? "Metric (kg/cm)" : "Imperial (lb/ft-in)"}
-                                </SelectValue>
+                                <SelectValue placeholder="Select unit preference" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>

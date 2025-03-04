@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
@@ -21,21 +20,12 @@ export function WorkoutList({
   selectedDate,
 }: WorkoutListProps) {
   const { formatWeight } = useUnitPreference();
-  const [localWorkouts, setLocalWorkouts] = useState(workouts);
-
-  // Sync localWorkouts with prop changes
-  useEffect(() => {
-    setLocalWorkouts(workouts);
-  }, [workouts]);
 
   const handleDelete = (workoutId: string) => {
-    // Optimistically remove the workout from local state
-    setLocalWorkouts((prev) => prev.filter((w) => w.id !== workoutId));
-    // Call the parent delete function
     onWorkoutDelete(workoutId);
   };
 
-  if (localWorkouts.length === 0) {
+  if (workouts.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
         {selectedDate ? (
@@ -66,12 +56,12 @@ export function WorkoutList({
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
       <AnimatePresence initial={false}>
-        {localWorkouts.map((workout) => (
+        {workouts.map((workout) => (
           <motion.div
             key={workout.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -100, height: 0 }} // Slide out left and collapse
+            exit={{ opacity: 0, x: -100, height: 0 }}
             transition={{ duration: 0.3 }}
             layout
           >
