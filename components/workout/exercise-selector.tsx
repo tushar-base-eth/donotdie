@@ -95,7 +95,7 @@ export function ExerciseSelector({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[80vh] px-0"
+        className="h-[80vh] px-0 z-[101]"
         aria-describedby="exercise-selector-description"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
