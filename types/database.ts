@@ -33,20 +33,17 @@ export type Database = {
       daily_volume: {
         Row: {
           date: string
-          id: number
-          user_id: string | null
+          user_id: string
           volume: number
         }
         Insert: {
           date: string
-          id?: number
-          user_id?: string | null
-          volume: number
+          user_id: string
+          volume?: number
         }
         Update: {
           date?: string
-          id?: number
-          user_id?: string | null
+          user_id?: string
           volume?: number
         }
         Relationships: [
@@ -64,14 +61,14 @@ export type Database = {
           body_fat_percentage: number | null
           created_at: string | null
           date_of_birth: string | null
-          gender: string | null
+          gender: string
           height_cm: number | null
           id: string
           name: string
-          theme_preference: string | null
+          theme_preference: string
           total_volume: number | null
           total_workouts: number | null
-          unit_preference: string // Changed from string | null to string
+          unit_preference: string
           updated_at: string | null
           weight_kg: number | null
         }
@@ -79,14 +76,14 @@ export type Database = {
           body_fat_percentage?: number | null
           created_at?: string | null
           date_of_birth?: string | null
-          gender?: string | null
+          gender?: string
           height_cm?: number | null
           id: string
           name: string
-          theme_preference?: string | null
+          theme_preference?: string
           total_volume?: number | null
           total_workouts?: number | null
-          unit_preference: string // Changed from string | null to string
+          unit_preference?: string
           updated_at?: string | null
           weight_kg?: number | null
         }
@@ -94,14 +91,14 @@ export type Database = {
           body_fat_percentage?: number | null
           created_at?: string | null
           date_of_birth?: string | null
-          gender?: string | null
+          gender?: string
           height_cm?: number | null
           id?: string
           name?: string
-          theme_preference?: string | null
+          theme_preference?: string
           total_volume?: number | null
           total_workouts?: number | null
-          unit_preference?: string | null
+          unit_preference?: string
           updated_at?: string | null
           weight_kg?: number | null
         }
