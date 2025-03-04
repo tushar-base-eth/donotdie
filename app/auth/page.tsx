@@ -122,7 +122,13 @@ export default function AuthPage() {
           We’ve sent a confirmation email to <span className="font-medium">{form.getValues("email")}</span>.
           Click the link to confirm your account (valid for 24 hours).
         </p>
-        <Button onClick={() => setConfirmationState("none")} className="w-full hover-lift">
+        <Button
+          onClick={() => {
+            setConfirmationState("none");
+            setIsLogin(true);
+          }}
+          className="w-full hover-lift"
+        >
           Back to Login
         </Button>
       </div>
@@ -151,7 +157,10 @@ export default function AuthPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setConfirmationState("none")}
+            onClick={() => {
+              setConfirmationState("none");
+              setIsLogin(true);
+            }}
             className="w-full hover-lift"
           >
             Back to Login

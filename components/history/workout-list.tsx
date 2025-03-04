@@ -32,10 +32,10 @@ export function WorkoutList({
           <div>
             <div className="mb-4">
               <div className="rounded-full bg-muted p-4 inline-block">
-                <span role="img" aria-label="Sad face" className="text-4xl">🤨</span>
+                <span role="img" aria-label="Sad face" className="text-4xl">🥱</span>
               </div>
             </div>
-            <p className="text-lg font-medium">You were LASY on this day!</p>
+            <p className="text-lg font-medium">You were LAZY on this day!</p>
           </div>
         ) : (
           <div>

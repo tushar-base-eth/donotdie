@@ -14,6 +14,8 @@ import type { UIExtendedWorkout } from "@/types/workouts";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useSWRConfig } from "swr";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle } from "lucide-react";
 
 function HistoryPage() {
   const { state, refreshProfile } = useAuth();
@@ -104,7 +106,16 @@ function HistoryPage() {
         next={() => setSize(size + 1)}
         hasMore={data?.[data.length - 1]?.length === 10 || false}
         loader={<p className="text-center">Loading...</p>}
-        endMessage={<p className="text-center">No more workouts to load.</p>}
+        endMessage={
+          !selectedDate && (
+            <div className="flex items-center justify-center p-4">
+            <Badge variant="outline" className="flex items-center space-x-1">
+              <CheckCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
+              <span>You’ve seen all your workouts!</span>
+            </Badge>
+          </div>
+          )
+        }
       >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
