@@ -103,7 +103,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
   const handleSaveWorkout = async () => {
     if (!isWorkoutValid || !user || isLoading) return;
-  
+
     startTransition(async () => {
       try {
         const newWorkout = {
@@ -114,11 +114,14 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
           })),
         };
         await saveWorkout(newWorkout);
-  
+
         dispatch({ type: "SET_EXERCISES", exercises: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null });
-  
+
+        // Clear localStorage
+        localStorage.removeItem("currentWorkout");
+
         toast({
           title: "Success",
           description: "Workout saved successfully.",
