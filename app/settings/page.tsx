@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import useSWR from "swr";
-import { useSWRConfig } from "swr";
 import { LogOut, Sun, Moon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,13 +27,13 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
-import { useAuth } from "@/contexts/auth-context";
-import { fetchProfileData } from "@/lib/supabaseUtils";
+import { useAuth, UpdatableProfile } from "@/contexts/auth-context"; // Added UpdatableProfile import
 import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 import { toast } from "@/components/ui/use-toast";
 
+// Define the schema for the settings form
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   gender: z.enum(["Male", "Female", "Other"]).nullable().optional(),
@@ -48,18 +46,13 @@ const settingsSchema = z.object({
 
 export default function SettingsPage() {
   const { state, logout, updateProfile } = useAuth();
-  const { user } = state;
+  const { user } = state; // Directly use user from AuthContext instead of SWR
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { mutate } = useSWRConfig();
 
-  const { data: profileData, error: profileError } = useSWR(
-    user ? ["profile", user.id] : null,
-    () => user ? fetchProfileData(user.id) : null
-  );
-
+  // Initialize the form with react-hook-form and zod validation
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -73,36 +66,47 @@ export default function SettingsPage() {
     },
   });
 
+  // Sync form with user data from AuthContext whenever it changes
   useEffect(() => {
-    if (profileData) {
-      console.log("Profile data loaded:", profileData);
-      setIsNewProfile(profileData.name === "New User");
+    if (user) {
+      setIsNewProfile(user.name === "New User");
       form.reset({
-        name: profileData.name || "",
-        gender: profileData.gender as "Male" | "Female" | "Other" | null,
-        date_of_birth: profileData.date_of_birth || "",
-        unit_preference: profileData.unit_preference as "metric" | "imperial",
-        weight_kg: profileData.weight_kg || null,
-        height_cm: profileData.height_cm || null,
-        body_fat_percentage: profileData.body_fat_percentage || null,
+        name: user.name || "",
+        gender: user.gender,
+        date_of_birth: user.dateOfBirth || "",
+        unit_preference: user.unitPreference, // Matches UserProfile field name
+        weight_kg: user.weight || null,
+        height_cm: user.height || null,
+        body_fat_percentage: user.bodyFat || null,
       });
     }
-  }, [profileData, form]);
+  }, [user, form]);
 
+  // Handle form submission
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     if (!user) return;
 
     setIsSaving(true);
     try {
-      await updateProfile(data);
-      mutate(user ? ["profile", user.id] : null, data, false);
-      form.reset(data);
+      // Map form data to match UpdatableProfile interface
+      const updates: Partial<UpdatableProfile> = {
+        name: data.name,
+        gender: data.gender,
+        dateOfBirth: data.date_of_birth,
+        unitPreference: data.unit_preference, // Use camelCase to match UserProfile
+        weight: data.weight_kg,
+        height: data.height_cm,
+        bodyFat: data.body_fat_percentage,
+      };
+      // Update profile in database and AuthContext state
+      await updateProfile(updates);
       toast({
         title: "Success",
         description: "Profile saved successfully.",
         variant: "default",
         duration: 1000,
       });
+      // No need to manually reset form; useEffect will handle it when user updates
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -116,18 +120,8 @@ export default function SettingsPage() {
     }
   };
 
-  if (profileError) {
-    return (
-      <div className="p-4">
-        Failed to load profile data.{" "}
-        <button onClick={() => user && mutate(["profile", user.id])} className="text-blue-500 underline">
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (!profileData) {
+  // Show loading skeleton while auth state is loading or user is not available
+  if (state.status === "loading" || !user) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background pb-16">
@@ -169,6 +163,7 @@ export default function SettingsPage() {
         />
 
         <div className="p-4 space-y-6">
+          {/* Show alert for new users */}
           {isNewProfile && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -211,10 +206,10 @@ export default function SettingsPage() {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
-                          value={user?.email || ""}
+                          value={user.email || ""}
                           readOnly
                           disabled
-                          className="rounded-xl"
+                          className="round ed-xl"
                         />
                       </FormControl>
                     </FormItem>

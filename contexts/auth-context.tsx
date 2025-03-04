@@ -21,19 +21,20 @@ export interface UserProfile {
   updatedAt: string | null;
 }
 
-// Define what fields can be updated
-type UpdatableProfile = Pick<
+// Define fields that can be updated via updateProfile
+// Exported to be used in SettingsPage.tsx
+export type UpdatableProfile = Pick<
   UserProfile,
   "name" | "gender" | "dateOfBirth" | "weight" | "height" | "bodyFat" | "unitPreference" | "themePreference"
 >;
 
-// Define auth state
+// Define the authentication state
 interface AuthState {
   status: "loading" | "authenticated" | "unauthenticated";
   user: UserProfile | null;
 }
 
-// Define context type
+// Define the context type with all available methods
 interface AuthContextType {
   state: AuthState;
   login: (email: string, password: string) => Promise<void>;
@@ -51,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
   });
 
-  // Fetch or create user profile
+  // Fetch or create a user profile from Supabase
   const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
     const { data: userData } = await supabase.auth.getUser();
     const email = userData.user?.email || "";
@@ -63,16 +64,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error || !profile) {
+      // Create a new profile if one doesn’t exist
+      // Removed 'id' from insert since it’s set by the auth.users reference and trigger
       const { data: newProfile, error: insertError } = await supabase
         .from("profiles")
         .insert({
-          id: userId,
-          email,
+          id: userId, // Ensure this is included
           name: "New User",
-          gender: null,
-          date_of_birth: null,
-          weight_kg: null,
-          height_cm: null,
+          gender: "Other", // Matches database default and constraint
+          date_of_birth: "2000-01-01", // Matches database default
+          weight_kg: 70,
+          height_cm: 170,
           body_fat_percentage: null,
           unit_preference: "metric",
           theme_preference: "light",
@@ -88,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile = newProfile;
     }
 
+    // Map database fields to UserProfile interface
     return {
       id: userId,
       email,
@@ -106,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  // Restore session on mount
+  // Restore session on component mount
   useEffect(() => {
     const restoreSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -125,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restoreSession();
   }, []);
 
-  // Listen for auth state changes
+  // Listen for auth state changes from Supabase
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
@@ -133,8 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setState({ status: "authenticated", user: userProfile });
         });
       } else if (event === "TOKEN_REFRESHED") {
-        // Update session state without fetching profile again
-        setState((prev) => prev.user ? { ...prev, status: "authenticated" } : prev);
+        setState((prev) => (prev.user ? { ...prev, status: "authenticated" } : prev));
       } else if (event === "SIGNED_OUT") {
         setState({ status: "unauthenticated", user: null });
       }
@@ -143,14 +145,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => authListener?.subscription.unsubscribe();
   }, []);
 
-  // Login function
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
-  // Signup function
-  const signup = async (email: string, password: string, name: string, unitPreference: "metric" | "imperial") => {
+  const signup = async (
+    email: string,
+    password: string,
+    name: string,
+    unitPreference: "metric" | "imperial"
+  ) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -161,24 +166,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  // Logout function
   const logout = async () => {
     await supabase.auth.signOut();
   };
 
-  // Update profile function
+  // Update user profile in database and context state
   const updateProfile = async (updates: Partial<UpdatableProfile>) => {
     if (!state.user) throw new Error("No user logged in");
+
+    // Map updates to match database column names and handle null-to-undefined conversion
+    const dbUpdates = {
+      name: updates.name,
+      gender: updates.gender === null ? undefined : updates.gender,
+      date_of_birth: updates.dateOfBirth === null ? undefined : updates.dateOfBirth,
+      weight_kg: updates.weight,
+      height_cm: updates.height,
+      body_fat_percentage: updates.bodyFat,
+      unit_preference: updates.unitPreference,
+      theme_preference: updates.themePreference === null ? undefined : updates.themePreference,
+    };
+
     const { error } = await supabase
       .from("profiles")
-      .update(updates)
+      .update(dbUpdates)
       .eq("id", state.user.id);
+
     if (error) throw error;
+
+    // Update local state with the new values
     const updatedUser = { ...state.user, ...updates };
     setState({ status: "authenticated", user: updatedUser });
   };
 
-  // Refresh profile function
+  // Refresh profile data from the database
   const refreshProfile = async () => {
     if (!state.user) return;
     const updatedProfile = await fetchUserProfile(state.user.id);

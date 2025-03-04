@@ -43,13 +43,13 @@ DROP TABLE IF EXISTS public.profiles CASCADE;
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, -- Links to authentication system
   name TEXT NOT NULL, -- User's display name
-  gender TEXT CHECK (gender IN ('Male', 'Female', 'Other')) DEFAULT 'Other', -- Constrained options for consistency
-  date_of_birth DATE DEFAULT '2000-01-01', -- Default for simplicity
+  gender TEXT NOT NULL CHECK (gender IN ('Male', 'Female', 'Other')) DEFAULT 'Other', -- Constrained options for consistency
+  date_of_birth DATE NOT NULL DEFAULT '2000-01-01', -- Default for simplicity
   weight_kg NUMERIC DEFAULT 70,  -- NUMERIC ensures precision for weight tracking
   height_cm NUMERIC DEFAULT 170, -- Consistent precision with weight_kg
   body_fat_percentage NUMERIC, -- Optional field for advanced tracking
   unit_preference TEXT NOT NULL CHECK (unit_preference IN ('metric', 'imperial')) DEFAULT 'metric', -- Enforces valid units
-  theme_preference TEXT CHECK (theme_preference IN ('light', 'dark')) DEFAULT 'light', -- UI customization
+  theme_preference TEXT NOT NULL CHECK (theme_preference IN ('light', 'dark')) DEFAULT 'light', -- UI customization
   total_volume NUMERIC DEFAULT 0,  -- Tracks lifetime volume lifted with precision
   total_workouts INTEGER DEFAULT 0, -- Tracks total workout count
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Audit trail for creation

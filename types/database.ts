@@ -60,7 +60,7 @@ export type Database = {
         Row: {
           body_fat_percentage: number | null
           created_at: string | null
-          date_of_birth: string | null
+          date_of_birth: string
           gender: string
           height_cm: number | null
           id: string
@@ -75,7 +75,7 @@ export type Database = {
         Insert: {
           body_fat_percentage?: number | null
           created_at?: string | null
-          date_of_birth?: string | null
+          date_of_birth?: string
           gender?: string
           height_cm?: number | null
           id: string
@@ -90,7 +90,7 @@ export type Database = {
         Update: {
           body_fat_percentage?: number | null
           created_at?: string | null
-          date_of_birth?: string | null
+          date_of_birth?: string
           gender?: string
           height_cm?: number | null
           id?: string
