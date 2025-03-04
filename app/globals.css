@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-    /* Light mode remains unchanged */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -28,26 +27,26 @@
   }
 
   .dark {
-    --background: 0 0% 10%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 346 100% 60%;
+    /* Fitbod-inspired dark theme */
+    --background: 210 10% 8%;
+    --foreground: 0 0% 95%;
+    --card: 210 10% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 210 10% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 10 80% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 50%;
-    --accent: 346 100% 60%;
+    --secondary: 210 12% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 210 12% 20%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 10 80% 55%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 80% 50%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 346 100% 60%;
-    --radius: 0.5rem;
+    --input: 0 0% 20%;
+    --ring: 10 80% 55%;
   }
 }
 
@@ -60,7 +59,6 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
-  /* Enhanced typography */
   h1, h2, h3, h4, h5, h6 {
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
     letter-spacing: -0.02em;
@@ -71,7 +69,6 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
-  /* Smooth scrolling */
   .smooth-scroll {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
@@ -93,7 +90,6 @@
   }
 }
 
-/* Glassmorphism effects */
 .glass {
   @apply bg-background/80 backdrop-blur-xl border border-background/10 backdrop-saturate-150;
 }
@@ -102,7 +98,6 @@
   @apply hover:bg-background/90 transition-colors duration-200;
 }
 
-/* Animations */
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
@@ -113,7 +108,6 @@
   animation: float 3s ease-in-out infinite;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
