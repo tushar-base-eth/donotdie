@@ -19,7 +19,7 @@ export default function HomePage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
-              className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center space-y-6 glass rounded-lg shadow-md"
+              className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center space-y-6 glass rounded-3xl shadow-md"
               style={{ marginBottom: "60px" }}
             >
               <motion.div

@@ -175,7 +175,7 @@ export default function SettingsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Alert variant="default" className="glass shadow-md">
+              <Alert variant="default" className="glass shadow-md rounded-3xl">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Profile Setup</AlertTitle>
                 <AlertDescription>
@@ -190,7 +190,7 @@ export default function SettingsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <Card className="border-0 glass shadow-md">
+            <Card className="border-0 glass shadow-md rounded-3xl">
               <CardContent className="p-4">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -242,7 +242,7 @@ export default function SettingsPage() {
                     <Button
                       type="submit"
                       disabled={isSaving || !form.formState.isDirty}
-                      className="rounded-xl"
+                      className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       {isSaving ? "Saving..." : "Save"}
                     </Button>

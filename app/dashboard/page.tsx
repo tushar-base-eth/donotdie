@@ -72,11 +72,10 @@ export default function DashboardPage() {
     const today = new Date();
     let formattedData: VolumeData[] = [];
 
-    // Convert rawVolumeData (UTC dates) to local dates and round volume
     const localVolumeData = rawVolumeData.map((d) => {
       const utcDate = parseISO(d.date + 'T00:00:00Z');
       const localDate = new Date(utcDate.getTime() - (new Date().getTimezoneOffset() * 60000));
-      return { date: localDate, volume: Math.round(d.volume * 100) / 100 }; // Round to 2 decimals
+      return { date: localDate, volume: Math.round(d.volume * 100) / 100 };
     });
 
     if (timeRange === "7days") {
@@ -116,7 +115,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="glass p-4 rounded-lg shadow-md"
+            className="glass p-4 rounded-3xl shadow-md"
           >
             <MetricsCards totalWorkouts={profileData.total_workouts ?? 0} totalVolume={profileData.total_volume ?? 0} />
           </motion.div>
@@ -124,7 +123,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="glass p-4 rounded-lg shadow-md"
+            className="glass p-4 rounded-3xl shadow-md"
           >
             <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
           </motion.div>

@@ -65,7 +65,7 @@ export function WorkoutExercises({
                 </motion.div>
 
                 <Card
-                  className="relative z-10 border-0 glass glass-hover transition-all duration-200"
+                  className="relative z-10 border-0 glass glass-hover transition-all duration-200 rounded-3xl"
                   onClick={() => onExerciseSelect(exercise)}
                 >
                   <CardContent className="p-4">

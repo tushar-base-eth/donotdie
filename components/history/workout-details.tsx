@@ -20,10 +20,9 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
   return (
     <Sheet open={!!workout} onOpenChange={onClose}>
       <SheetContent
-        className="w-full sm:max-w-lg p-0 bg-background z-50"
-        style={{ maxHeight: "calc(100vh - 60px)", overflowY: "auto" }} // Key change here
+        className="w-full sm:max-w-lg p-0 bg-background z-50 rounded-t-3xl"
+        style={{ maxHeight: "calc(100vh - 60px)", overflowY: "auto" }}
       >
-        {/* Header */}
         <div className="p-4 border-b sticky top-0 bg-background z-10">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-xl text-foreground">Workout Details</SheetTitle>
@@ -37,7 +36,6 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
             </Button>
           </div>
         </div>
-        {/* Animated content */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

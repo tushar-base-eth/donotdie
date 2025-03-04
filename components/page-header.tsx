@@ -18,7 +18,7 @@ export function PageHeader({ title, showSettings = true, rightContent }: PageHea
   const router = useRouter()
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg rounded-b-3xl">
       <h1 className="text-lg font-semibold">{title}</h1>
       {rightContent ||
         (showSettings && (
@@ -37,4 +37,3 @@ export function PageHeader({ title, showSettings = true, rightContent }: PageHea
     </header>
   )
 }
-

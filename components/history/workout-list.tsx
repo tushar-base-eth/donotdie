@@ -92,7 +92,7 @@ export function WorkoutList({
               </motion.div>
 
               <Card
-                className="overflow-hidden cursor-pointer hover:bg-accent/5 transition-colors"
+                className="overflow-hidden cursor-pointer hover:bg-accent/5 transition-colors rounded-3xl"
                 onClick={() => onWorkoutSelect(workout)}
               >
                 <CardContent className="p-4">

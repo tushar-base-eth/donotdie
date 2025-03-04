@@ -8,8 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import useSWR from "swr"; // Import SWR for data fetching and caching
-import { fetchAvailableExercises } from "@/lib/supabaseUtils"; // Centralized fetch function
+import useSWR from "swr";
+import { fetchAvailableExercises } from "@/lib/supabaseUtils";
 import type { Exercise } from "@/types/workouts";
 
 interface ExerciseSelectorProps {
@@ -32,17 +32,15 @@ export function ExerciseSelector({
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
 
-  // Use SWR to fetch exercises with caching; key "available_exercises" ensures global caching
   const { data: availableExercises, error } = useSWR<Exercise[]>(
     "available_exercises",
     fetchAvailableExercises,
     {
-      revalidateOnFocus: false, // Prevent refetch on window focus (static data)
-      revalidateOnReconnect: false, // Prevent refetch on reconnect
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
   );
 
-  // Handle error state: show retry option if fetch fails
   if (error) {
     return (
       <div className="p-4">
@@ -54,15 +52,12 @@ export function ExerciseSelector({
     );
   }
 
-  // Handle loading state: show a placeholder while data is being fetched
   if (!availableExercises) {
-    return <div className="p-4">Loading exercises...</div>; // Could be enhanced with a skeleton loader
+    return <div className="p-4">Loading exercises...</div>;
   }
 
-  // Extract unique muscle groups from fetched exercises
   const muscleGroups = Array.from(new Set(availableExercises.map((ex) => ex.primary_muscle_group)));
 
-  // Filter exercises based on search query and selected muscle group
   const filteredExercises = Object.entries(
     availableExercises.reduce((acc, ex) => {
       const group = ex.primary_muscle_group || "Other";
@@ -84,23 +79,21 @@ export function ExerciseSelector({
     return acc;
   }, {} as Record<string, Exercise[]>);
 
-  // Handle adding selected exercises and closing the modal
   const handleAdd = () => {
     const selected = availableExercises.filter((ex) => selectedExercises.includes(ex.id));
     onAddExercises(selected);
-    onOpenChange(false); // Close the modal
+    onOpenChange(false);
   };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[80vh] px-0 z-[101]"
+        className="h-[80vh] px-0 z-[101] rounded-t-3xl"
         aria-describedby="exercise-selector-description"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col h-full">
-          {/* Header with title */}
           <div className="px-6 pb-6 flex items-center border-b">
             <SheetTitle className="text-xl">Add Exercise</SheetTitle>
             <span id="exercise-selector-description" className="sr-only">
@@ -108,7 +101,6 @@ export function ExerciseSelector({
             </span>
           </div>
 
-          {/* Search and tab navigation */}
           <div className="px-6 pt-4 space-y-4">
             <Input
               ref={inputRef}
@@ -126,7 +118,7 @@ export function ExerciseSelector({
               }}
               className="w-full"
             >
-              <TabsList className="w-full p-0.5 h-10 bg-accent/10">
+              <TabsList className="w-full p-0.5 h-10 bg-accent/10 rounded-xl">
                 <TabsTrigger value="all" className="flex-1 rounded-lg">
                   All
                 </TabsTrigger>
@@ -137,7 +129,6 @@ export function ExerciseSelector({
             </Tabs>
           </div>
 
-          {/* Scrollable exercise list */}
           <ScrollArea className="flex-1">
             <div className="px-6 space-y-6 py-4">
               {selectedTab === "byMuscle" && (
@@ -169,7 +160,7 @@ export function ExerciseSelector({
                         whileTap={{ scale: 0.99 }}
                       >
                         <div
-                          className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer hover:bg-accent/5 transition-colors"
+                          className="flex items-center gap-4 p-4 rounded-3xl border cursor-pointer hover:bg-accent/5 transition-colors"
                           onClick={() => onExerciseToggle(exercise.id)}
                         >
                           <div className="flex-1">
@@ -183,7 +174,7 @@ export function ExerciseSelector({
                             className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors
                               ${
                                 selectedExercises.includes(exercise.id)
-                                  ? "bg-[#4B7BFF] dark:bg-red-500 border-[#4B7BFF] dark:border-red-500 text-white"
+                                  ? "bg-primary border-primary text-primary-foreground"
                                   : "border-input"
                               }`}
                           >
@@ -198,12 +189,11 @@ export function ExerciseSelector({
             </div>
           </ScrollArea>
 
-          {/* Footer with Add button */}
           <div className="p-4 bg-background/80 backdrop-blur-sm border-t">
             <Button
               onClick={handleAdd}
               disabled={selectedExercises.length === 0}
-              className="w-full bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-xl h-12"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12"
             >
               Add {selectedExercises.length} Exercise{selectedExercises.length !== 1 ? "s" : ""}
             </Button>

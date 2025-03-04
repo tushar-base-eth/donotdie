@@ -84,23 +84,19 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
-  // Updated handleUpdateSets to fix type mismatch
   const handleUpdateSets = (exerciseIndex: number, newSets: { reps: number; weight_kg: number }[]) => {
     if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
       throw new Error(`Invalid exercise index: ${exerciseIndex}`);
     }
-    // Get the existing exercise to access its current sets
     const existingExercise = state.currentWorkout.exercises[exerciseIndex];
-    // Merge new sets with existing sets to preserve properties like id, workout_exercise_id, created_at
     const updatedSets = newSets.map((newSet, i) => {
-      const existingSet = existingExercise.sets[i] || {}; // Use empty object if no existing set
+      const existingSet = existingExercise.sets[i] || {};
       return {
-        ...existingSet, // Retains id, workout_exercise_id, created_at if they exist
-        reps: newSet.reps, // Update with new reps
-        weight_kg: newSet.weight_kg, // Update with new weight_kg
+        ...existingSet,
+        reps: newSet.reps,
+        weight_kg: newSet.weight_kg,
       };
     });
-    // Dispatch the updated sets, which now satisfy the expected Set[] type
     dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: updatedSets });
   };
 
@@ -125,13 +121,11 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         };
         await saveWorkout(newWorkout);
 
-        // Invalidate all workout-related caches for this user
         mutate(
           (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user.id,
           undefined,
           { revalidate: true }
         );
-        // Invalidate profile cache
         mutate(["profile", user.id], undefined, { revalidate: true });
 
         dispatch({ type: "SET_EXERCISES", exercises: [] });
@@ -192,7 +186,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
                 <Button
                   size="icon"
                   onClick={handleSaveWorkout}
-                  className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-green-500 hover:bg-green-600 touch-target ios-active"
+                  className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 touch-target ios-active"
                 >
                   <Save className="h-8 w-8" />
                 </Button>
@@ -203,7 +197,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             <Button
               size="icon"
               onClick={() => setShowExerciseModal(true)}
-              className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-[#4B7BFF] hover:bg-[#4B7BFF]/90 dark:bg-red-500 dark:hover:bg-red-600 touch-target ios-active"
+              className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 touch-target ios-active"
             >
               <Plus className="h-8 w-8" />
             </Button>

@@ -37,7 +37,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     const inputValue = e.target.value;
     const parsedValue = handleNumberInput(inputValue);
     if (parsedValue !== null) {
-      const weightInKg = parseInputToKg(inputValue); // Convert to kg if imperial
+      const weightInKg = parseInputToKg(inputValue);
       const newSets = [...exercise.sets];
       newSets[setIndex] = { ...newSets[setIndex], weight_kg: weightInKg };
       onUpdateSets(exerciseIndex, newSets);
@@ -56,7 +56,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
 
   return (
     <Sheet open={true} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0" aria-describedby="exercise-editor-description">
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 rounded-t-3xl" aria-describedby="exercise-editor-description">
         <div className="flex flex-col h-full">
           <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
             <div className="flex items-center justify-between">

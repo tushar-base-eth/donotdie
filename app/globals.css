@@ -58,11 +58,21 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
+  /* Enhanced typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+    letter-spacing: -0.02em;
+  }
 }
 
 @layer utilities {
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Smooth scrolling */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -99,4 +109,18 @@
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/50 rounded-full;
 }
