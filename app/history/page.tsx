@@ -70,7 +70,11 @@ function HistoryPage() {
       await refreshProfile();
       setPendingDeletions((prev) => prev.filter((id) => id !== workoutId));
     } catch (err) {
-      console.error("Error deleting workout:", err);
+      toast({
+        title: "Error",
+        description: "Failed to delete workout. Please try again.",
+        variant: "destructive",
+      });
       setPendingDeletions((prev) => prev.filter((id) => id !== workoutId));
       mutate(
         (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user?.id,
@@ -93,8 +97,8 @@ function HistoryPage() {
 
   if (isLoading && workouts.length === 0) {
     return (
-      <div className="p-4">
-        <WorkoutListSkeleton />
+      <div className="flex justify-center items-center min-h-screen p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }

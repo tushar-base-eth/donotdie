@@ -44,7 +44,7 @@ const settingsSchema = z.object({
   body_fat_percentage: z.number().min(0).max(100).nullable().optional(),
 });
 
-export default function SettingsPage() {
+export default function Settings() {
   const { state, logout, updateProfile } = useAuth();
   const { user } = state; // Directly use user from AuthContext instead of SWR
   const router = useRouter();

@@ -4,7 +4,6 @@ import type React from "react";
 import { createContext, useContext, useReducer, useEffect, useState } from "react";
 import type { Set, UIWorkoutExercise } from "@/types/workouts";
 
-// Define the structure of the workout state
 interface WorkoutState {
   currentWorkout: {
     exercises: UIWorkoutExercise[];
@@ -13,14 +12,12 @@ interface WorkoutState {
   };
 }
 
-// Define possible actions for the reducer
 type WorkoutAction =
   | { type: "SET_EXERCISES"; exercises: UIWorkoutExercise[] }
   | { type: "SET_SELECTED_EXERCISE_IDS"; ids: string[] }
   | { type: "SET_SELECTED_EXERCISE"; exercise: UIWorkoutExercise | null }
   | { type: "UPDATE_EXERCISE_SETS"; exerciseIndex: number; sets: { reps: number; weight_kg: number }[] };
 
-// Initial state with empty workout data
 const initialState: WorkoutState = {
   currentWorkout: {
     exercises: [],
@@ -29,13 +26,11 @@ const initialState: WorkoutState = {
   },
 };
 
-// Create the context for sharing state and dispatch
 const WorkoutContext = createContext<{
   state: WorkoutState;
   dispatch: React.Dispatch<WorkoutAction>;
 } | null>(null);
 
-// Reducer to handle state updates
 function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutState {
   switch (action.type) {
     case "SET_EXERCISES":
@@ -89,33 +84,26 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
   }
 }
 
-// WorkoutProvider component to manage state and persistence
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(workoutReducer, initialState);
-  const [isRestored, setIsRestored] = useState(false); // Flag to track restoration completion
+  const [isRestored, setIsRestored] = useState(false);
 
-  // Restore state from localStorage on component mount
   useEffect(() => {
     const savedWorkout = localStorage.getItem("currentWorkout");
     if (savedWorkout) {
       try {
         const parsed = JSON.parse(savedWorkout);
-        // console.log("Restoring state:", parsed);
         dispatch({ type: "SET_EXERCISES", exercises: parsed.exercises });
         dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: parsed.selectedExerciseIds });
       } catch (error) {
-        // console.error("Error parsing saved workout:", error);
+        // Handle parsing error silently in production
       }
-    } else {
-      // console.log("No saved workout found in localStorage");
     }
-    setIsRestored(true); // Mark restoration as complete
+    setIsRestored(true);
   }, []);
 
-  // Save state to localStorage only after restoration is complete
   useEffect(() => {
     if (isRestored) {
-      // console.log("Saving to localStorage:", state.currentWorkout);
       localStorage.setItem(
         "currentWorkout",
         JSON.stringify({
@@ -133,7 +121,6 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Hook to access workout context
 export function useWorkout() {
   const context = useContext(WorkoutContext);
   if (!context) {

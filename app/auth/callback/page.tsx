@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function Callback() {
-  const [message, setMessage] = useState("Verifying your email... Please wait while we confirm your account.");
+  const message = "Verifying your email... Please wait while we confirm your account.";
 
   useEffect(() => {
     // AuthProvider handles state updates; no additional logic needed

@@ -22,7 +22,7 @@ export interface UserProfile {
 }
 
 // Define fields that can be updated via updateProfile
-// Exported to be used in SettingsPage.tsx
+// Exported to be used in Settings.tsx
 export type UpdatableProfile = Pick<
   UserProfile,
   "name" | "gender" | "dateOfBirth" | "weight" | "height" | "bodyFat" | "unitPreference" | "themePreference"

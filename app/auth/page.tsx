@@ -34,7 +34,7 @@ const authSchema = z
 
 type AuthSchema = z.infer<typeof authSchema>;
 
-export default function AuthPage() {
+export default function Auth() {
   const { state, login, signup } = useAuth();
   const router = useRouter();
   // State management with clearer initial values
@@ -329,6 +329,7 @@ export default function AuthPage() {
                     type="submit" 
                     className="w-full" 
                     disabled={isLoading}
+                    aria-label={isLogin ? "Sign in" : "Create account"}
                   >
                     {isLoading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
                   </Button>
@@ -344,6 +345,7 @@ export default function AuthPage() {
                     }}
                     disabled={isLoading}
                     type="button"
+                    aria-label={isLogin ? "Switch to sign up" : "Switch to sign in"}
                   >
                     {isLogin ? "Create New Account" : "Already Have an Account?"}
                   </Button>
