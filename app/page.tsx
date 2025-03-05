@@ -66,8 +66,8 @@ export default function LandingPage() {
 
       {/* Call-to-Action Section */}
       <div className="px-6 py-12 text-center w-full">
-        <h2 className="text-3xl font-bold mb-4">Ready to start?</h2>
-        <p className="text-xl text-muted-foreground mb-8">DoNotDie today and Reverse aging!</p>
+        {/* <h2 className="text-3xl font-bold mb-4">Ready to start?</h2> */}
+        {/* <p className="text-xl text-muted-foreground mb-8">DoNotDie today and Reverse aging!</p> */}
         <Button
           size="lg"
           className="bg-primary text-primary-foreground px-8 py-4 rounded-xl"
