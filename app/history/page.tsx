@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { useSWRConfig } from "swr";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 function HistoryPage() {
   const { state, refreshProfile } = useAuth();

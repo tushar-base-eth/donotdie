@@ -14,13 +14,13 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/placeholder-logo",
         sizes: "192x192",
         type: "image/png",
-        purpose: "any maskable",
+        purpose: "maskable",
       },
       {
         src: "/placeholder-logo",
         sizes: "512x512",
         type: "image/png",
-        purpose: "any maskable",
+        purpose: "maskable",
       },
     ],
   }
