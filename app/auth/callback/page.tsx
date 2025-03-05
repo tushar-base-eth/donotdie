@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-
 export default function Callback() {
   const message = "Verifying your email... Please wait while we confirm your account.";
-
-  useEffect(() => {
-    // AuthProvider handles state updates; no additional logic needed
-  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
