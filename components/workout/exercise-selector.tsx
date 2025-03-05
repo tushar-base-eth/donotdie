@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,7 +31,7 @@ export function ExerciseSelector({
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
 
-  const { data: availableExercises, error } = useSWR<Exercise[]>(
+  const { data: availableExercises, error, mutate } = useSWR<Exercise[]>(
     "available_exercises",
     fetchAvailableExercises,
     {
@@ -45,9 +44,9 @@ export function ExerciseSelector({
     return (
       <div className="p-4">
         Failed to load exercises.{" "}
-        <button onClick={() => mutate("available_exercises")} className="text-blue-500 underline">
-          Retry
-        </button>
+        <button onClick={() => mutate()} className="text-blue-500 underline">
+  Retry
+</button>
       </div>
     );
   }
