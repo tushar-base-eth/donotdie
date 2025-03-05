@@ -6,12 +6,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Why: Dropping in reverse order (triggers/functions before tables) prevents dependency errors when re-running the script.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS trigger_on_workout_delete ON public.workouts;
+DROP TRIGGER IF EXISTS trigger_on_workout_insert ON public.workouts;
 DROP TRIGGER IF EXISTS update_volume_after_set_insert ON public.sets;
 DROP TRIGGER IF EXISTS update_volume_after_set_delete ON public.sets;
 DROP TRIGGER IF EXISTS update_volume_after_set_update ON public.sets;
 
 DROP FUNCTION IF EXISTS public.handle_new_user();
 DROP FUNCTION IF EXISTS public.on_workout_delete();
+DROP FUNCTION IF EXISTS public.on_workout_insert();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_insert();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_delete();
 DROP FUNCTION IF EXISTS public.update_volume_on_set_update();
@@ -50,8 +52,8 @@ CREATE TABLE public.profiles (
   body_fat_percentage NUMERIC, -- Optional field for advanced tracking
   unit_preference TEXT NOT NULL CHECK (unit_preference IN ('metric', 'imperial')) DEFAULT 'metric', -- Enforces valid units
   theme_preference TEXT NOT NULL CHECK (theme_preference IN ('light', 'dark')) DEFAULT 'light', -- UI customization
-  total_volume NUMERIC DEFAULT 0,  -- Tracks lifetime volume lifted with precision
-  total_workouts INTEGER DEFAULT 0, -- Tracks total workout count
+  total_volume NUMERIC DEFAULT 0 CHECK (total_volume >= 0),  -- Tracks lifetime volume lifted with precision, non-negative
+  total_workouts INTEGER DEFAULT 0 CHECK (total_workouts >= 0), -- Tracks total workout count, non-negative
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Audit trail for creation
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Audit trail for updates
 );
@@ -164,6 +166,24 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_on_workout_delete
   BEFORE DELETE ON public.workouts
   FOR EACH ROW EXECUTE FUNCTION public.on_workout_delete();
+
+-- Function to handle workout insertion
+-- Why: Increments total_workouts in profiles when a new workout is added.
+CREATE OR REPLACE FUNCTION public.on_workout_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.profiles
+  SET total_workouts = total_workouts + 1
+  WHERE id = NEW.user_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger for workout insertion
+-- Why: Executes the increment function after a workout is added.
+CREATE TRIGGER trigger_on_workout_insert
+  AFTER INSERT ON public.workouts
+  FOR EACH ROW EXECUTE FUNCTION public.on_workout_insert();
 
 -- Create available_exercises table for exercise catalog
 -- Why: Provides a reusable list of exercises for users to select from.
