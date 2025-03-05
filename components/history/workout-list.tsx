@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 import { format } from "date-fns";
+import { useState } from "react";
 
 interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
@@ -20,8 +21,10 @@ export function WorkoutList({
   selectedDate,
 }: WorkoutListProps) {
   const { formatWeight } = useUnitPreference();
+  const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
   const handleDelete = (workoutId: string) => {
+    setDeletingIds((prev) => [...prev, workoutId]);
     onWorkoutDelete(workoutId);
   };
 
@@ -56,7 +59,7 @@ export function WorkoutList({
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
       <AnimatePresence initial={false}>
-        {workouts.map((workout) => (
+        {workouts.filter(workout => !deletingIds.includes(workout.id)).map((workout) => (
           <motion.div
             key={workout.id}
             initial={{ opacity: 0, y: 20 }}
