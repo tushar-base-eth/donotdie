@@ -44,8 +44,8 @@ function HistoryPage() {
   const displayedWorkouts = useMemo(() => {
     const filtered = workouts.filter((w) => !pendingDeletions.includes(w.id));
     if (!selectedDate) return filtered;
-    const selectedUtc = format(selectedDate, "yyyy-MM-dd");
-    return filtered.filter((w) => w.utcDate === selectedUtc);
+    const selectedLocalDate = format(selectedDate, "yyyy-MM-dd"); // Local date string
+    return filtered.filter((w) => w.date === selectedLocalDate);
   }, [selectedDate, workouts, pendingDeletions]);
 
   const workoutDates = useMemo(() => new Set(workouts.map((w) => w.date)), [workouts]);

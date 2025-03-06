@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient";
 import type { UIExtendedWorkout, NewWorkout, WorkoutExercise, Set } from "@/types/workouts";
 import { parseISO } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
+import { format } from "date-fns";
 
 /**
  * Fetches all workouts for a user with pagination, including exercises and sets, formatted for UI display.
@@ -36,8 +36,8 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
     .filter((rawWorkout) => rawWorkout.created_at !== null)
     .map((rawWorkout) => {
       const utcDate = parseISO(rawWorkout.created_at as string);
-      const localDate = formatInTimeZone(utcDate, "UTC", "yyyy-MM-dd");
-      const localTime = formatInTimeZone(utcDate, "UTC", "hh:mm a");
+      const localDate = format(utcDate, "yyyy-MM-dd"); // Uses local timezone
+      const localTime = format(utcDate, "hh:mm a"); // Uses local timezone
 
       const exercises = rawWorkout.workout_exercises
         ? rawWorkout.workout_exercises.map((we) => ({

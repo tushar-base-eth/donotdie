@@ -9,9 +9,10 @@ import { useAuth } from "@/contexts/auth-context";
 import { fetchProfileData, fetchVolumeData } from "@/lib/supabaseUtils";
 import type { Database } from "@/types/database";
 import ProtectedRoute from "@/components/auth/protected-route";
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, parseISO, isSameDay, isSameWeek, isSameMonth } from "date-fns";
+import { format, subDays, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isSameWeek, isSameMonth, parse } from "date-fns";
 import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
+import { formatUtcToLocalDate } from "@/lib/utils";
 
 interface VolumeData {
   date: string;
@@ -72,17 +73,17 @@ export default function DashboardPage() {
     const today = new Date();
     let formattedData: VolumeData[] = [];
 
-    const localVolumeData = rawVolumeData.map((d) => {
-      const utcDate = parseISO(d.date + 'T00:00:00Z');
-      const localDate = new Date(utcDate.getTime() - (new Date().getTimezoneOffset() * 60000));
-      return { date: localDate, volume: Math.round(d.volume * 100) / 100 };
-    });
+    // Convert UTC date strings from daily_volume to local date strings
+    const localVolumeData = rawVolumeData.map((d) => ({
+      date: formatUtcToLocalDate(d.date + "T00:00:00Z"), // e.g., "2023-10-15" in local time
+      volume: Math.round(d.volume * 100) / 100,
+    }));
 
     if (timeRange === "7days") {
       const days = eachDayOfInterval({ start: subDays(today, 6), end: today });
       formattedData = days.map((day) => {
         const dayVolume = localVolumeData
-          .filter((d) => isSameDay(d.date, day))
+          .filter((d) => d.date === format(day, "yyyy-MM-dd"))
           .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(day, "MMM d"), volume: dayVolume };
       });
@@ -90,7 +91,7 @@ export default function DashboardPage() {
       const weeks = eachWeekOfInterval({ start: subDays(today, 55), end: today }, { weekStartsOn: 1 });
       formattedData = weeks.map((weekStart) => {
         const weekVolume = localVolumeData
-          .filter((d) => isSameWeek(d.date, weekStart, { weekStartsOn: 1 }))
+          .filter((d) => isSameWeek(parse(d.date, "yyyy-MM-dd", new Date()), weekStart, { weekStartsOn: 1 }))
           .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(weekStart, "MMM d"), volume: weekVolume };
       });
@@ -98,7 +99,7 @@ export default function DashboardPage() {
       const months = eachMonthOfInterval({ start: subDays(today, 364), end: today });
       formattedData = months.map((monthStart) => {
         const monthVolume = localVolumeData
-          .filter((d) => isSameMonth(d.date, monthStart))
+          .filter((d) => isSameMonth(parse(d.date, "yyyy-MM-dd", new Date()), monthStart))
           .reduce((sum, d) => sum + d.volume, 0);
         return { date: format(monthStart, "MMM yyyy"), volume: monthVolume };
       });
