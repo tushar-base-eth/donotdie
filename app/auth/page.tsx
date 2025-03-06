@@ -1,4 +1,4 @@
-"use client"; // Next.js client component (needed for hooks and browser APIs)
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -7,8 +7,6 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-
-// Project components
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -18,7 +16,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/auth-context";
 import { supabase } from "@/lib/supabaseClient";
 
-// Validation schema with improved error messages
 const authSchema = z
   .object({
     email: z.string().email("Please enter a valid email address"),
@@ -28,7 +25,7 @@ const authSchema = z
     unitPreference: z.enum(["metric", "imperial"]).optional(),
   })
   .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
-    message: "Passwords do not match", // More natural language
+    message: "Passwords do not match",
     path: ["confirmPassword"],
   });
 
@@ -37,7 +34,6 @@ type AuthSchema = z.infer<typeof authSchema>;
 export default function Auth() {
   const { state, login, signup, signInWithGoogle } = useAuth();
   const router = useRouter();
-  // State management with clearer initial values
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationState, setConfirmationState] = useState<"none" | "sent" | "resend">("none");
@@ -55,16 +51,13 @@ export default function Auth() {
     },
   });
 
-  // Authentication redirect effect
   useEffect(() => {
     if (state.status === "authenticated") router.replace("/home");
   }, [state.status, router]);
 
-  // Unified submit handler
   const onSubmit = async (data: AuthSchema) => {
     setIsLoading(true);
     setMessage(null);
-
     try {
       if (isLogin) {
         await login(data.email, data.password);
@@ -79,7 +72,6 @@ export default function Auth() {
     }
   };
 
-  // Error handling with status tracking
   const handleError = (error: any, email: string) => {
     if (error.message.includes("Email not confirmed")) {
       setConfirmationState("resend");
@@ -88,24 +80,21 @@ export default function Auth() {
       setMessage({
         text: error.message.includes("already registered")
           ? "This email is already registered. Please log in."
-          : error.message || "An unexpected error occurred", // More user-friendly
+          : error.message || "An unexpected error occurred",
         isError: true,
       });
     }
   };
 
-  // Resend confirmation flow
   const resendConfirmation = async () => {
     setIsLoading(true);
     setMessage(null);
-
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: resendEmail,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
-
       if (error) throw error;
       setMessage({ text: "Confirmation email resent. Please check your inbox.", isError: false });
     } catch (error: any) {
@@ -115,7 +104,6 @@ export default function Auth() {
     }
   };
 
-  // Loading state with consistent spacing
   if (state.status === "loading") {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -124,75 +112,76 @@ export default function Auth() {
     );
   }
 
-  // Confirmation success screen
   if (confirmationState === "sent") {
     return (
       <div className="container max-w-lg p-8 text-center space-y-6">
-        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold">Check Your Email</h2>
-          <p className="text-muted-foreground">
-            We've sent a confirmation link to{" "}
-            <span className="font-medium text-foreground">{form.getValues("email")}</span>. The link will expire in 24
-            hours.
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setConfirmationState("none");
-            setIsLogin(true);
-          }}
-          className="w-full"
-        >
-          Return to Login
-        </Button>
+        <Card className="glass">
+          <CardContent className="pt-6">
+            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Check Your Email</h2>
+              <p className="text-muted-foreground">
+                We've sent a confirmation link to{" "}
+                <span className="font-medium text-foreground">{form.getValues("email")}</span>. The link will expire in 24
+                hours.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setConfirmationState("none");
+                setIsLogin(true);
+              }}
+              className="w-full mt-4"
+            >
+              Return to Login
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // Resend confirmation screen
   if (confirmationState === "resend") {
     return (
       <div className="container max-w-lg p-8 text-center space-y-6">
-        <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto" />
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold">Confirmation Required</h2>
-          <p className="text-muted-foreground">
-            Please confirm your email address{" "}
-            <span className="font-medium text-foreground">{resendEmail}</span>
-          </p>
-        </div>
-
-        {message && (
-          <Alert variant={message.isError ? "destructive" : "default"}>
-            <AlertDescription>{message.text}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-3">
-          <Button onClick={resendConfirmation} className="w-full" disabled={isLoading}>
-            {isLoading ? "Sending..." : "Resend Confirmation"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setConfirmationState("none");
-              setIsLogin(true);
-            }}
-            className="w-full"
-          >
-            Back to Login
-          </Button>
-        </div>
+        <Card className="glass">
+          <CardContent className="pt-6">
+            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto" />
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Confirmation Required</h2>
+              <p className="text-muted-foreground">
+                Please confirm your email address{" "}
+                <span className="font-medium text-foreground">{resendEmail}</span>
+              </p>
+            </div>
+            {message && (
+              <Alert variant={message.isError ? "destructive" : "default"} className="mt-4">
+                <AlertDescription>{message.text}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-3 mt-4">
+              <Button onClick={resendConfirmation} className="w-full" disabled={isLoading}>
+                {isLoading ? "Sending..." : "Resend Confirmation"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConfirmationState("none");
+                  setIsLogin(true);
+                }}
+                className="w-full"
+              >
+                Back to Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // Main auth form with animation
   return (
     <div className="container max-w-lg p-4">
-      
-
       <AnimatePresence mode="wait">
         <motion.div
           key={isLogin ? "login" : "signup"}
@@ -201,21 +190,18 @@ export default function Auth() {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="mt-8">
+          <Card className="mt-8 glass">
             <CardHeader className="pb-4">
               <CardTitle>{isLogin ? "Welcome Back" : "Create Account"}</CardTitle>
             </CardHeader>
-
             <CardContent>
               {message && (
                 <Alert variant={message.isError ? "destructive" : "default"} className="mb-6">
                   <AlertDescription>{message.text}</AlertDescription>
                 </Alert>
               )}
-
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  {/* Email Field */}
                   <FormField
                     control={form.control}
                     name="email"
@@ -234,8 +220,6 @@ export default function Auth() {
                       </FormItem>
                     )}
                   />
-
-                  {/* Password Field */}
                   <FormField
                     control={form.control}
                     name="password"
@@ -249,11 +233,8 @@ export default function Auth() {
                       </FormItem>
                     )}
                   />
-
-                  {/* Conditional Signup Fields */}
                   {!isLogin && (
                     <>
-                      {/* Confirm Password */}
                       <FormField
                         control={form.control}
                         name="confirmPassword"
@@ -267,8 +248,6 @@ export default function Auth() {
                           </FormItem>
                         )}
                       />
-
-                      {/* Full Name */}
                       <FormField
                         control={form.control}
                         name="name"
@@ -282,8 +261,6 @@ export default function Auth() {
                           </FormItem>
                         )}
                       />
-
-                      {/* Unit Preference */}
                       <FormField
                         control={form.control}
                         name="unitPreference"
@@ -307,8 +284,6 @@ export default function Auth() {
                       />
                     </>
                   )}
-
-                  {/* Submit Button */}
                   <Button
                     type="submit"
                     className="w-full"
@@ -317,8 +292,6 @@ export default function Auth() {
                   >
                     {isLoading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
                   </Button>
-
-                  {/* Toggle Button */}
                   <Button
                     variant="outline"
                     className="w-full"
@@ -340,9 +313,18 @@ export default function Auth() {
         </motion.div>
       </AnimatePresence>
 
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-muted"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-background px-2 text-muted-foreground">Or</span>
+        </div>
+      </div>
+
       <Button
         variant="outline"
-        className="w-full mb-4 flex items-center justify-center gap-2"
+        className="w-full flex items-center justify-center gap-2"
         onClick={async () => {
           setIsLoading(true);
           setMessage(null);
@@ -372,7 +354,7 @@ export default function Auth() {
             fill="#FBBC05"
           />
           <path
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.30-4.53 6.16-4.53z"
             fill="#EA4335"
           />
           <path d="M1 1h22v22H1z" fill="none" />
