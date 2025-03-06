@@ -2,17 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import useSWR from "swr";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { useAuth } from "@/contexts/auth-context";
-import { fetchProfileData, fetchVolumeData } from "@/lib/supabaseUtils";
-import type { Database } from "@/types/database";
 import ProtectedRoute from "@/components/auth/protected-route";
-import { format, subDays, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isSameWeek, isSameMonth, parse } from "date-fns";
+import {
+  format,
+  subDays,
+  eachDayOfInterval,
+  eachWeekOfInterval,
+  eachMonthOfInterval,
+  isSameWeek,
+  isSameMonth,
+  parse,
+} from "date-fns";
 import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
 import { formatUtcToLocalDate } from "@/lib/utils";
+import { useProfile, useVolumeData } from "@/lib/hooks/data-hooks";
 
 interface VolumeData {
   date: string;
@@ -26,18 +33,15 @@ export default function DashboardPage() {
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
 
-  const { data: profileData, error: profileError, mutate: mutateProfile } = useSWR(
-    user ? ["profile", user.id] : null,
-    () => user ? fetchProfileData(user.id) : null
-  );
-
-  const { data: rawVolumeData, error: volumeError, mutate: mutateVolume } = useSWR(
-    user ? ["volume", user.id, timeRange] : null,
-    () => user ? fetchVolumeData(user.id, timeRange) : null
+  const { profile, isLoading: profileLoading, error: profileError, mutate: mutateProfile } = useProfile(user?.id || "");
+  const { volumeData, isLoading: volumeLoading, error: volumeError, mutate: mutateVolume } = useVolumeData(
+    user?.id || "",
+    timeRange
   );
 
   if (!user && !isLoading) {
     router.push("/auth");
+    return null;
   }
 
   if (profileError || volumeError) {
@@ -57,7 +61,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!profileData || !rawVolumeData) {
+  if (profileLoading || volumeLoading) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background pb-16">
@@ -69,13 +73,20 @@ export default function DashboardPage() {
     );
   }
 
-  const volumeData: VolumeData[] = (() => {
+  if (!profile) {
+    return (
+      <div className="p-4">
+        <p className="text-center text-muted-foreground">No profile data available.</p>
+      </div>
+    );
+  }
+
+  const formattedVolumeData: VolumeData[] = (() => {
     const today = new Date();
     let formattedData: VolumeData[] = [];
 
-    // Convert UTC date strings from daily_volume to local date strings
-    const localVolumeData = rawVolumeData.map((d) => ({
-      date: formatUtcToLocalDate(d.date + "T00:00:00Z"), // e.g., "2023-10-15" in local time
+    const localVolumeData = (volumeData || []).map((d) => ({
+      date: formatUtcToLocalDate(d.date + "T00:00:00Z"),
       volume: Math.round(d.volume * 100) / 100,
     }));
 
@@ -118,7 +129,7 @@ export default function DashboardPage() {
             transition={{ duration: 0.3 }}
             className="glass p-4 rounded-3xl shadow-md"
           >
-            <MetricsCards totalWorkouts={profileData.total_workouts ?? 0} totalVolume={profileData.total_volume ?? 0} />
+            <MetricsCards totalWorkouts={profile.total_workouts ?? 0} totalVolume={profile.total_volume ?? 0} />
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -126,7 +137,7 @@ export default function DashboardPage() {
             transition={{ duration: 0.3, delay: 0.2 }}
             className="glass p-4 rounded-3xl shadow-md"
           >
-            <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+            <VolumeChart data={formattedVolumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
           </motion.div>
         </div>
       </div>

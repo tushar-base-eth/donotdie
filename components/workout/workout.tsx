@@ -1,3 +1,4 @@
+// components/workout/workout.tsx
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -15,29 +16,30 @@ import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useWorkout } from "@/contexts/workout-context";
 import { toast } from "@/components/ui/use-toast";
-import { saveWorkout } from "@/lib/supabaseUtils";
-import { useSWRConfig } from "swr";
+import { useSaveWorkout } from "@/lib/hooks/data-hooks"; // Custom hook for saving workouts
 
 interface WorkoutProps {
   onExercisesChange?: (exercises: UIExtendedWorkout["exercises"]) => void;
 }
 
 function WorkoutPage({ onExercisesChange }: WorkoutProps) {
-  const { state, dispatch } = useWorkout();
+  const { state, dispatch } = useWorkout(); // Manage local workout state
   const { state: authState } = useAuth();
   const { user } = authState;
   const isLoading = authState.status === "loading";
   const router = useRouter();
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const { mutate } = useSWRConfig();
+  const { trigger: saveWorkoutTrigger } = useSaveWorkout(); // Hook for saving with optimistic updates
 
+  // Redirect to auth if not authenticated
   useEffect(() => {
     if (!user && !isLoading) {
       router.push("/auth");
     }
   }, [user, isLoading, router]);
 
+  // Validate workout for saving
   const isWorkoutValid =
     state.currentWorkout.exercises.length > 0 &&
     state.currentWorkout.exercises.every(
@@ -47,6 +49,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         exercise.sets.every((set) => set.reps > 0 && set.weight_kg > 0)
     );
 
+  // Toggle exercise selection in modal
   const handleExerciseToggle = (id: string) => {
     dispatch({
       type: "SET_SELECTED_EXERCISE_IDS",
@@ -56,6 +59,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
+  // Add selected exercises to the workout
   const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
       const newExercises = selected.map((exercise) => ({
@@ -84,22 +88,21 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
+  // Update sets for an exercise
   const handleUpdateSets = (exerciseIndex: number, newSets: { reps: number; weight_kg: number }[]) => {
     if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
       throw new Error(`Invalid exercise index: ${exerciseIndex}`);
     }
     const existingExercise = state.currentWorkout.exercises[exerciseIndex];
-    const updatedSets = newSets.map((newSet, i) => {
-      const existingSet = existingExercise.sets[i] || {};
-      return {
-        ...existingSet,
-        reps: newSet.reps,
-        weight_kg: newSet.weight_kg,
-      };
-    });
+    const updatedSets = newSets.map((newSet, i) => ({
+      ...existingExercise.sets[i] || {},
+      reps: newSet.reps,
+      weight_kg: newSet.weight_kg,
+    }));
     dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: updatedSets });
   };
 
+  // Remove an exercise from the workout
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
       const newExercises = state.currentWorkout.exercises.filter((_, i) => i !== index);
@@ -107,6 +110,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
+  // Save the workout using the custom hook
   const handleSaveWorkout = async () => {
     if (!isWorkoutValid || !user || isLoading) return;
 
@@ -119,19 +123,12 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             sets: ex.sets.map((set) => ({ reps: set.reps, weight_kg: set.weight_kg })),
           })),
         };
-        await saveWorkout(newWorkout);
+        await saveWorkoutTrigger(newWorkout); // Save with optimistic update
 
-        mutate(
-          (key) => Array.isArray(key) && key[0] === "workouts" && key[1] === user.id,
-          undefined,
-          { revalidate: true }
-        );
-        mutate(["profile", user.id], undefined, { revalidate: true });
-
+        // Reset local state after successful save
         dispatch({ type: "SET_EXERCISES", exercises: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE", exercise: null });
-
         localStorage.removeItem("currentWorkout");
 
         toast({
@@ -152,6 +149,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
+  // Show loading UI during auth check
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-4">
@@ -168,9 +166,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         ) : (
           <WorkoutExercises
             exercises={state.currentWorkout.exercises}
-            onExerciseSelect={(exercise) =>
-              dispatch({ type: "SET_SELECTED_EXERCISE", exercise })
-            }
+            onExerciseSelect={(exercise) => dispatch({ type: "SET_SELECTED_EXERCISE", exercise })}
             onExerciseRemove={handleRemoveExercise}
           />
         )}

@@ -1,3 +1,4 @@
+// components/workout/exercise-selector.tsx
 "use client";
 
 import { useState, useRef } from "react";
@@ -7,8 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import useSWR from "swr";
-import { fetchAvailableExercises } from "@/lib/supabaseUtils";
+import { useAvailableExercises } from "@/lib/hooks/data-hooks"; // Custom hook for exercises
 import type { Exercise } from "@/types/workouts";
 
 interface ExerciseSelectorProps {
@@ -31,32 +31,30 @@ export function ExerciseSelector({
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
 
-  const { data: availableExercises, error, mutate } = useSWR<Exercise[]>(
-    "available_exercises",
-    fetchAvailableExercises,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
+  // Fetch available exercises using custom hook
+  const { exercises: availableExercises, isLoading, error, mutate } = useAvailableExercises();
 
+  // Handle loading state
+  if (isLoading) {
+    return <div className="p-4">Loading exercises...</div>;
+  }
+
+  // Handle error state with retry option
   if (error) {
     return (
       <div className="p-4">
         Failed to load exercises.{" "}
         <button onClick={() => mutate()} className="text-blue-500 underline">
-  Retry
-</button>
+          Retry
+        </button>
       </div>
     );
   }
 
-  if (!availableExercises) {
-    return <div className="p-4">Loading exercises...</div>;
-  }
-
+  // Extract unique muscle groups for filtering
   const muscleGroups = Array.from(new Set(availableExercises.map((ex) => ex.primary_muscle_group)));
 
+  // Filter exercises based on search query and muscle group
   const filteredExercises = Object.entries(
     availableExercises.reduce((acc, ex) => {
       const group = ex.primary_muscle_group || "Other";
@@ -68,9 +66,7 @@ export function ExerciseSelector({
     const filtered = exercises.filter(
       (ex) =>
         ex.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (selectedTab === "all" ||
-          !selectedMuscleGroup ||
-          ex.primary_muscle_group === selectedMuscleGroup)
+        (selectedTab === "all" || !selectedMuscleGroup || ex.primary_muscle_group === selectedMuscleGroup)
     );
     if (filtered.length > 0) {
       acc[group] = filtered;
@@ -78,6 +74,7 @@ export function ExerciseSelector({
     return acc;
   }, {} as Record<string, Exercise[]>);
 
+  // Add selected exercises and close the modal
   const handleAdd = () => {
     const selected = availableExercises.filter((ex) => selectedExercises.includes(ex.id));
     onAddExercises(selected);
