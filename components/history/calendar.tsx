@@ -33,6 +33,14 @@ export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarPr
     onDateChange(null); // Clear selection when changing months
   };
 
+  const isFutureDate = (date: string): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0); // Normalize to start of day
+    return checkDate > today;
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
@@ -74,7 +82,11 @@ export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarPr
                   aspect-square p-2 relative cursor-pointer flex items-center justify-center
                   ${isToday && !isSelected ? "bg-muted" : ""}
                 `}
-                onClick={() => onDateChange(isSelected ? null : new Date(date))}
+                onClick={() => {
+                  if (!isFutureDate(date)) {
+                    onDateChange(isSelected ? null : new Date(date));
+                  }
+                }}
               >
                 {/* Solid circle highlight for selected date */}
                 {isSelected && (
