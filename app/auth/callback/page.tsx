@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { Suspense } from "react";
 
-export default function Callback() {
+function CallbackContent() {
   const { state } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -14,10 +15,9 @@ export default function Callback() {
     const errorDescription = searchParams.get("error_description");
 
     if (error) {
-      // Redirect to auth page with error message
       router.replace(`/auth?error=${encodeURIComponent(errorDescription || "Authentication failed")}`);
     } else if (state.status === "authenticated") {
-      router.push("/home");
+      router.replace("/home"); // Updated to replace as per previous suggestion
     }
   }, [state.status, router, searchParams]);
 
@@ -28,5 +28,22 @@ export default function Callback() {
         <div className="mt-4 w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
     </div>
+  );
+}
+
+export default function Callback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p>Verifying your authentication... Please wait.</p>
+            <div className="mt-4 w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        </div>
+      }
+    >
+      <CallbackContent />
+    </Suspense>
   );
 }

@@ -12,10 +12,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/auth-context";
 import { supabase } from "@/lib/supabaseClient";
 import * as Toast from "@radix-ui/react-toast";
+import { Suspense } from "react";
 
 const authSchema = z
   .object({
@@ -32,7 +32,7 @@ const authSchema = z
 
 type AuthSchema = z.infer<typeof authSchema>;
 
-export default function Auth() {
+function AuthContent() {
   const { state, login, signup, signInWithGoogle } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,7 +41,7 @@ export default function Auth() {
   const [confirmationState, setConfirmationState] = useState<"none" | "sent" | "resend">("none");
   const [resendEmail, setResendEmail] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
-  const [toastOpen, setToastOpen] = useState(false); // State for toast visibility
+  const [toastOpen, setToastOpen] = useState(false);
 
   const form = useForm<AuthSchema>({
     resolver: zodResolver(authSchema),
@@ -62,7 +62,7 @@ export default function Auth() {
     const error = searchParams.get("error");
     if (error) {
       setMessage({ text: decodeURIComponent(error), isError: true });
-      setToastOpen(true); // Show toast when error is detected
+      setToastOpen(true);
       router.replace("/auth");
     }
   }, [searchParams, router]);
@@ -93,7 +93,7 @@ export default function Auth() {
         ? "This email is already registered. Please log in."
         : error.message || "An unexpected error occurred";
       setMessage({ text: errorMessage, isError: true });
-      setToastOpen(true); // Show toast for form errors
+      setToastOpen(true);
     }
   };
 
@@ -108,10 +108,10 @@ export default function Auth() {
       });
       if (error) throw error;
       setMessage({ text: "Confirmation email resent. Please check your inbox.", isError: false });
-      setToastOpen(true); // Show toast for success
+      setToastOpen(true);
     } catch (error: any) {
       setMessage({ text: error.message || "Failed to resend confirmation email", isError: true });
-      setToastOpen(true); // Show toast for error
+      setToastOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -272,125 +272,136 @@ export default function Auth() {
                             <FormItem>
                               <FormLabel>Measurement System</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select system" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="metric">Metric (kg, cm)</SelectItem>
-                                <SelectItem value="imperial">Imperial (lb, in)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </>
-                  )}
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading}
-                    aria-label={isLogin ? "Sign in" : "Create account"}
-                  >
-                    {isLoading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      setIsLogin(!isLogin);
-                      form.reset();
-                      setMessage(null);
-                    }}
-                    disabled={isLoading}
-                    type="button"
-                    aria-label={isLogin ? "Switch to sign up" : "Switch to sign in"}
-                  >
-                    {isLogin ? "Create New Account" : "Already Have an Account?"}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </AnimatePresence>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select system" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="metric">Metric (kg, cm)</SelectItem>
+                                  <SelectItem value="imperial">Imperial (lb, in)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                      aria-label={isLogin ? "Sign in" : "Create account"}
+                    >
+                      {isLoading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setIsLogin(!isLogin);
+                        form.reset();
+                        setMessage(null);
+                      }}
+                      disabled={isLoading}
+                      type="button"
+                      aria-label={isLogin ? "Switch to sign up" : "Switch to sign in"}
+                    >
+                      {isLogin ? "Create New Account" : "Already Have an Account?"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
 
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-muted"></div>
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-muted"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-background px-2 text-muted-foreground">Or</span>
+          </div>
         </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-background px-2 text-muted-foreground">Or</span>
-        </div>
+
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2"
+          onClick={async () => {
+            setIsLoading(true);
+            setMessage(null);
+            try {
+              await signInWithGoogle();
+            } catch (error: any) {
+              setMessage({ text: error.message || "Failed to sign in with Google", isError: true });
+              setToastOpen(true);
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          disabled={isLoading}
+          type="button"
+          aria-label="Sign in with Google"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.30-4.53 6.16-4.53z"
+              fill="#EA4335"
+            />
+            <path d="M1 1h22v22H1z" fill="none" />
+          </svg>
+          Sign in with Google
+        </Button>
       </div>
 
-      <Button
-        variant="outline"
-        className="w-full flex items-center justify-center gap-2"
-        onClick={async () => {
-          setIsLoading(true);
-          setMessage(null);
-          try {
-            await signInWithGoogle();
-          } catch (error: any) {
-            setMessage({ text: error.message || "Failed to sign in with Google", isError: true });
-            setToastOpen(true); // Show toast for Google sign-in error
-          } finally {
-            setIsLoading(false);
-          }
-        }}
-        disabled={isLoading}
-        type="button"
-        aria-label="Sign in with Google"
-      >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            fill="#4285F4"
-          />
-          <path
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            fill="#34A853"
-          />
-          <path
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            fill="#FBBC05"
-          />
-          <path
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.30-4.53 6.16-4.53z"
-            fill="#EA4335"
-          />
-          <path d="M1 1h22v22H1z" fill="none" />
-        </svg>
-        Sign in with Google
-      </Button>
-    </div>
-
-    {/* Toast Notification */}
-    {message && (
-      <Toast.Root
-        className="glass rounded-md p-4 shadow-lg flex items-center gap-3 z-50 fixed bottom-4 right-4 max-w-xs"
-        open={toastOpen}
-        onOpenChange={setToastOpen}
-        duration={3000} // Auto-dismiss after 3 seconds
-      >
-        <Toast.Description
-          className={`${
-            message.isError ? "text-destructive" : "text-green-500"
-          } text-sm font-medium`}
+      {message && (
+        <Toast.Root
+          className="glass rounded-md p-4 shadow-lg flex items-center gap-3 z-50 fixed bottom-4 right-4 max-w-xs"
+          open={toastOpen}
+          onOpenChange={setToastOpen}
+          duration={3000}
         >
-          {message.text}
-        </Toast.Description>
-        <Toast.Close asChild>
-          <button className="text-muted-foreground hover:text-foreground transition-colors">
-            ×
-          </button>
-        </Toast.Close>
-      </Toast.Root>
-    )}
-    <Toast.Viewport />
-  </Toast.Provider>
+          <Toast.Description
+            className={`${message.isError ? "text-destructive" : "text-green-500"} text-sm font-medium`}
+          >
+            {message.text}
+          </Toast.Description>
+          <Toast.Close asChild>
+            <button className="text-muted-foreground hover:text-foreground transition-colors">
+              ×
+            </button>
+          </Toast.Close>
+        </Toast.Root>
+      )}
+      <Toast.Viewport />
+    </Toast.Provider>
+  );
+}
+
+export default function Auth() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      }
+    >
+      <AuthContent />
+    </Suspense>
   );
 }
