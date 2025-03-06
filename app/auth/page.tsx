@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/auth-context";
 import { supabase } from "@/lib/supabaseClient";
+import * as Toast from "@radix-ui/react-toast";
 
 const authSchema = z
   .object({
@@ -40,6 +41,7 @@ export default function Auth() {
   const [confirmationState, setConfirmationState] = useState<"none" | "sent" | "resend">("none");
   const [resendEmail, setResendEmail] = useState("");
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [toastOpen, setToastOpen] = useState(false); // State for toast visibility
 
   const form = useForm<AuthSchema>({
     resolver: zodResolver(authSchema),
@@ -60,8 +62,8 @@ export default function Auth() {
     const error = searchParams.get("error");
     if (error) {
       setMessage({ text: decodeURIComponent(error), isError: true });
-      // Clear the error from the URL
-      router.replace("/auth", undefined, { shallow: true });
+      setToastOpen(true); // Show toast when error is detected
+      router.replace("/auth");
     }
   }, [searchParams, router]);
 
@@ -87,12 +89,11 @@ export default function Auth() {
       setConfirmationState("resend");
       setResendEmail(email);
     } else {
-      setMessage({
-        text: error.message.includes("already registered")
-          ? "This email is already registered. Please log in."
-          : error.message || "An unexpected error occurred",
-        isError: true,
-      });
+      const errorMessage = error.message.includes("already registered")
+        ? "This email is already registered. Please log in."
+        : error.message || "An unexpected error occurred";
+      setMessage({ text: errorMessage, isError: true });
+      setToastOpen(true); // Show toast for form errors
     }
   };
 
@@ -107,8 +108,10 @@ export default function Auth() {
       });
       if (error) throw error;
       setMessage({ text: "Confirmation email resent. Please check your inbox.", isError: false });
+      setToastOpen(true); // Show toast for success
     } catch (error: any) {
       setMessage({ text: error.message || "Failed to resend confirmation email", isError: true });
+      setToastOpen(true); // Show toast for error
     } finally {
       setIsLoading(false);
     }
@@ -164,11 +167,6 @@ export default function Auth() {
                 <span className="font-medium text-foreground">{resendEmail}</span>
               </p>
             </div>
-            {message && (
-              <Alert variant={message.isError ? "destructive" : "default"} className="mt-4">
-                <AlertDescription>{message.text}</AlertDescription>
-              </Alert>
-            )}
             <div className="space-y-3 mt-4">
               <Button onClick={resendConfirmation} className="w-full" disabled={isLoading}>
                 {isLoading ? "Sending..." : "Resend Confirmation"}
@@ -191,93 +189,89 @@ export default function Auth() {
   }
 
   return (
-    <div className="container max-w-lg p-4">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={isLogin ? "login" : "signup"}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-        >
-          <Card className="mt-8 glass">
-            <CardHeader className="pb-4">
-              <CardTitle>{isLogin ? "Welcome Back" : "Create Account"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {message && (
-                <Alert variant={message.isError ? "destructive" : "default"} className="mb-6">
-                  <AlertDescription>{message.text}</AlertDescription>
-                </Alert>
-              )}
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="email@example.com"
-                            type="email"
-                            autoComplete="email"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" autoComplete="current-password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {!isLogin && (
-                    <>
-                      <FormField
-                        control={form.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirm Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" autoComplete="new-password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John Doe" autoComplete="name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="unitPreference"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Measurement System</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+    <Toast.Provider swipeDirection="right">
+      <div className="container max-w-lg p-4">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isLogin ? "login" : "signup"}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Card className="mt-8 glass">
+              <CardHeader className="pb-4">
+                <CardTitle>{isLogin ? "Welcome Back" : "Create Account"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="email@example.com"
+                              type="email"
+                              autoComplete="email"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" autoComplete="current-password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {!isLogin && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Confirm Password</FormLabel>
+                              <FormControl>
+                                <Input type="password" autoComplete="new-password" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Full Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="John Doe" autoComplete="name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="unitPreference"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Measurement System</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select system" />
@@ -342,6 +336,7 @@ export default function Auth() {
             await signInWithGoogle();
           } catch (error: any) {
             setMessage({ text: error.message || "Failed to sign in with Google", isError: true });
+            setToastOpen(true); // Show toast for Google sign-in error
           } finally {
             setIsLoading(false);
           }
@@ -372,5 +367,30 @@ export default function Auth() {
         Sign in with Google
       </Button>
     </div>
+
+    {/* Toast Notification */}
+    {message && (
+      <Toast.Root
+        className="glass rounded-md p-4 shadow-lg flex items-center gap-3 z-50 fixed bottom-4 right-4 max-w-xs"
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        duration={3000} // Auto-dismiss after 3 seconds
+      >
+        <Toast.Description
+          className={`${
+            message.isError ? "text-destructive" : "text-green-500"
+          } text-sm font-medium`}
+        >
+          {message.text}
+        </Toast.Description>
+        <Toast.Close asChild>
+          <button className="text-muted-foreground hover:text-foreground transition-colors">
+            ×
+          </button>
+        </Toast.Close>
+      </Toast.Root>
+    )}
+    <Toast.Viewport />
+  </Toast.Provider>
   );
 }
