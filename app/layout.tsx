@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { ConditionalBottomNav } from "@/components/navigation/conditional-bottom-nav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
                 <ConditionalBottomNav />
               </ErrorBoundary>
               <Toaster />
+              <Analytics />
             </WorkoutProvider>
           </AuthProvider>
         </ThemeProvider>
