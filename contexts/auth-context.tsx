@@ -42,6 +42,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UpdatableProfile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>; // New method
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
     const { data: userData } = await supabase.auth.getUser();
     const email = userData.user?.email || "";
+    const userMetadata = userData.user?.user_metadata || {};
 
     let { data: profile, error } = await supabase
       .from("profiles")
@@ -70,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("profiles")
         .insert({
           id: userId, // Ensure this is included
-          name: "New User",
+          name: userMetadata.name || "New User", // Use Google-provided name if available
           gender: "Other", // Matches database default and constraint
           date_of_birth: "2000-01-01", // Matches database default
           weight_kg: 70,
@@ -170,6 +172,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
+  };
+
   // Update user profile in database and context state
   const updateProfile = async (updates: Partial<UpdatableProfile>) => {
     if (!state.user) throw new Error("No user logged in");
@@ -205,8 +217,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: "authenticated", user: updatedProfile });
   };
 
+  // Update context provider value
   return (
-    <AuthContext.Provider value={{ state, login, signup, logout, updateProfile, refreshProfile }}>
+    <AuthContext.Provider value={{ state, login, signup, logout, updateProfile, refreshProfile, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );
