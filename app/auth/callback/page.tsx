@@ -1,18 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function Callback() {
   const { state } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (state.status === "authenticated") {
+    const error = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
+
+    if (error) {
+      // Redirect to auth page with error message
+      router.replace(`/auth?error=${encodeURIComponent(errorDescription || "Authentication failed")}`);
+    } else if (state.status === "authenticated") {
       router.push("/home");
     }
-  }, [state.status, router]);
+  }, [state.status, router, searchParams]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

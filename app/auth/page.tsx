@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -34,6 +34,7 @@ type AuthSchema = z.infer<typeof authSchema>;
 export default function Auth() {
   const { state, login, signup, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationState, setConfirmationState] = useState<"none" | "sent" | "resend">("none");
@@ -54,6 +55,15 @@ export default function Auth() {
   useEffect(() => {
     if (state.status === "authenticated") router.replace("/home");
   }, [state.status, router]);
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      setMessage({ text: decodeURIComponent(error), isError: true });
+      // Clear the error from the URL
+      router.replace("/auth", undefined, { shallow: true });
+    }
+  }, [searchParams, router]);
 
   const onSubmit = async (data: AuthSchema) => {
     setIsLoading(true);
