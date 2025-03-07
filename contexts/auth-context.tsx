@@ -9,7 +9,7 @@ export interface UserProfile {
   email: string;
   name: string;
   gender: "Male" | "Female" | "Other";
-  date_of_birth: string;
+  date_of_birth: string; // Remains string, but null is handled in code
   weight_kg: number | null;
   height_cm: number | null;
   body_fat_percentage: number | null;
@@ -72,16 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: userId,
           name: userMetadata.name || "New User",
           gender: "Other",
-          date_of_birth: "2000-01-01",
+          date_of_birth: "2000-01-01", // Default date if null
           weight_kg: null,
           height_cm: null,
           body_fat_percentage: null,
           unit_preference: "metric",
           theme_preference: "light",
-          total_volume: 0,
-          total_workouts: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         })
         .select("*")
         .single();
@@ -90,8 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile = newProfile;
     }
 
+    // Handle null date_of_birth
+    const date_of_birth = profile.date_of_birth ?? "2000-01-01"; // Default to "2000-01-01" if null
+
     // Runtime validation for constrained fields
-    const gender = profile.gender;
+    const gender = profile.gender ?? "Other"; // Use "Other" if gender is null
     if (!["Male", "Female", "Other"].includes(gender)) {
       throw new Error(`Invalid gender value: ${gender}`);
     }
@@ -111,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       name: profile.name,
       gender: gender as "Male" | "Female" | "Other",
-      date_of_birth: profile.date_of_birth,
+      date_of_birth, // Now guaranteed to be a string
       weight_kg: profile.weight_kg,
       height_cm: profile.height_cm,
       body_fat_percentage: profile.body_fat_percentage,

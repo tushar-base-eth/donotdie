@@ -279,22 +279,22 @@ DECLARE
   workout_volume NUMERIC;
   workout_date DATE;
 BEGIN
-  -- Calculate total volume for the deleted workout
-  SELECT SUM(CAST(s.reps * s.weight_kg AS numeric)) INTO workout_volume
+  -- Calculate total volume with rounding per set
+  SELECT SUM(ROUND(CAST(s.reps * s.weight_kg AS numeric), 2)) INTO workout_volume
   FROM public.sets s
   JOIN public.workout_exercises we ON s.workout_exercise_id = we.id
   WHERE we.workout_id = OLD.id;
 
-  workout_volume := ROUND(COALESCE(workout_volume, 0), 2);
+  workout_volume := COALESCE(workout_volume, 0); -- No need to round again
   workout_date := OLD.workout_date;
 
-  -- Update profiles, ensuring total_volume stays non-negative
+  -- Update profiles
   UPDATE public.profiles
   SET total_volume = GREATEST(ROUND(total_volume - workout_volume, 2), 0),
       total_workouts = total_workouts - 1
   WHERE id = OLD.user_id;
 
-  -- Update daily_volume, ensuring volume stays non-negative
+  -- Update daily_volume
   UPDATE public.daily_volume
   SET volume = GREATEST(ROUND(volume - workout_volume, 2), 0)
   WHERE user_id = OLD.user_id AND date = workout_date;

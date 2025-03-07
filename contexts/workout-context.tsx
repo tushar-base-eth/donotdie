@@ -38,7 +38,7 @@ function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutStat
         ...state,
         currentWorkout: {
           ...state.currentWorkout,
-          exercises: action.exercises,
+          exercises: action.exercises.map((ex, index) => ({ ...ex, order: index + 1 })),
         },
       };
     case "SET_SELECTED_EXERCISE_IDS":

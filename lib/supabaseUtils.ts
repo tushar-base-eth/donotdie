@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import type { UIExtendedWorkout, NewWorkout, WorkoutExercise, Set } from "@/types/workouts";
+import type { UIExtendedWorkout, NewWorkout, WorkoutExercise } from "@/types/workouts";
 import { parseISO } from "date-fns";
 import { format } from "date-fns";
 
@@ -16,15 +16,19 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
   const { data, error } = await supabase
     .from("workouts")
     .select(`
-      id, user_id, created_at,
+      id, user_id, workout_date, created_at,
       workout_exercises (
-        id, exercise_id, created_at,
+        id, exercise_id, order, created_at,
         exercise:available_exercises(*),
-        sets (*)
+        sets (
+          id, set_number, reps, weight_kg, created_at
+        )
       )
     `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
+    .order("order", { ascending: true, foreignTable: "workout_exercises" })
+    .order("set_number", { ascending: true, foreignTable: "workout_exercises.sets" })
     .range(start, end);
 
   if (error) {
@@ -44,13 +48,14 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
             id: we.id,
             workout_id: rawWorkout.id,
             exercise_id: we.exercise_id ?? "",
+            order: we.order,
             exercise: {
               id: we.exercise?.id ?? "",
               name: we.exercise?.name ?? "",
               primary_muscle_group: we.exercise?.primary_muscle_group ?? "",
               secondary_muscle_group: we.exercise?.secondary_muscle_group ?? null,
             },
-            sets: we.sets ? we.sets.map((set: Set) => ({ reps: set.reps, weight_kg: set.weight_kg })) : [],
+            sets: we.sets ? we.sets.map((set) => ({ reps: set.reps, weight_kg: set.weight_kg })) : [],
             created_at: we.created_at ?? "",
           }))
         : [];
@@ -58,9 +63,9 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
       return {
         id: rawWorkout.id,
         user_id: rawWorkout.user_id ?? "",
+        workout_date: rawWorkout.workout_date,
         created_at: rawWorkout.created_at,
         exercises,
-        utcDate: localDate,
         date: localDate,
         time: localTime,
         totalVolume: exercises.reduce(
@@ -98,10 +103,10 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
 
     const workoutId = workoutData.id;
 
-    for (const ex of workout.exercises) {
+    for (const [index, ex] of workout.exercises.entries()) {
       const { data: weData, error: weError } = await supabase
         .from("workout_exercises")
-        .insert({ workout_id: workoutId, exercise_id: ex.exercise_id })
+        .insert({ workout_id: workoutId, exercise_id: ex.exercise_id, order: index + 1 })
         .select("id")
         .single();
 
@@ -112,8 +117,9 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
 
       const weId = weData.id;
 
-      const setsToInsert = ex.sets.map((set: { reps: number; weight_kg: number }) => ({
+      const setsToInsert = ex.sets.map((set, setIndex) => ({
         workout_exercise_id: weId,
+        set_number: setIndex + 1,
         reps: set.reps,
         weight_kg: set.weight_kg,
       }));
@@ -173,13 +179,13 @@ export async function fetchVolumeData(userId: string, timeRange: string) {
     .from("daily_volume")
     .select("date, volume")
     .eq("user_id", userId)
-    .gte("date", startDate.toISOString().split('T')[0]) // 'YYYY-MM-DD' format
+    .gte("date", startDate.toISOString().split("T")[0]) // 'YYYY-MM-DD' format
     .order("date", { ascending: true });
 
   if (error) throw error;
 
   // Ensure data is in the expected format: { date: string, volume: number }[]
-  return data.map(row => ({ date: row.date, volume: row.volume }));
+  return data.map((row) => ({ date: row.date, volume: row.volume }));
 }
 
 /**

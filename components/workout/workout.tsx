@@ -62,11 +62,12 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   // Add selected exercises to the workout
   const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
-      const newExercises = selected.map((exercise) => ({
+      const newExercises = selected.map((exercise, index) => ({
         instance_id: generateUUID(),
         id: generateUUID(),
         workout_id: "",
         exercise_id: exercise.id,
+        order: state.currentWorkout.exercises.length + index, // Assign order based on current length
         exercise,
         sets: [
           {
