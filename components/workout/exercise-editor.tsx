@@ -17,10 +17,8 @@ interface ExerciseEditorProps {
 }
 
 export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex }: ExerciseEditorProps) {
-  // Destructure properties from the updated useUnitPreference hook
   const { formatWeight, parseInputToKg, convertFromKg, unitLabel } = useUnitPreference();
 
-  // Helper function to validate and parse numeric input
   const handleNumberInput = (value: string): number | null => {
     const regex = /^\d*\.?\d*$/;
     if (value === "" || regex.test(value)) {
@@ -32,7 +30,6 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     return null;
   };
 
-  // Handle weight input changes, converting to kg based on user preference
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
     const inputValue = e.target.value;
     const parsedValue = handleNumberInput(inputValue);
@@ -44,7 +41,6 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     }
   };
 
-  // Handle reps input changes
   const handleRepsChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
     const inputValue = e.target.value;
     const parsedValue = handleNumberInput(inputValue);
@@ -57,7 +53,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
 
   return (
     <Sheet open={true} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0 rounded-t-3xl" aria-describedby="exercise-editor-description">
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 rounded-t-3xl z-[101]" aria-describedby="exercise-editor-description">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
@@ -72,7 +68,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
             </div>
           </div>
 
-          {/* Sets Editor */}
+          {/* Scrollable Sets Editor */}
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-4">
               <AnimatePresence initial={false}>
@@ -141,31 +137,25 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                   </motion.div>
                 ))}
               </AnimatePresence>
-
-              {/* Add Set Button */}
-              <motion.div layout>
-                <div className="px-4">
-                  <div className="flex gap-3">
-                    <div className="w-8" />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const newSet: { reps: number; weight_kg: number } = {
-                          reps: 0,
-                          weight_kg: 0,
-                        };
-                        const newSets = [...exercise.sets, newSet];
-                        onUpdateSets(exerciseIndex, newSets);
-                      }}
-                      className="rounded-xl h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
-                    >
-                      Add Set
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
             </div>
           </ScrollArea>
+
+          {/* Fixed Bottom with Add Set Button */}
+          <div className="p-4 bg-background/80 backdrop-blur-sm border-t">
+            <Button
+              onClick={() => {
+                const newSet: { reps: number; weight_kg: number } = {
+                  reps: 0,
+                  weight_kg: 0,
+                };
+                const newSets = [...exercise.sets, newSet];
+                onUpdateSets(exerciseIndex, newSets);
+              }}
+              className="w-full rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Add Set
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
