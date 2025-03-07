@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
 import { formatUtcToLocalDate } from "@/lib/utils";
 import { useProfile, useVolumeData } from "@/lib/hooks/data-hooks";
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface VolumeData {
   date: string;
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const isLoading = state.status === "loading";
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
+  const { formatWeight, formatHeight } = useUnitPreference();
 
   const { profile, isLoading: profileLoading, error: profileError, mutate: mutateProfile } = useProfile(user?.id || "");
   const { volumeData, isLoading: volumeLoading, error: volumeError, mutate: mutateVolume } = useVolumeData(
@@ -129,7 +131,12 @@ export default function DashboardPage() {
             transition={{ duration: 0.3 }}
             className="glass p-4 rounded-3xl shadow-md"
           >
-            <MetricsCards totalWorkouts={profile.total_workouts ?? 0} totalVolume={profile.total_volume ?? 0} />
+            <MetricsCards
+              totalWorkouts={profile.total_workouts ?? 0}
+              totalVolume={profile.total_volume ?? 0}
+              formatWeight={formatWeight}
+              formatHeight={formatHeight}
+            />
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

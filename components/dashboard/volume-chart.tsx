@@ -12,7 +12,7 @@ interface VolumeChartProps {
 }
 
 export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartProps) {
-  const { formatWeight, unitLabel } = useUnitPreference();
+  const { formatWeight } = useUnitPreference();
 
   return (
     <Card>

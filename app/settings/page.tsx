@@ -37,7 +37,7 @@ import * as z from "zod";
 import { Sun, Moon } from "lucide-react";
 
 export default function Settings() {
-  const { state, logout, updateProfile } = useAuth();
+  const { state, logout, updateProfile, refreshProfile } = useAuth();
   const { user } = state;
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -88,6 +88,7 @@ export default function Settings() {
         body_fat_percentage: data.body_fat_percentage,
       };
       await updateProfile(updates);
+      await refreshProfile(); // Ensure profile data is refreshed after update
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -205,6 +206,7 @@ export default function Settings() {
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
+                            key={field.value} // Added to force re-render on value change
                           >
                             <FormControl>
                               <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
@@ -249,6 +251,7 @@ export default function Settings() {
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
+                            key={field.value} // Added to force re-render on value change
                           >
                             <FormControl>
                               <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
