@@ -27,7 +27,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
-import { useAuth, UpdatableProfile } from "@/contexts/auth-context"; // Added UpdatableProfile import
+import { useAuth, UpdatableProfile } from "@/contexts/auth-context";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
@@ -46,13 +46,12 @@ const settingsSchema = z.object({
 
 export default function Settings() {
   const { state, logout, updateProfile } = useAuth();
-  const { user } = state; // Directly use user from AuthContext instead of SWR
+  const { user } = state;
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize the form with react-hook-form and zod validation
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -66,7 +65,6 @@ export default function Settings() {
     },
   });
 
-  // Sync form with user data from AuthContext whenever it changes
   useEffect(() => {
     if (user) {
       setIsNewProfile(user.name === "New User");
@@ -74,7 +72,7 @@ export default function Settings() {
         name: user.name || "",
         gender: user.gender,
         date_of_birth: user.dateOfBirth || "",
-        unit_preference: user.unitPreference, // Matches UserProfile field name
+        unit_preference: user.unitPreference,
         weight_kg: user.weight || null,
         height_cm: user.height || null,
         body_fat_percentage: user.bodyFat || null,
@@ -82,23 +80,20 @@ export default function Settings() {
     }
   }, [user, form]);
 
-  // Handle form submission
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     if (!user) return;
 
     setIsSaving(true);
     try {
-      // Map form data to match UpdatableProfile interface
       const updates: Partial<UpdatableProfile> = {
         name: data.name,
         gender: data.gender,
         dateOfBirth: data.date_of_birth,
-        unitPreference: data.unit_preference, // Use camelCase to match UserProfile
+        unitPreference: data.unit_preference,
         weight: data.weight_kg,
         height: data.height_cm,
         bodyFat: data.body_fat_percentage,
       };
-      // Update profile in database and AuthContext state
       await updateProfile(updates);
       toast({
         title: "Success",
@@ -106,7 +101,6 @@ export default function Settings() {
         variant: "default",
         duration: 1000,
       });
-      // No need to manually reset form; useEffect will handle it when user updates
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -120,7 +114,6 @@ export default function Settings() {
     }
   };
 
-  // Show loading skeleton while auth state is loading or user is not available
   if (state.status === "loading" || !user) {
     return (
       <ProtectedRoute>
@@ -163,7 +156,6 @@ export default function Settings() {
         />
 
         <div className="p-4 space-y-6">
-          {/* Show alert for new users */}
           {isNewProfile && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -184,6 +176,7 @@ export default function Settings() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
+            className="max-w-md mx-auto"
           >
             <Card className="border-0 glass shadow-md rounded-3xl">
               <CardContent className="p-4">
@@ -196,7 +189,11 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} className="rounded-xl" />
+                            <Input
+                              {...field}
+                              placeholder="Enter your name"
+                              className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -209,7 +206,7 @@ export default function Settings() {
                           value={user.email || ""}
                           readOnly
                           disabled
-                          className="round ed-xl"
+                          className="rounded-xl bg-muted/50"
                         />
                       </FormControl>
                     </FormItem>
@@ -220,12 +217,12 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Unit Preference</FormLabel>
                           <Select
-                            key={field.value} // Add key to force re-render
+                            key={field.value}
                             onValueChange={field.onChange}
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="rounded-xl">
+                              <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
                                 <SelectValue placeholder="Select unit preference" />
                               </SelectTrigger>
                             </FormControl>
@@ -241,7 +238,7 @@ export default function Settings() {
                     <Button
                       type="submit"
                       disabled={isSaving || !form.formState.isDirty}
-                      className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
+                      className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors duration-200"
                     >
                       {isSaving ? "Saving..." : "Save"}
                     </Button>
