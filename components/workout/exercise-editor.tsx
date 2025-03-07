@@ -62,7 +62,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
               <span id="exercise-editor-description" className="sr-only">
                 Edit sets for {exercise.exercise.name}. You can add, remove, or modify sets with reps and weight.
               </span>
-              <Button size="icon" variant="ghost" onClick={onClose} className="rounded-full h-8 w-8">
+              <Button size="icon" variant="ghost" onClick={onClose} className="rounded-full h-8 w-8 text-primary">
                 <X className="h-4 w-4" />
               </Button>
             </div>
