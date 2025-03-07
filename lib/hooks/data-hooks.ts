@@ -63,11 +63,13 @@ export function useSaveWorkout() {
         const tempWorkout: UIExtendedWorkout = {
           id: "temp-id",
           user_id: userId,
+          workout_date: format(new Date(), "yyyy-MM-dd"),
           created_at: new Date().toISOString(),
-          exercises: workout.exercises.map((ex) => ({
+          exercises: workout.exercises.map((ex, index) => ({
             id: "temp-ex-id",
             workout_id: "temp-id",
             exercise_id: ex.exercise_id,
+            order: index,
             exercise: { id: ex.exercise_id, name: "Loading...", primary_muscle_group: "", secondary_muscle_group: null },
             sets: ex.sets,
             created_at: new Date().toISOString(),

@@ -12,9 +12,10 @@ export interface Exercise {
 export interface Set extends Tables<"sets"> {
   id: string;
   workout_exercise_id: string; // References workout_exercises.id
+  set_number: number;
   reps: number;
   weight_kg: number;
-  created_at: string | null; // UTC timestamp from database, nullable per schema
+  created_at: string; // Changed to string to match Tables<"sets">
 }
 
 // Interface for a workout exercise, including related exercise and sets
@@ -22,7 +23,8 @@ export interface WorkoutExercise extends Tables<"workout_exercises"> {
   id: string;
   workout_id: string; // References workouts.id
   exercise_id: string; // References available_exercises.id
-  created_at: string | null; // UTC timestamp from database, nullable per schema
+  order: number; // Added to match schema
+  created_at: string; // Changed to string to match Tables<"workout_exercises">
   exercise: Exercise;
   sets: { reps: number; weight_kg: number }[]; // Simplified set data for UI
 }
@@ -36,7 +38,7 @@ export interface UIWorkoutExercise extends WorkoutExercise {
 export interface Workout extends Tables<"workouts"> {
   id: string;
   user_id: string; // References profiles.id
-  created_at: string | null; // UTC timestamp from database, nullable per schema
+  created_at: string; // Changed to string to match Tables<"workouts">
   exercises: WorkoutExercise[];
 }
 

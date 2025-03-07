@@ -59,70 +59,73 @@ export type Database = {
       profiles: {
         Row: {
           body_fat_percentage: number | null
-          created_at: string | null
-          date_of_birth: string
-          gender: "Male" | "Female" | "Other"
+          created_at: string
+          date_of_birth: string | null
+          gender: string | null
           height_cm: number | null
           id: string
           name: string
-          theme_preference: "light" | "dark"
-          total_volume: number | null
-          total_workouts: number | null
-          unit_preference: "metric" | "imperial"
-          updated_at: string | null
+          theme_preference: string
+          total_volume: number
+          total_workouts: number
+          unit_preference: string
+          updated_at: string
           weight_kg: number | null
         }
         Insert: {
           body_fat_percentage?: number | null
-          created_at?: string | null
-          date_of_birth?: string
-          gender?: "Male" | "Female" | "Other"
+          created_at?: string
+          date_of_birth?: string | null
+          gender?: string | null
           height_cm?: number | null
           id: string
           name: string
-          theme_preference?: "light" | "dark"
-          total_volume?: number | null
-          total_workouts?: number | null
-          unit_preference?: "metric" | "imperial"
-          updated_at?: string | null
+          theme_preference?: string
+          total_volume?: number
+          total_workouts?: number
+          unit_preference?: string
+          updated_at?: string
           weight_kg?: number | null
         }
         Update: {
           body_fat_percentage?: number | null
-          created_at?: string | null
-          date_of_birth?: string
-          gender?: "Male" | "Female" | "Other"
+          created_at?: string
+          date_of_birth?: string | null
+          gender?: string | null
           height_cm?: number | null
           id?: string
           name?: string
-          theme_preference?: "light" | "dark"
-          total_volume?: number | null
-          total_workouts?: number | null
-          unit_preference?: "metric" | "imperial"
-          updated_at?: string | null
+          theme_preference?: string
+          total_volume?: number
+          total_workouts?: number
+          unit_preference?: string
+          updated_at?: string
           weight_kg?: number | null
         }
         Relationships: []
       }
       sets: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           reps: number
+          set_number: number
           weight_kg: number
           workout_exercise_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           reps: number
+          set_number: number
           weight_kg: number
           workout_exercise_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           reps?: number
+          set_number?: number
           weight_kg?: number
           workout_exercise_id?: string
         }
@@ -138,21 +141,24 @@ export type Database = {
       }
       workout_exercises: {
         Row: {
-          created_at: string | null
+          created_at: string
           exercise_id: string
           id: string
+          order: number
           workout_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           exercise_id: string
           id?: string
+          order: number
           workout_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           exercise_id?: string
           id?: string
+          order?: number
           workout_id?: string
         }
         Relationships: [
@@ -174,19 +180,22 @@ export type Database = {
       }
       workouts: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           user_id: string
+          workout_date: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           user_id: string
+          workout_date?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           user_id?: string
+          workout_date?: string
         }
         Relationships: [
           {
