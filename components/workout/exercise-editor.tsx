@@ -2,14 +2,11 @@
 
 import { X, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import type { UIExtendedWorkout } from "@/types/workouts";
-import type { Set } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface ExerciseEditorProps {
@@ -20,9 +17,11 @@ interface ExerciseEditorProps {
 }
 
 export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex }: ExerciseEditorProps) {
+  // Destructure properties from the updated useUnitPreference hook
   const { formatWeight, parseInputToKg, convertFromKg, unitLabel } = useUnitPreference();
 
-  const handleNumberInput = (value: string) => {
+  // Helper function to validate and parse numeric input
+  const handleNumberInput = (value: string): number | null => {
     const regex = /^\d*\.?\d*$/;
     if (value === "" || regex.test(value)) {
       const numValue = value === "" ? 0 : parseFloat(value);
@@ -33,6 +32,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     return null;
   };
 
+  // Handle weight input changes, converting to kg based on user preference
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
     const inputValue = e.target.value;
     const parsedValue = handleNumberInput(inputValue);
@@ -44,6 +44,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     }
   };
 
+  // Handle reps input changes
   const handleRepsChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
     const inputValue = e.target.value;
     const parsedValue = handleNumberInput(inputValue);
@@ -58,6 +59,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
     <Sheet open={true} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0 rounded-t-3xl" aria-describedby="exercise-editor-description">
         <div className="flex flex-col h-full">
+          {/* Header */}
           <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl">{exercise.exercise.name}</SheetTitle>
@@ -70,6 +72,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
             </div>
           </div>
 
+          {/* Sets Editor */}
           <ScrollArea className="flex-1 p-6">
             <div className="space-y-4">
               <AnimatePresence initial={false}>
@@ -94,10 +97,12 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                       }}
                       className="relative"
                     >
+                      {/* Trash icon for swipe-to-delete */}
                       <div className="absolute right-0 top-0 bottom-0 w-[50px] bg-destructive/10 rounded-r-xl flex items-center justify-center">
                         <Trash className="h-4 w-4 text-destructive" />
                       </div>
 
+                      {/* Set input fields */}
                       <motion.div className="relative bg-background rounded-xl glass" style={{ x: 0 }}>
                         <div className="px-4 py-3">
                           <div className="flex gap-3 mb-1">
@@ -137,6 +142,7 @@ export function ExerciseEditor({ exercise, onClose, onUpdateSets, exerciseIndex 
                 ))}
               </AnimatePresence>
 
+              {/* Add Set Button */}
               <motion.div layout>
                 <div className="px-4">
                   <div className="flex gap-3">

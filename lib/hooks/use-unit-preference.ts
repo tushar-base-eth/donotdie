@@ -56,5 +56,6 @@ export function useUnitPreference() {
     convertFromCm,
     weightUnit: isImperial ? 'lb' : 'kg',
     heightUnit: isImperial ? 'in' : 'cm',
+    unitLabel: isImperial ? 'lb' : 'kg', // Added unitLabel property
   };
 }
