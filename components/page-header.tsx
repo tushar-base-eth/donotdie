@@ -1,21 +1,20 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { LogOut, Sun, Moon, Settings } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useTheme } from "next-themes"
-import { useRouter } from "next/navigation"
+import type React from "react";
+import { LogOut, Sun, Moon, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 interface PageHeaderProps {
-  title: string
-  showSettings?: boolean
-  rightContent?: React.ReactNode
+  title: string;
+  showSettings?: boolean;
+  rightContent?: React.ReactNode;
 }
 
 export function PageHeader({ title, showSettings = true, rightContent }: PageHeaderProps) {
-  const { theme, setTheme } = useTheme()
-  const router = useRouter()
+  const { theme, setTheme } = useTheme();
+  const router = useRouter();
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg rounded-b-3xl">
@@ -35,5 +34,5 @@ export function PageHeader({ title, showSettings = true, rightContent }: PageHea
           </div>
         ))}
     </header>
-  )
+  );
 }

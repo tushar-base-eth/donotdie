@@ -61,14 +61,14 @@ export type Database = {
           body_fat_percentage: number | null
           created_at: string | null
           date_of_birth: string
-          gender: string
+          gender: "Male" | "Female" | "Other"
           height_cm: number | null
           id: string
           name: string
-          theme_preference: string
+          theme_preference: "light" | "dark"
           total_volume: number | null
           total_workouts: number | null
-          unit_preference: string
+          unit_preference: "metric" | "imperial"
           updated_at: string | null
           weight_kg: number | null
         }
@@ -76,14 +76,14 @@ export type Database = {
           body_fat_percentage?: number | null
           created_at?: string | null
           date_of_birth?: string
-          gender?: string
+          gender?: "Male" | "Female" | "Other"
           height_cm?: number | null
           id: string
           name: string
-          theme_preference?: string
+          theme_preference?: "light" | "dark"
           total_volume?: number | null
           total_workouts?: number | null
-          unit_preference?: string
+          unit_preference?: "metric" | "imperial"
           updated_at?: string | null
           weight_kg?: number | null
         }
@@ -91,14 +91,14 @@ export type Database = {
           body_fat_percentage?: number | null
           created_at?: string | null
           date_of_birth?: string
-          gender?: string
+          gender?: "Male" | "Female" | "Other"
           height_cm?: number | null
           id?: string
           name?: string
-          theme_preference?: string
+          theme_preference?: "light" | "dark"
           total_volume?: number | null
           total_workouts?: number | null
-          unit_preference?: string
+          unit_preference?: "metric" | "imperial"
           updated_at?: string | null
           weight_kg?: number | null
         }

@@ -8,24 +8,23 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
-  gender: "Male" | "Female" | "Other" | null;
-  dateOfBirth: string | null;
-  weight: number | null;
-  height: number | null;
-  bodyFat: number | null;
-  unitPreference: "metric" | "imperial";
-  themePreference: "light" | "dark" | null;
-  totalVolume: number | null;
-  totalWorkouts: number | null;
-  createdAt: string | null;
-  updatedAt: string | null;
+  gender: "Male" | "Female" | "Other";
+  date_of_birth: string;
+  weight_kg: number | null;
+  height_cm: number | null;
+  body_fat_percentage: number | null;
+  unit_preference: "metric" | "imperial";
+  theme_preference: "light" | "dark";
+  total_volume: number | null;
+  total_workouts: number | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 // Define fields that can be updated via updateProfile
-// Exported to be used in Settings.tsx
 export type UpdatableProfile = Pick<
   UserProfile,
-  "name" | "gender" | "dateOfBirth" | "weight" | "height" | "bodyFat" | "unitPreference" | "themePreference"
+  "name" | "gender" | "date_of_birth" | "weight_kg" | "height_cm" | "body_fat_percentage" | "unit_preference" | "theme_preference"
 >;
 
 // Define the authentication state
@@ -42,7 +41,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UpdatableProfile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>; // New method
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -67,16 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error || !profile) {
       // Create a new profile if one doesn’t exist
-      // Removed 'id' from insert since it’s set by the auth.users reference and trigger
       const { data: newProfile, error: insertError } = await supabase
         .from("profiles")
         .insert({
-          id: userId, // Ensure this is included
-          name: userMetadata.name || "New User", // Use Google-provided name if available
-          gender: "Other", // Matches database default and constraint
-          date_of_birth: "2000-01-01", // Matches database default
-          weight_kg: 70,
-          height_cm: 170,
+          id: userId,
+          name: userMetadata.name || "New User",
+          gender: "Other",
+          date_of_birth: "2000-01-01",
+          weight_kg: null,
+          height_cm: null,
           body_fat_percentage: null,
           unit_preference: "metric",
           theme_preference: "light",
@@ -92,22 +90,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile = newProfile;
     }
 
-    // Map database fields to UserProfile interface
+    // Runtime validation for constrained fields
+    const gender = profile.gender;
+    if (!["Male", "Female", "Other"].includes(gender)) {
+      throw new Error(`Invalid gender value: ${gender}`);
+    }
+
+    const unitPreference = profile.unit_preference;
+    if (!["metric", "imperial"].includes(unitPreference)) {
+      throw new Error(`Invalid unit preference: ${unitPreference}`);
+    }
+
+    const themePreference = profile.theme_preference;
+    if (!["light", "dark"].includes(themePreference)) {
+      throw new Error(`Invalid theme preference: ${themePreference}`);
+    }
+
     return {
       id: userId,
       email,
       name: profile.name,
-      gender: profile.gender as "Male" | "Female" | "Other" | null,
-      dateOfBirth: profile.date_of_birth,
-      weight: profile.weight_kg,
-      height: profile.height_cm,
-      bodyFat: profile.body_fat_percentage,
-      unitPreference: profile.unit_preference as "metric" | "imperial",
-      themePreference: profile.theme_preference as "light" | "dark" | null,
-      totalVolume: profile.total_volume,
-      totalWorkouts: profile.total_workouts,
-      createdAt: profile.created_at,
-      updatedAt: profile.updated_at,
+      gender: gender as "Male" | "Female" | "Other",
+      date_of_birth: profile.date_of_birth,
+      weight_kg: profile.weight_kg,
+      height_cm: profile.height_cm,
+      body_fat_percentage: profile.body_fat_percentage,
+      unit_preference: unitPreference as "metric" | "imperial",
+      theme_preference: themePreference as "light" | "dark",
+      total_volume: profile.total_volume,
+      total_workouts: profile.total_workouts,
+      created_at: profile.created_at,
+      updated_at: profile.updated_at,
     };
   };
 
@@ -186,16 +199,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: Partial<UpdatableProfile>) => {
     if (!state.user) throw new Error("No user logged in");
 
-    // Map updates to match database column names and handle null-to-undefined conversion
     const dbUpdates = {
       name: updates.name,
-      gender: updates.gender === null ? undefined : updates.gender,
-      date_of_birth: updates.dateOfBirth === null ? undefined : updates.dateOfBirth,
-      weight_kg: updates.weight,
-      height_cm: updates.height,
-      body_fat_percentage: updates.bodyFat,
-      unit_preference: updates.unitPreference,
-      theme_preference: updates.themePreference === null ? undefined : updates.themePreference,
+      gender: updates.gender,
+      date_of_birth: updates.date_of_birth,
+      weight_kg: updates.weight_kg,
+      height_cm: updates.height_cm,
+      body_fat_percentage: updates.body_fat_percentage,
+      unit_preference: updates.unit_preference,
+      theme_preference: updates.theme_preference,
     };
 
     const { error } = await supabase
@@ -217,7 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: "authenticated", user: updatedProfile });
   };
 
-  // Update context provider value
   return (
     <AuthContext.Provider value={{ state, login, signup, logout, updateProfile, refreshProfile, signInWithGoogle }}>
       {children}

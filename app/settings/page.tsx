@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { LogOut, Sun, Moon, AlertCircle } from "lucide-react";
+import { LogOut, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -32,17 +31,10 @@ import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 import { toast } from "@/components/ui/use-toast";
-
-// Define the schema for the settings form
-const settingsSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  gender: z.enum(["Male", "Female", "Other"]).nullable().optional(),
-  date_of_birth: z.string().nullable().optional(),
-  unit_preference: z.enum(["metric", "imperial"]),
-  weight_kg: z.number().positive("Weight must be greater than 0").nullable().optional(),
-  height_cm: z.number().positive("Height must be greater than 0").nullable().optional(),
-  body_fat_percentage: z.number().min(0).max(100).nullable().optional(),
-});
+import { settingsSchema } from "@/types/forms";
+import { convertWeight, convertHeightToInches, convertInchesToCm } from "@/lib/utils";
+import * as z from "zod";
+import { Sun, Moon } from "lucide-react";
 
 export default function Settings() {
   const { state, logout, updateProfile } = useAuth();
@@ -56,8 +48,8 @@ export default function Settings() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: "",
-      gender: null,
-      date_of_birth: "",
+      gender: "Other",
+      date_of_birth: "2000-01-01",
       unit_preference: "metric",
       weight_kg: null,
       height_cm: null,
@@ -69,16 +61,17 @@ export default function Settings() {
     if (user) {
       setIsNewProfile(user.name === "New User");
       form.reset({
-        name: user.name || "",
+        name: user.name,
         gender: user.gender,
-        date_of_birth: user.dateOfBirth || "",
-        unit_preference: user.unitPreference,
-        weight_kg: user.weight || null,
-        height_cm: user.height || null,
-        body_fat_percentage: user.bodyFat || null,
+        date_of_birth: user.date_of_birth,
+        unit_preference: user.unit_preference,
+        weight_kg: user.weight_kg,
+        height_cm: user.height_cm,
+        body_fat_percentage: user.body_fat_percentage,
       });
+      setTheme(user.theme_preference);
     }
-  }, [user, form]);
+  }, [user, form, setTheme]);
 
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     if (!user) return;
@@ -88,11 +81,11 @@ export default function Settings() {
       const updates: Partial<UpdatableProfile> = {
         name: data.name,
         gender: data.gender,
-        dateOfBirth: data.date_of_birth,
-        unitPreference: data.unit_preference,
-        weight: data.weight_kg,
-        height: data.height_cm,
-        bodyFat: data.body_fat_percentage,
+        date_of_birth: data.date_of_birth,
+        unit_preference: data.unit_preference,
+        weight_kg: data.weight_kg,
+        height_cm: data.height_cm,
+        body_fat_percentage: data.body_fat_percentage,
       };
       await updateProfile(updates);
       toast({
@@ -138,7 +131,11 @@ export default function Settings() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={() => {
+                  const newTheme = theme === "dark" ? "light" : "dark";
+                  setTheme(newTheme);
+                  updateProfile({ theme_preference: newTheme });
+                }}
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -199,17 +196,50 @@ export default function Settings() {
                         </FormItem>
                       )}
                     />
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          value={user.email || ""}
-                          readOnly
-                          disabled
-                          className="rounded-xl bg-muted/50"
-                        />
-                      </FormControl>
-                    </FormItem>
+                    <FormField
+                      control={form.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gender</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
+                                <SelectValue placeholder="Select gender" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Male">Male</SelectItem>
+                              <SelectItem value="Female">Female</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="date_of_birth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Date of Birth</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value || null)}
+                              className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="unit_preference"
@@ -217,7 +247,6 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Unit Preference</FormLabel>
                           <Select
-                            key={field.value}
                             onValueChange={field.onChange}
                             value={field.value}
                           >
@@ -228,9 +257,85 @@ export default function Settings() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="metric">Metric (kg/cm)</SelectItem>
-                              <SelectItem value="imperial">Imperial (lb/ft-in)</SelectItem>
+                              <SelectItem value="imperial">Imperial (lb/in)</SelectItem>
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="weight_kg"
+                      render={({ field }) => {
+                        const unitPreference = form.watch("unit_preference");
+                        const isImperial = unitPreference === "imperial";
+                        const displayValue = field.value && isImperial ? convertWeight(field.value, true) : field.value;
+                        return (
+                          <FormItem>
+                            <FormLabel>Weight ({isImperial ? "lbs" : "kg"})</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                value={displayValue ?? ""}
+                                onChange={(e) => {
+                                  const inputValue = e.target.value ? Number(e.target.value) : null;
+                                  const valueInKg = inputValue && isImperial ? inputValue / 2.20462 : inputValue;
+                                  field.onChange(valueInKg);
+                                }}
+                                placeholder={`Enter weight in ${isImperial ? "lbs" : "kg"}`}
+                                className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="height_cm"
+                      render={({ field }) => {
+                        const unitPreference = form.watch("unit_preference");
+                        const isImperial = unitPreference === "imperial";
+                        const displayValue = field.value && isImperial ? convertHeightToInches(field.value) : field.value;
+                        return (
+                          <FormItem>
+                            <FormLabel>Height ({isImperial ? "in" : "cm"})</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                value={displayValue ?? ""}
+                                onChange={(e) => {
+                                  const inputValue = e.target.value ? Number(e.target.value) : null;
+                                  const valueInCm = inputValue && isImperial ? convertInchesToCm(inputValue) : inputValue;
+                                  field.onChange(valueInCm);
+                                }}
+                                placeholder={`Enter height in ${isImperial ? "inches" : "cm"}`}
+                                className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="body_fat_percentage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Body Fat Percentage (%)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                              placeholder="Enter body fat percentage"
+                              className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

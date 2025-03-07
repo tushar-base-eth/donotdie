@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, parseISO } from "date-fns"; // Added import for date handling
+import { format, parseISO } from "date-fns";
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
@@ -10,18 +10,12 @@ export function convertWeight(weight: number, toImperial: boolean): number {
   return toImperial ? weight * 2.20462 : weight;
 }
 
-export function convertHeight(
-  height: number,
-  toImperial: boolean
-): { feet: number; inches: number } | number {
-  if (toImperial) {
-    const totalInches = height / 2.54;
-    return {
-      feet: Math.floor(totalInches / 12),
-      inches: Math.round(totalInches % 12),
-    };
-  }
-  return height;
+export function convertHeightToInches(heightCm: number): number {
+  return heightCm / 2.54;
+}
+
+export function convertInchesToCm(heightInches: number): number {
+  return heightInches * 2.54;
 }
 
 export function generateUUID(): string {
@@ -35,21 +29,11 @@ export function generateUUID(): string {
   });
 }
 
-/**
- * Converts a UTC ISO string from Supabase to a local date string.
- * @param utcDateString - UTC ISO string (e.g., "2023-10-15T12:00:00Z")
- * @returns Local date string (e.g., "2023-10-15" in user's local time zone)
- */
 export function formatUtcToLocalDate(utcDateString: string): string {
   const utcDate = parseISO(utcDateString);
   return format(utcDate, "yyyy-MM-dd");
 }
 
-/**
- * Converts a UTC ISO string from Supabase to a local time string.
- * @param utcDateString - UTC ISO string (e.g., "2023-10-15T12:00:00Z")
- * @returns Local time string (e.g., "12:00 PM" in user's local time zone)
- */
 export function formatUtcToLocalTime(utcDateString: string): string {
   const utcDate = parseISO(utcDateString);
   return format(utcDate, "hh:mm a");

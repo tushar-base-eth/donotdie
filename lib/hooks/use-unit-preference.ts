@@ -5,7 +5,7 @@ import { convertWeight } from "@/lib/utils";
 export function useUnitPreference() {
   const { state } = useAuth();
   const { user } = state;
-  const isImperial = user?.unitPreference === "imperial"; // Determine unit system based on user preference
+  const isImperial = user?.unit_preference === "imperial"; // Determine unit system based on user preference
 
   // Format weight based on unit preference
   const formatWeight = (weightInKg: number, decimals: number = 1): string => {
