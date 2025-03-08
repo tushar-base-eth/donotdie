@@ -1,25 +1,36 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Suspense } from "react";
 
 function CallbackContent() {
   const { state } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const error = searchParams.get("error");
     const errorDescription = searchParams.get("error_description");
 
+    console.log("Callback - Auth State:", {
+      status: state.status,
+      user: state.user,
+      error,
+      errorDescription,
+    });
+
     if (error) {
-      router.replace(`/auth/login?error=${encodeURIComponent(errorDescription || "Authentication failed")}`);
+      console.log("Callback - OAuth Error Detected:", { error, errorDescription });
+      window.location.href = `/auth/login?error=${encodeURIComponent(errorDescription || "Authentication failed")}`;
     } else if (state.status === "authenticated") {
-      router.replace("/home");
+      console.log("Callback - User Authenticated, Redirecting to /home");
+      window.location.href = "/home";
+    } else if (state.status === "unauthenticated") {
+      console.log("Callback - User Not Authenticated After OAuth, Redirecting to /auth/login");
+      window.location.href = "/auth/login?error=Authentication%20failed%20-%20no%20session";
     }
-  }, [state.status, router, searchParams]);
+  }, [state.status, state.user, searchParams]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
