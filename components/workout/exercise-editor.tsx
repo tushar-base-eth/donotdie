@@ -158,9 +158,9 @@ export function ExerciseEditor({
                                     onChange={(e) => handleRepsChange(e, setIndex)}
                                     className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
                                     aria-label={`Reps for set ${setIndex + 1}`}
-                                    ref={(el) =>
-                                      (repsInputRefs.current[setIndex] = el)
-                                    }
+                                    ref={(el) => {
+                                      repsInputRefs.current[setIndex] = el;
+                                    }}
                                   />
                                 </div>
                                 <Input
