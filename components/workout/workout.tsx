@@ -35,7 +35,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   // Redirect to auth if not authenticated
   useEffect(() => {
     if (!user && !isLoading) {
-      router.push("/auth");
+      router.push("/auth/login");
     }
   }, [user, isLoading, router]);
 

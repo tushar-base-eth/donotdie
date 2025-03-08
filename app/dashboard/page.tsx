@@ -42,7 +42,7 @@ export default function DashboardPage() {
   );
 
   if (!user && !isLoading) {
-    router.push("/auth");
+    router.push("/auth/login");
     return null;
   }
 

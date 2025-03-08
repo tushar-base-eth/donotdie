@@ -27,7 +27,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
-import { useProfile } from "@/lib/hooks/use-profile"; // New import
+import { useProfile } from "@/lib/hooks/use-profile";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
@@ -38,8 +38,8 @@ import * as z from "zod";
 import { Sun, Moon } from "lucide-react";
 
 export default function Settings() {
-  const { state, logout } = useAuth(); // Removed updateProfile and refreshProfile
-  const { updateProfile } = useProfile(); // New hook for profile updates
+  const { state, logout } = useAuth();
+  const { updateProfile } = useProfile();
   const { user } = state;
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -89,7 +89,7 @@ export default function Settings() {
         height_cm: data.height_cm,
         body_fat_percentage: data.body_fat_percentage,
       };
-      await updateProfile(updates); // Now handles both update and refresh
+      await updateProfile(updates);
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -121,6 +121,7 @@ export default function Settings() {
 
   const handleLogout = () => {
     logout();
+    router.push("/auth/login");
   };
 
   return (
@@ -136,18 +137,13 @@ export default function Settings() {
                 onClick={() => {
                   const newTheme = theme === "dark" ? "light" : "dark";
                   setTheme(newTheme);
-                  updateProfile({ theme_preference: newTheme }); // Now uses updateProfile from useProfile
+                  updateProfile({ theme_preference: newTheme });
                 }}
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                aria-label="Log out"
-              >
+              <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Log out">
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>
@@ -204,11 +200,7 @@ export default function Settings() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Gender</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            key={field.value} // Added to force re-render on value change
-                          >
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
                                 <SelectValue placeholder="Select gender" />
@@ -248,11 +240,7 @@ export default function Settings() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unit Preference</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            key={field.value} // Added to force re-render on value change
-                          >
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
                                 <SelectValue placeholder="Select unit preference" />

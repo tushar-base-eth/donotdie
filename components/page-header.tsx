@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { LogOut, Sun, Moon, Settings } from "lucide-react";
+import { Settings, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -22,14 +22,15 @@ export function PageHeader({ title, showSettings = true, rightContent }: PageHea
       {rightContent ||
         (showSettings && (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
             <Button variant="ghost" size="icon" onClick={() => router.push("/settings")}>
               <Settings className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push("/auth")}>
-              <LogOut className="h-5 w-5" />
             </Button>
           </div>
         ))}

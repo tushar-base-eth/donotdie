@@ -71,7 +71,7 @@ export default function LandingPage() {
         <Button
           size="lg"
           className="bg-primary text-primary-foreground px-8 py-4 rounded-xl"
-          onClick={() => router.push("/auth")}
+          onClick={() => router.push("/auth/login")}
         >
           Get Started
         </Button>

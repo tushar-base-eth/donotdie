@@ -15,9 +15,9 @@ function CallbackContent() {
     const errorDescription = searchParams.get("error_description");
 
     if (error) {
-      router.replace(`/auth?error=${encodeURIComponent(errorDescription || "Authentication failed")}`);
+      router.replace(`/auth/login?error=${encodeURIComponent(errorDescription || "Authentication failed")}`);
     } else if (state.status === "authenticated") {
-      router.replace("/home"); // Updated to replace as per previous suggestion
+      router.replace("/home");
     }
   }, [state.status, router, searchParams]);
 

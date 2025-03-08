@@ -22,7 +22,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Effect to handle redirects based on authentication status
   useEffect(() => {
     if (state.status === "unauthenticated") {
-      router.push("/auth"); // Redirect to login page if unauthenticated
+      router.push("/auth/login"); // Redirect to login page if unauthenticated
     }
   }, [state.status, router]); // Dependencies: re-run if status or router changes
 
