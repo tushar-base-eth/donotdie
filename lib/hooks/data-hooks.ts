@@ -1,14 +1,14 @@
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 import { useSWRConfig } from "swr";
+import { fetchProfileData } from "../authUtils"; // Updated import
 import {
-  fetchProfileData,
   fetchWorkouts,
   saveWorkout,
   deleteWorkout,
   fetchVolumeData,
   fetchAvailableExercises,
-} from "../supabaseUtils";
+} from "../workoutUtils"; // Updated import
 import type { UIExtendedWorkout, NewWorkout, Exercise } from "@/types/workouts";
 import { format } from "date-fns";
 
