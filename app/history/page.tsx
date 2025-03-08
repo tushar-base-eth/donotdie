@@ -6,6 +6,7 @@ import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
 import { useAuth } from "@/contexts/auth-context";
+import ProtectedRoute from "@/components/auth/protected-route";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useWorkouts, useDeleteWorkout } from "@/lib/hooks/data-hooks";
@@ -114,6 +115,8 @@ function HistoryPage() {
 
 export default function History() {
   return (
+    <ProtectedRoute>
       <HistoryPage />
+    </ProtectedRoute>
   );
 }

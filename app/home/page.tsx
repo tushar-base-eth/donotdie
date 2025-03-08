@@ -3,12 +3,14 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell } from "lucide-react";
 import Workout from "@/components/workout/workout";
+import ProtectedRoute from "@/components/auth/protected-route";
 import { useWorkout } from "@/contexts/workout-context";
 
 export default function HomePage() {
   const { state } = useWorkout();
 
   return (
+    <ProtectedRoute>
       <div className="min-h-screen bg-background pb-16">
         <AnimatePresence mode="wait">
           {state.currentWorkout.exercises.length === 0 && (
@@ -43,5 +45,6 @@ export default function HomePage() {
         </AnimatePresence>
         <Workout />
       </div>
+    </ProtectedRoute>
   );
 }
