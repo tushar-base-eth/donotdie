@@ -93,7 +93,7 @@ export default function Settings() {
         title: "Success",
         description: "Profile saved successfully.",
         variant: "default",
-        duration: 1000,
+        duration: 2000,
       });
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -101,7 +101,7 @@ export default function Settings() {
         title: "Error",
         description: "Failed to save profile. Please try again.",
         variant: "destructive",
-        duration: 2000,
+        duration: 3000,
       });
     } finally {
       setIsSaving(false);

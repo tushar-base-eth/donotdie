@@ -136,7 +136,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
           title: "Success",
           description: "Workout saved successfully.",
           variant: "default",
-          duration: 1000,
+          duration: 2000,
         });
       } catch (error: any) {
         console.error("Error saving workout:", error.message);
@@ -144,7 +144,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
           title: "Error",
           description: "Failed to save workout. Please try again.",
           variant: "destructive",
-          duration: 2000,
+          duration: 3000,
         });
       }
     });
