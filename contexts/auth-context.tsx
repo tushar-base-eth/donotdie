@@ -9,7 +9,7 @@ export interface UserProfile {
   email: string;
   name: string;
   gender: "Male" | "Female" | "Other";
-  date_of_birth: string; // Remains string, but null is handled in code
+  date_of_birth: Date | null; // Changed to Date | null
   weight_kg: number | null;
   height_cm: number | null;
   body_fat_percentage: number | null;
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: userId,
           name: userMetadata.name || "New User",
           gender: "Other",
-          date_of_birth: "2000-01-01", // Default date if null
+          date_of_birth: "2000-01-01", // Default date string for database
           weight_kg: null,
           height_cm: null,
           body_fat_percentage: null,
@@ -86,8 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile = newProfile;
     }
 
-    // Handle null date_of_birth
-    const date_of_birth = profile.date_of_birth ?? "2000-01-01"; // Default to "2000-01-01" if null
+    // Handle null date_of_birth and convert to Date object
+    const date_of_birth = profile.date_of_birth ? new Date(profile.date_of_birth) : null;
 
     // Runtime validation for constrained fields
     const gender = profile.gender ?? "Other"; // Use "Other" if gender is null
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       name: profile.name,
       gender: gender as "Male" | "Female" | "Other",
-      date_of_birth, // Now guaranteed to be a string
+      date_of_birth, // Now a Date object or null
       weight_kg: profile.weight_kg,
       height_cm: profile.height_cm,
       body_fat_percentage: profile.body_fat_percentage,
@@ -201,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const dbUpdates = {
       name: updates.name,
       gender: updates.gender,
-      date_of_birth: updates.date_of_birth,
+      date_of_birth: updates.date_of_birth ? updates.date_of_birth.toISOString().split("T")[0] : null, // Convert Date to YYYY-MM-DD
       weight_kg: updates.weight_kg,
       height_cm: updates.height_cm,
       body_fat_percentage: updates.body_fat_percentage,

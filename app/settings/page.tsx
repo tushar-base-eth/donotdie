@@ -49,7 +49,7 @@ export default function Settings() {
     defaultValues: {
       name: "",
       gender: "Other",
-      date_of_birth: "2000-01-01",
+      date_of_birth: new Date("2000-01-01"), // Changed to Date object
       unit_preference: "metric",
       weight_kg: null,
       height_cm: null,
@@ -63,7 +63,7 @@ export default function Settings() {
       form.reset({
         name: user.name,
         gender: user.gender,
-        date_of_birth: user.date_of_birth,
+        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null, // Ensure it's a Date object
         unit_preference: user.unit_preference,
         weight_kg: user.weight_kg,
         height_cm: user.height_cm,
@@ -81,7 +81,7 @@ export default function Settings() {
       const updates: Partial<UpdatableProfile> = {
         name: data.name,
         gender: data.gender,
-        date_of_birth: data.date_of_birth,
+        date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null, // Ensure it's a Date object
         unit_preference: data.unit_preference,
         weight_kg: data.weight_kg,
         height_cm: data.height_cm,
@@ -232,9 +232,8 @@ export default function Settings() {
                           <FormControl>
                             <Input
                               type="date"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value || null)}
+                              value={field.value ? field.value.toISOString().split("T")[0] : ""}
+                              onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                               className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
                             />
                           </FormControl>
