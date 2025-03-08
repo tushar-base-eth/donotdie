@@ -26,7 +26,8 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
-import { useAuth, UpdatableProfile } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useProfile } from "@/lib/hooks/use-profile"; // New import
 import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
@@ -37,7 +38,8 @@ import * as z from "zod";
 import { Sun, Moon } from "lucide-react";
 
 export default function Settings() {
-  const { state, logout, updateProfile, refreshProfile } = useAuth();
+  const { state, logout } = useAuth(); // Removed updateProfile and refreshProfile
+  const { updateProfile } = useProfile(); // New hook for profile updates
   const { user } = state;
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -49,7 +51,7 @@ export default function Settings() {
     defaultValues: {
       name: "",
       gender: "Other",
-      date_of_birth: new Date("2000-01-01"), // Changed to Date object
+      date_of_birth: new Date("2000-01-01"),
       unit_preference: "metric",
       weight_kg: null,
       height_cm: null,
@@ -63,7 +65,7 @@ export default function Settings() {
       form.reset({
         name: user.name,
         gender: user.gender,
-        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null, // Ensure it's a Date object
+        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null,
         unit_preference: user.unit_preference,
         weight_kg: user.weight_kg,
         height_cm: user.height_cm,
@@ -78,17 +80,16 @@ export default function Settings() {
 
     setIsSaving(true);
     try {
-      const updates: Partial<UpdatableProfile> = {
+      const updates = {
         name: data.name,
         gender: data.gender,
-        date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null, // Ensure it's a Date object
+        date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
         unit_preference: data.unit_preference,
         weight_kg: data.weight_kg,
         height_cm: data.height_cm,
         body_fat_percentage: data.body_fat_percentage,
       };
-      await updateProfile(updates);
-      await refreshProfile(); // Ensure profile data is refreshed after update
+      await updateProfile(updates); // Now handles both update and refresh
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -135,7 +136,7 @@ export default function Settings() {
                 onClick={() => {
                   const newTheme = theme === "dark" ? "light" : "dark";
                   setTheme(newTheme);
-                  updateProfile({ theme_preference: newTheme });
+                  updateProfile({ theme_preference: newTheme }); // Now uses updateProfile from useProfile
                 }}
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >

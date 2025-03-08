@@ -39,7 +39,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, unitPreference: "metric" | "imperial") => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<UpdatableProfile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
 }
@@ -194,33 +193,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  // Update user profile in database and context state
-  const updateProfile = async (updates: Partial<UpdatableProfile>) => {
-    if (!state.user) throw new Error("No user logged in");
-
-    const dbUpdates = {
-      name: updates.name,
-      gender: updates.gender,
-      date_of_birth: updates.date_of_birth ? updates.date_of_birth.toISOString().split("T")[0] : null, // Convert Date to YYYY-MM-DD
-      weight_kg: updates.weight_kg,
-      height_cm: updates.height_cm,
-      body_fat_percentage: updates.body_fat_percentage,
-      unit_preference: updates.unit_preference,
-      theme_preference: updates.theme_preference,
-    };
-
-    const { error } = await supabase
-      .from("profiles")
-      .update(dbUpdates)
-      .eq("id", state.user.id);
-
-    if (error) throw error;
-
-    // Update local state with the new values
-    const updatedUser = { ...state.user, ...updates };
-    setState({ status: "authenticated", user: updatedUser });
-  };
-
   // Refresh profile data from the database
   const refreshProfile = async () => {
     if (!state.user) return;
@@ -229,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ state, login, signup, logout, updateProfile, refreshProfile, signInWithGoogle }}>
+    <AuthContext.Provider value={{ state, login, signup, logout, refreshProfile, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );
