@@ -16,7 +16,8 @@ CREATE POLICY "Users can view their own profile"
 CREATE POLICY "Users can update their own profile" 
   ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
 CREATE POLICY "Allow auth admin to insert profiles" 
-  ON public.profiles FOR INSERT TO supabase_auth_admin WITH CHECK (true);
+  ON public.profiles FOR INSERT TO supabase_auth_admin WITH CHECK (id = auth.uid());
+  -- Updated: Added WITH CHECK to ensure admin inserts only their own profiles
 
 -- Policies for workouts table
 CREATE POLICY "Users can view their own workouts" 
@@ -140,6 +141,17 @@ CREATE POLICY "Users can update their own sets"
       AND w.user_id = auth.uid()
     )
   );
+CREATE POLICY "Users can delete their own sets"
+  ON public.sets FOR DELETE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.workout_exercises we
+      JOIN public.workouts w ON w.id = we.workout_id
+      WHERE we.id = public.sets.workout_exercise_id
+      AND w.user_id = auth.uid()
+    )
+  );
+  -- Updated: Added delete policy for sets to prevent unauthorized deletions
 
 -- Policies for daily_volume
 CREATE POLICY "Users can view their own daily volume" 

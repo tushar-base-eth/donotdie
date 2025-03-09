@@ -24,7 +24,8 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET ROLE supabase_auth_admin;
+-- Updated: Added SET ROLE to limit privileges to supabase_auth_admin
 
 -- Trigger: Calls handle_new_user after user signup
 CREATE TRIGGER on_auth_user_created
@@ -114,12 +115,16 @@ BEGIN
   -- Calculate set volume
   set_volume := ROUND(CAST(NEW.reps * NEW.weight_kg AS numeric), 2);
 
+  -- Use advisory lock to prevent race conditions for this user's volume updates
+  PERFORM pg_advisory_xact_lock(hashtext(func_user_id::text));
+  -- Updated: Replaced invalid FOR UPDATE with advisory lock to ensure atomicity
+
   -- Update profiles total_volume
   UPDATE public.profiles
   SET total_volume = ROUND(total_volume + set_volume, 2)
   WHERE id = func_user_id;
 
-  -- Insert or update daily_volume
+  -- Update or insert daily_volume
   INSERT INTO public.daily_volume (user_id, date, volume)
   VALUES (func_user_id, workout_date, set_volume)
   ON CONFLICT (user_id, date)
@@ -155,6 +160,10 @@ BEGIN
 
   -- Calculate set volume
   set_volume := ROUND(CAST(OLD.reps * OLD.weight_kg AS numeric), 2);
+
+  -- Use advisory lock to prevent race conditions for this user's volume updates
+  PERFORM pg_advisory_xact_lock(hashtext(func_user_id::text));
+  -- Updated: Replaced invalid FOR UPDATE with advisory lock to ensure atomicity
 
   -- Update profiles total_volume
   UPDATE public.profiles
@@ -202,6 +211,10 @@ BEGIN
   old_volume := ROUND(CAST(COALESCE(OLD.reps, 0) * COALESCE(OLD.weight_kg, 0) AS numeric), 2);
   new_volume := ROUND(CAST(COALESCE(NEW.reps, 0) * COALESCE(NEW.weight_kg, 0) AS numeric), 2);
   volume_diff := new_volume - old_volume;
+
+  -- Use advisory lock to prevent race conditions for this user's volume updates
+  PERFORM pg_advisory_xact_lock(hashtext(func_user_id::text));
+  -- Updated: Replaced invalid FOR UPDATE with advisory lock to ensure atomicity
 
   -- Update profiles total_volume
   UPDATE public.profiles
@@ -273,6 +286,21 @@ BEGIN
   IF ex_uses_distance AND NEW.distance_meters IS NULL THEN
     RAISE EXCEPTION 'Distance is required for this exercise.';
   END IF;
+
+  -- Validate that irrelevant metrics are not provided
+  IF NOT ex_uses_reps AND NEW.reps IS NOT NULL THEN
+    RAISE EXCEPTION 'Reps not applicable for this exercise.';
+  END IF;
+  IF NOT ex_uses_weight AND NEW.weight_kg IS NOT NULL THEN
+    RAISE EXCEPTION 'Weight not applicable for this exercise.';
+  END IF;
+  IF NOT ex_uses_duration AND NEW.duration_seconds IS NOT NULL THEN
+    RAISE EXCEPTION 'Duration not applicable for this exercise.';
+  END IF;
+  IF NOT ex_uses_distance AND NEW.distance_meters IS NOT NULL THEN
+    RAISE EXCEPTION 'Distance not applicable for this exercise.';
+  END IF;
+  -- Updated: Added checks to disallow irrelevant metrics for consistency
 
   RETURN NEW;
 END;

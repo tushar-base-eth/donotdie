@@ -25,11 +25,12 @@ CREATE TYPE effort_level_type AS ENUM ('super_easy', 'easy', 'ok', 'hard', 'supe
 -- Read-only: total_volume, total_workouts (managed by triggers)
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, -- Links to auth.users, auto-generated, cascades deletion
-  name TEXT NOT NULL CHECK (LENGTH(TRIM(name)) >= 1 AND LENGTH(name) <= 50 AND name ~ '^[[:print:]]+$'), 
+  name TEXT NOT NULL CHECK (LENGTH(TRIM(name)) >= 1 AND LENGTH(name) <= 50 AND name ~ '^[a-zA-Z0-9 ]+$'), 
   -- User's name, required on insert
   -- tightened: non-empty, trimmed, max 50 chars, printable characters only (per user request)
   -- original: TEXT NOT NULL with no length/format restriction
   -- suggestion: Added length and printable character constraints to prevent malicious or invalid input
+  -- Updated: Restricted to alphanumeric characters and spaces for security and consistency
 
   gender gender_type, -- Optional, uses ENUM for strict type safety (per user request)
   -- original: TEXT CHECK (gender IN ('Male', 'Female', 'Other')), nullable
@@ -89,7 +90,8 @@ CREATE TABLE public.profiles (
 CREATE TABLE public.workouts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Auto-generated unique identifier
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE, -- Required, links to profiles
-  workout_date DATE NOT NULL DEFAULT CURRENT_DATE, -- Required, defaults to today, can be updated
+  workout_date DATE NOT NULL, -- Required, defaults to today, can be updated
+  -- Updated: Removed DEFAULT CURRENT_DATE to allow flexibility in logging past/future workouts
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP -- Auto-generated on insert
 );
 
@@ -120,6 +122,10 @@ CREATE TABLE public.exercises (
   -- Optional: CHECK (uses_reps OR uses_weight OR uses_duration OR uses_distance) -- Ensure at least one metric
 );
 
+-- Add case-insensitive unique index for exercises
+CREATE UNIQUE INDEX idx_exercises_name_lower ON public.exercises (LOWER(name));
+-- Updated: Ensures exercise names are unique regardless of case
+
 -- Table: equipment
 -- Purpose: Stores available equipment types.
 -- Auto-generated: id
@@ -141,6 +147,10 @@ CREATE TABLE public.equipment (
   -- My comment: Implements soft deletion, intended as read-only but not enforced at table level
   -- My suggestion: Typically managed by app logic or higher privileges; no table-level change needed
 );
+
+-- Add case-insensitive unique index for equipment
+CREATE UNIQUE INDEX idx_equipment_name_lower ON public.equipment (LOWER(name));
+-- Updated: Ensures equipment names are unique regardless of case
 
 -- Table: exercise_equipment
 -- Purpose: Links predefined exercises to equipment (many-to-many).
@@ -167,10 +177,11 @@ CREATE TABLE public.user_exercises (
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE, -- Required, links to user
   -- My comment: Foreign key to profiles(id) with CASCADE ensures user deletion removes exercises
 
-  name TEXT NOT NULL CHECK (LENGTH(TRIM(name)) >= 1 AND LENGTH(name) <= 20 AND name ~ '^[[:print:]]+$'), 
+  name TEXT NOT NULL CHECK (LENGTH(TRIM(name)) >= 1 AND LENGTH(name) <= 50 AND name ~ '^[[:print:]]+$'), 
   -- Required, exercise name
   -- My comment: Enhanced with TRIM and printable checks; 20-char limit stricter than other tables
   -- My suggestion: Consider 50 chars for consistency unless 20 is intentional
+  -- Updated: Increased name length to 50 for consistency with other tables
 
   category exercise_category NOT NULL, -- Required, exercise type
   -- My comment: Uses ENUM for consistency with exercises table
@@ -311,7 +322,8 @@ CREATE INDEX idx_sets_workout_exercise_id ON public.sets(workout_exercise_id);
 -- Read-only: (none)
 CREATE TABLE public.daily_volume (
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE, -- Required, links to profiles
-  date DATE NOT NULL, -- Required, date of volume
+  date DATE NOT NULL CHECK (date <= CURRENT_DATE), -- Required, date of volume
+  -- Updated: Added CHECK to prevent future dates
   volume NUMERIC NOT NULL DEFAULT 0 CHECK (volume >= 0), -- Required, non-negative volume
   PRIMARY KEY (user_id, date) -- Composite primary key
 );
