@@ -52,7 +52,7 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
                       {setIndex + 1}
                     </div>
                     <span className="text-muted-foreground">{set.reps} reps</span>
-                    <span className="text-muted-foreground">{formatWeight(set.weight_kg)}</span>
+                    <span className="text-muted-foreground">{formatWeight(set.weight_kg ?? 0)}</span> {/* Default to 0 if null */}
                   </div>
                 </div>
               ))}

@@ -27,6 +27,24 @@ export function WorkoutExercises({
           const opacity = useTransform(dragX, [-120, 0], [1, 0]);
           const xTransform = useTransform(dragX, [-120, 0], [0, 40]);
 
+          const summary = [];
+          if (exercise.exercise.uses_weight && exercise.sets.some((s) => s.weight_kg)) {
+            const totalVolume = exercise.sets.reduce((acc, set) => acc + ((set.reps || 0) * (set.weight_kg || 0)), 0);
+            summary.push(formatWeight(totalVolume));
+          }
+          if (exercise.exercise.uses_duration && exercise.sets.some((s) => s.duration_seconds)) {
+            const totalDuration = exercise.sets.reduce((acc, set) => acc + (set.duration_seconds || 0), 0);
+            summary.push(`${totalDuration}s`);
+          }
+          if (exercise.exercise.uses_distance && exercise.sets.some((s) => s.distance_meters)) {
+            const totalDistance = exercise.sets.reduce((acc, set) => acc + (set.distance_meters || 0), 0);
+            summary.push(`${totalDistance}m`);
+          }
+          if (exercise.exercise.uses_reps && !exercise.exercise.uses_weight) {
+            const totalReps = exercise.sets.reduce((acc, set) => acc + (set.reps || 0), 0);
+            summary.push(`${totalReps} reps`);
+          }
+
           return (
             <motion.div
               key={exercise.instance_id}
@@ -73,8 +91,7 @@ export function WorkoutExercises({
                       {exercise.exercise.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {exercise.exercise.primary_muscle_group} • {exercise.sets.length} sets •{" "}
-                      {formatWeight(exercise.sets.reduce((acc, set) => acc + set.weight_kg * set.reps, 0))}
+                      {exercise.exercise.category} • {exercise.sets.length} sets • {summary.join(", ")}
                     </p>
                   </CardContent>
                 </Card>

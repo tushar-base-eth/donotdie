@@ -1,23 +1,25 @@
 "use client";
 
-import type React from "react";
-import { createContext, useContext, useReducer, useEffect, useState } from "react";
-import type { Set, UIWorkoutExercise } from "@/types/workouts";
+import { createContext, useContext, useReducer, ReactNode } from "react";
+import type { ExtendedExercise, Set, UIWorkoutExercise } from "@/types/workouts";
 
+// Define the shape of the workout state
 interface WorkoutState {
   currentWorkout: {
     exercises: UIWorkoutExercise[];
-    selectedExerciseIds: string[];
+    selectedExerciseIds: ExtendedExercise[]; // Updated to ExtendedExercise[]
     selectedExercise: UIWorkoutExercise | null;
   };
 }
 
-type WorkoutAction =
+// Define action types for the reducer
+type Action =
   | { type: "SET_EXERCISES"; exercises: UIWorkoutExercise[] }
-  | { type: "SET_SELECTED_EXERCISE_IDS"; ids: string[] }
+  | { type: "SET_SELECTED_EXERCISE_IDS"; ids: ExtendedExercise[] } // Updated to ExtendedExercise[]
   | { type: "SET_SELECTED_EXERCISE"; exercise: UIWorkoutExercise | null }
-  | { type: "UPDATE_EXERCISE_SETS"; exerciseIndex: number; sets: { reps: number; weight_kg: number }[] };
+  | { type: "UPDATE_EXERCISE_SETS"; exerciseIndex: number; sets: Set[] };
 
+// Initial state for the workout context
 const initialState: WorkoutState = {
   currentWorkout: {
     exercises: [],
@@ -26,94 +28,51 @@ const initialState: WorkoutState = {
   },
 };
 
-const WorkoutContext = createContext<{
-  state: WorkoutState;
-  dispatch: React.Dispatch<WorkoutAction>;
-} | null>(null);
-
-function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutState {
+// Reducer to handle state updates
+function workoutReducer(state: WorkoutState, action: Action): WorkoutState {
   switch (action.type) {
     case "SET_EXERCISES":
       return {
         ...state,
-        currentWorkout: {
-          ...state.currentWorkout,
-          exercises: action.exercises.map((ex, index) => ({ ...ex, order: index + 1 })),
-        },
+        currentWorkout: { ...state.currentWorkout, exercises: action.exercises },
       };
     case "SET_SELECTED_EXERCISE_IDS":
       return {
         ...state,
-        currentWorkout: {
-          ...state.currentWorkout,
-          selectedExerciseIds: action.ids,
-        },
+        currentWorkout: { ...state.currentWorkout, selectedExerciseIds: action.ids },
       };
     case "SET_SELECTED_EXERCISE":
       return {
         ...state,
-        currentWorkout: {
-          ...state.currentWorkout,
-          selectedExercise: action.exercise,
-        },
+        currentWorkout: { ...state.currentWorkout, selectedExercise: action.exercise },
       };
-    case "UPDATE_EXERCISE_SETS": {
-      const { exerciseIndex, sets } = action;
-      if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
-        throw new Error(`Invalid exercise index: ${exerciseIndex}`);
-      }
+    case "UPDATE_EXERCISE_SETS":
       const updatedExercises = [...state.currentWorkout.exercises];
-      updatedExercises[exerciseIndex] = {
-        ...updatedExercises[exerciseIndex],
-        sets,
+      updatedExercises[action.exerciseIndex] = {
+        ...updatedExercises[action.exerciseIndex],
+        sets: action.sets,
       };
       return {
         ...state,
-        currentWorkout: {
-          ...state.currentWorkout,
-          exercises: updatedExercises,
-          selectedExercise:
-            state.currentWorkout.selectedExercise?.instance_id === updatedExercises[exerciseIndex].instance_id
-              ? updatedExercises[exerciseIndex]
-              : state.currentWorkout.selectedExercise,
-        },
+        currentWorkout: { ...state.currentWorkout, exercises: updatedExercises },
       };
-    }
     default:
       return state;
   }
 }
 
-export function WorkoutProvider({ children }: { children: React.ReactNode }) {
+// Create the context
+const WorkoutContext = createContext<{
+  state: WorkoutState;
+  dispatch: React.Dispatch<Action>;
+}>({
+  state: initialState,
+  dispatch: () => null,
+});
+
+// Provider component to wrap the app or relevant components
+export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(workoutReducer, initialState);
-  const [isRestored, setIsRestored] = useState(false);
-
-  useEffect(() => {
-    const savedWorkout = localStorage.getItem("currentWorkout");
-    if (savedWorkout) {
-      try {
-        const parsed = JSON.parse(savedWorkout);
-        dispatch({ type: "SET_EXERCISES", exercises: parsed.exercises });
-        dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: parsed.selectedExerciseIds });
-      } catch (error) {
-        // Handle parsing error silently in production
-      }
-    }
-    setIsRestored(true);
-  }, []);
-
-  useEffect(() => {
-    if (isRestored) {
-      localStorage.setItem(
-        "currentWorkout",
-        JSON.stringify({
-          exercises: state.currentWorkout.exercises,
-          selectedExerciseIds: state.currentWorkout.selectedExerciseIds,
-        })
-      );
-    }
-  }, [state.currentWorkout.exercises, state.currentWorkout.selectedExerciseIds, isRestored]);
-
   return (
     <WorkoutContext.Provider value={{ state, dispatch }}>
       {children}
@@ -121,6 +80,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Hook to use the workout context
 export function useWorkout() {
   const context = useContext(WorkoutContext);
   if (!context) {

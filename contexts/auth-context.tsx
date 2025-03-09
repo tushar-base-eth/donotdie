@@ -2,14 +2,15 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from '@/lib/supabase/browser';
+import type { Database } from "@/types/database"; // Assuming this is where database.ts is
 
-// Define the user profile interface
+// Define the user profile interface to match database schema
 export interface UserProfile {
   id: string;
   email: string;
   name: string;
-  gender: "Male" | "Female" | "Other";
-  date_of_birth: Date | null; // Changed to Date | null
+  gender: "male" | "female" | "other" | null; // Updated to lowercase enum values
+  date_of_birth: Date | null; // Kept as Date | null
   weight_kg: number | null;
   height_cm: number | null;
   body_fat_percentage: number | null;
@@ -68,9 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: newProfile, error: insertError } = await supabase
         .from("profiles")
         .insert({
-          id: userId,
+          id: userId, // Required to match auth.users.id, handled by trigger
           name: userMetadata.name || "New User",
-          gender: "Other",
+          gender: "other", // Fixed to lowercase "other"
           date_of_birth: "2000-01-01", // Default date string for database
           weight_kg: null,
           height_cm: null,
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("*")
         .single();
 
-      if (insertError) throw new Error("Failed to create profile");
+      if (insertError) throw new Error("Failed to create profile: " + insertError.message);
       profile = newProfile;
     }
 
@@ -89,8 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const date_of_birth = profile.date_of_birth ? new Date(profile.date_of_birth) : null;
 
     // Runtime validation for constrained fields
-    const gender = profile.gender ?? "Other"; // Use "Other" if gender is null
-    if (!["Male", "Female", "Other"].includes(gender)) {
+    const gender = profile.gender ?? "other"; // Use "other" if gender is null
+    if (!["male", "female", "other"].includes(gender)) {
       throw new Error(`Invalid gender value: ${gender}`);
     }
 
@@ -108,8 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: userId,
       email,
       name: profile.name,
-      gender: gender as "Male" | "Female" | "Other",
-      date_of_birth, // Now a Date object or null
+      gender: gender as "male" | "female" | "other",
+      date_of_birth,
       weight_kg: profile.weight_kg,
       height_cm: profile.height_cm,
       body_fat_percentage: profile.body_fat_percentage,
@@ -147,6 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_IN" && session?.user) {
         fetchUserProfile(session.user.id).then((userProfile) => {
           setState({ status: "authenticated", user: userProfile });
+        }).catch((error) => {
+          console.error("Error fetching profile on sign-in:", error);
+          setState({ status: "unauthenticated", user: null });
         });
       } else if (event === "TOKEN_REFRESHED") {
         setState((prev) => (prev.user ? { ...prev, status: "authenticated" } : prev));

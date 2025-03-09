@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/auth-context";
+import type { Profile } from "@/types/workouts"; // Import updated Profile type
 
 // Utility hook to handle unit preferences and conversions
 export function useUnitPreference() {
@@ -56,6 +57,6 @@ export function useUnitPreference() {
     convertFromCm,
     weightUnit: isImperial ? 'lb' : 'kg',
     heightUnit: isImperial ? 'in' : 'cm',
-    unitLabel: isImperial ? 'lb' : 'kg', // Added unitLabel property
+    unitLabel: isImperial ? 'lb' : 'kg', // Added for convenience in UI components
   };
 }

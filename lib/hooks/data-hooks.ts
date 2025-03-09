@@ -1,16 +1,21 @@
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 import { useSWRConfig } from "swr";
-import { fetchProfileData } from "../authUtils"; // Updated import
+import { fetchProfileData } from "../authUtils";
 import {
   fetchWorkouts,
   saveWorkout,
   deleteWorkout,
   fetchVolumeData,
-  fetchAvailableExercises,
-} from "../workoutUtils"; // Updated import
-import type { UIExtendedWorkout, NewWorkout, Exercise } from "@/types/workouts";
+} from "../workoutUtils";
+import type {
+  ExtendedExercise,
+  UIExtendedWorkout,
+  NewWorkout, // Updated to use NewWorkout instead of InsertWorkout
+  Exercise,
+} from "@/types/workouts";
 import { format } from "date-fns";
+import { supabase } from "@/lib/supabase/browser"; // Adjust import based on your setup
 
 export function useProfile(userId: string) {
   const { data, error, mutate } = useSWR(
@@ -30,12 +35,15 @@ export function useProfile(userId: string) {
 export function useWorkouts(userId: string, pageSize: number) {
   const getKey = (pageIndex: number, previousPageData: UIExtendedWorkout[]) => {
     if (previousPageData && !previousPageData.length) return null;
-    return userId ? ["workouts", userId, pageIndex.toString(), pageSize.toString()] : null;
+    return userId
+      ? ["workouts", userId, pageIndex.toString(), pageSize.toString()]
+      : null;
   };
 
   const { data, error, size, setSize, mutate } = useSWRInfinite(
     getKey,
-    ([, uid, pageIndexStr, psStr]) => fetchWorkouts(uid, parseInt(pageIndexStr, 10), parseInt(psStr, 10)),
+    ([, uid, pageIndexStr, psStr]) =>
+      fetchWorkouts(uid, parseInt(pageIndexStr, 10), parseInt(psStr, 10)),
     { revalidateFirstPage: false }
   );
 
@@ -54,30 +62,62 @@ export function useWorkouts(userId: string, pageSize: number) {
 export function useSaveWorkout() {
   const { mutate } = useSWRConfig();
 
-  const trigger = async (workout: NewWorkout) => {
-    const userId = workout.user_id;
+  // Updated to use NewWorkout type, which includes exercises and sets
+  const trigger = async (newWorkout: NewWorkout) => {
+    const userId = newWorkout.user_id;
 
     await mutate(
       ["workouts", userId, "0", "10"],
       async (current: UIExtendedWorkout[] = []) => {
+        const workoutDate = newWorkout.workout_date || format(new Date(), "yyyy-MM-dd"); // Default to today if not provided
         const tempWorkout: UIExtendedWorkout = {
           id: "temp-id",
           user_id: userId,
-          workout_date: format(new Date(), "yyyy-MM-dd"),
+          workout_date: workoutDate,
           created_at: new Date().toISOString(),
-          exercises: workout.exercises.map((ex, index) => ({
-            id: "temp-ex-id",
+          exercises: newWorkout.exercises.map((ex, index) => ({
+            id: `temp-ex-id-${index}`,
             workout_id: "temp-id",
-            exercise_id: ex.exercise_id,
-            order: index,
-            exercise: { id: ex.exercise_id, name: "Loading...", primary_muscle_group: "", secondary_muscle_group: null },
-            sets: ex.sets,
+            exercise_type: ex.exercise_type,
+            predefined_exercise_id: ex.predefined_exercise_id || null,
+            user_exercise_id: ex.user_exercise_id || null,
+            order: ex.order,
+            effort_level: ex.effort_level || null,
             created_at: new Date().toISOString(),
+            instance_id: `temp-inst-${index}`, // Added instance_id for UIWorkoutExercise
+            exercise: {
+              id: ex.predefined_exercise_id || ex.user_exercise_id || "temp",
+              name: "Loading...",
+              primary_muscle_group: "other",
+              secondary_muscle_group: null,
+              category: "other",
+              uses_reps: true,
+              uses_weight: true,
+              uses_duration: false,
+              uses_distance: false,
+              is_deleted: false, // Added to satisfy Exercise base type
+              source: ex.exercise_type, // Kept for ExtendedExercise
+            } as ExtendedExercise, // Updated assertion to ExtendedExercise
+            sets: ex.sets.map((set, setIndex) => ({
+              id: `temp-set-${setIndex}`,
+              workout_exercise_id: `temp-ex-id-${index}`,
+              set_number: set.set_number || setIndex + 1, // Ensure set_number is set
+              reps: set.reps || null,
+              weight_kg: set.weight_kg || null,
+              duration_seconds: set.duration_seconds || null,
+              distance_meters: set.distance_meters || null,
+              created_at: new Date().toISOString(),
+            })),
           })),
-          date: format(new Date(), "yyyy-MM-dd"),
+          date: format(new Date(workoutDate), "yyyy-MM-dd"),
           time: format(new Date(), "hh:mm a"),
-          totalVolume: workout.exercises.reduce(
-            (sum, ex) => sum + ex.sets.reduce((s, set) => s + set.reps * set.weight_kg, 0),
+          totalVolume: newWorkout.exercises.reduce(
+            (sum, ex) =>
+              sum +
+              ex.sets.reduce(
+                (s, set) => s + ((set.reps || 0) * (set.weight_kg || 0)),
+                0
+              ),
             0
           ),
         };
@@ -86,7 +126,7 @@ export function useSaveWorkout() {
       { optimisticData: true, rollbackOnError: true }
     );
 
-    await saveWorkout(workout);
+    await saveWorkout(newWorkout);
 
     mutate(["workouts", userId, "0", "10"]);
     mutate(["profile", userId]);
@@ -128,10 +168,29 @@ export function useVolumeData(userId: string, timeRange: string) {
   };
 }
 
-export function useAvailableExercises() {
-  const { data, error, mutate } = useSWR<Exercise[]>(
-    "available_exercises",
-    fetchAvailableExercises,
+export function useAvailableExercises(userId: string) {
+  const { data, error, mutate } = useSWR<ExtendedExercise[]>( // Updated return type
+    userId ? ["available_exercises", userId] : null,
+    async () => {
+      const [predefinedRes, userRes] = await Promise.all([
+        supabase.from("exercises").select("*").eq("is_deleted", false),
+        supabase.from("user_exercises").select("*").eq("user_id", userId),
+      ]);
+
+      if (predefinedRes.error) throw predefinedRes.error;
+      if (userRes.error) throw userRes.error;
+
+      const predefinedExercises = predefinedRes.data.map((ex) => ({
+        ...ex,
+        source: "predefined" as const,
+      }));
+      const userExercises = userRes.data.map((ex) => ({
+        ...ex,
+        source: "user" as const,
+      }));
+
+      return [...predefinedExercises, ...userExercises] as ExtendedExercise[];
+    },
     {
       dedupingInterval: 60 * 60 * 1000,
     }

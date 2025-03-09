@@ -1,4 +1,3 @@
-// components/workout/exercise-selector.tsx
 "use client";
 
 import { useState, useRef } from "react";
@@ -8,15 +7,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { useAvailableExercises } from "@/lib/hooks/data-hooks"; // Custom hook for exercises
-import type { Exercise } from "@/types/workouts";
+import { useAvailableExercises } from "@/lib/hooks/data-hooks";
+import type { ExtendedExercise } from "@/types/workouts"; // Updated to use ExtendedExercise
+import { useAuth } from "@/contexts/auth-context";
 
 interface ExerciseSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedExercises: string[];
-  onExerciseToggle: (id: string) => void;
-  onAddExercises: (selected: Exercise[]) => void;
+  selectedExercises: ExtendedExercise[]; // Updated type
+  onExerciseToggle: (exercise: ExtendedExercise) => void; // Updated type
+  onAddExercises: (selected: ExtendedExercise[]) => void; // Updated type
 }
 
 export function ExerciseSelector({
@@ -26,20 +26,19 @@ export function ExerciseSelector({
   onExerciseToggle,
   onAddExercises,
 }: ExerciseSelectorProps) {
+  const { state: authState } = useAuth();
+  const { user } = authState;
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
 
-  // Fetch available exercises using custom hook
-  const { exercises: availableExercises, isLoading, error, mutate } = useAvailableExercises();
+  const { exercises: availableExercises, isLoading, error, mutate } = useAvailableExercises(user?.id || "");
 
-  // Handle loading state
   if (isLoading) {
     return <div className="p-4">Loading exercises...</div>;
   }
 
-  // Handle error state with retry option
   if (error) {
     return (
       <div className="p-4">
@@ -51,17 +50,15 @@ export function ExerciseSelector({
     );
   }
 
-  // Extract unique muscle groups for filtering
   const muscleGroups = Array.from(new Set(availableExercises.map((ex) => ex.primary_muscle_group)));
 
-  // Filter exercises based on search query and muscle group
   const filteredExercises = Object.entries(
     availableExercises.reduce((acc, ex) => {
       const group = ex.primary_muscle_group || "Other";
       acc[group] = acc[group] || [];
       acc[group].push(ex);
       return acc;
-    }, {} as Record<string, Exercise[]>)
+    }, {} as Record<string, ExtendedExercise[]>) // Updated type
   ).reduce((acc, [group, exercises]) => {
     const filtered = exercises.filter(
       (ex) =>
@@ -72,12 +69,10 @@ export function ExerciseSelector({
       acc[group] = filtered;
     }
     return acc;
-  }, {} as Record<string, Exercise[]>);
+  }, {} as Record<string, ExtendedExercise[]>); // Updated type
 
-  // Add selected exercises and close the modal
   const handleAdd = () => {
-    const selected = availableExercises.filter((ex) => selectedExercises.includes(ex.id));
-    onAddExercises(selected);
+    onAddExercises(selectedExercises);
     onOpenChange(false);
   };
 
@@ -93,7 +88,7 @@ export function ExerciseSelector({
           <div className="px-6 pb-6 flex items-center border-b">
             <SheetTitle className="text-xl">Add Exercise</SheetTitle>
             <span id="exercise-selector-description" className="sr-only">
-              Select exercises to add to your workout. You can search for exercises or filter them by muscle group.
+              Select exercises to add to your workout. You can search or filter by muscle group.
             </span>
           </div>
 
@@ -151,16 +146,18 @@ export function ExerciseSelector({
                   <div className="space-y-2">
                     {exercises.map((exercise) => (
                       <motion.div
-                        key={exercise.id}
+                        key={`${exercise.id}-${exercise.source}`} // Line 149
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                       >
                         <div
                           className="flex items-center gap-4 p-4 rounded-3xl border cursor-pointer hover:bg-accent/5 transition-colors"
-                          onClick={() => onExerciseToggle(exercise.id)}
+                          onClick={() => onExerciseToggle(exercise)}
                         >
                           <div className="flex-1">
-                            <div>{exercise.name}</div>
+                            <div>
+                              {exercise.name} {exercise.source === "user" && "(Custom)"} {/* Line 159 */}
+                            </div>
                             <div className="text-sm text-muted-foreground">
                               {exercise.primary_muscle_group}
                               {exercise.secondary_muscle_group && `, ${exercise.secondary_muscle_group}`}
@@ -169,12 +166,16 @@ export function ExerciseSelector({
                           <div
                             className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors
                               ${
-                                selectedExercises.includes(exercise.id)
+                                selectedExercises.some(
+                                  (se) => se.id === exercise.id && se.source === exercise.source // Line 170 (twice)
+                                )
                                   ? "bg-primary border-primary text-primary-foreground"
                                   : "border-input"
                               }`}
                           >
-                            {selectedExercises.includes(exercise.id) && "✓"}
+                            {selectedExercises.some(
+                              (se) => se.id === exercise.id && se.source === exercise.source // Line 177 (twice)
+                            ) && "✓"}
                           </div>
                         </div>
                       </motion.div>
