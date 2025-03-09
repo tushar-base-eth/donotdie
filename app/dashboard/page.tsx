@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { useAuth } from "@/contexts/auth-context";
-import ProtectedRoute from "@/components/auth/protected-route";
 import {
   format,
   subDays,
@@ -41,10 +40,10 @@ export default function DashboardPage() {
     timeRange
   );
 
-  if (!user && !isLoading) {
-    router.push("/auth/login");
-    return null;
-  }
+  // if (!user && !isLoading) {
+  //   router.push("/auth/login");
+  //   return null;
+  // }
 
   if (profileError || volumeError) {
     return (
@@ -65,13 +64,11 @@ export default function DashboardPage() {
 
   if (profileLoading || volumeLoading) {
     return (
-      <ProtectedRoute>
         <div className="min-h-screen bg-background pb-16">
           <div className="p-4 space-y-6">
             <MetricsSkeleton />
           </div>
         </div>
-      </ProtectedRoute>
     );
   }
 
@@ -122,7 +119,6 @@ export default function DashboardPage() {
   })();
 
   return (
-    <ProtectedRoute>
       <div className="min-h-screen bg-background pb-16">
         <div className="p-4 space-y-6">
           <motion.div
@@ -148,6 +144,5 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }

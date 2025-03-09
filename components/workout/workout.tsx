@@ -13,7 +13,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout } from "@/types/workouts";
 import { useRouter } from "next/navigation";
-import ProtectedRoute from "@/components/auth/protected-route";
 import { useWorkout } from "@/contexts/workout-context";
 import { toast } from "@/components/ui/use-toast";
 import { useSaveWorkout } from "@/lib/hooks/data-hooks"; // Custom hook for saving workouts
@@ -33,11 +32,11 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const { trigger: saveWorkoutTrigger } = useSaveWorkout(); // Hook for saving with optimistic updates
 
   // Redirect to auth if not authenticated
-  useEffect(() => {
-    if (!user && !isLoading) {
-      router.push("/auth/login");
-    }
-  }, [user, isLoading, router]);
+  // useEffect(() => {
+  //   if (!user && !isLoading) {
+  //     router.push("/auth/login");
+  //   }
+  // }, [user, isLoading, router]);
 
   // Validate workout for saving
   const isWorkoutValid =
@@ -224,8 +223,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
 export default function Workout(props: WorkoutProps) {
   return (
-    <ProtectedRoute>
       <WorkoutPage {...props} />
-    </ProtectedRoute>
   );
 }

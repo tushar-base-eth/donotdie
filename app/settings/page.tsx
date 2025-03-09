@@ -28,7 +28,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
 import { useProfile } from "@/lib/hooks/use-profile";
-import ProtectedRoute from "@/components/auth/protected-route";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 import { toast } from "@/components/ui/use-toast";
@@ -111,11 +110,9 @@ export default function Settings() {
 
   if (state.status === "loading" || !user) {
     return (
-      <ProtectedRoute>
         <div className="min-h-screen bg-background pb-16">
           <ProfileSkeleton />
         </div>
-      </ProtectedRoute>
     );
   }
 
@@ -125,7 +122,6 @@ export default function Settings() {
   };
 
   return (
-    <ProtectedRoute>
       <div className="min-h-screen bg-background pb-16">
         <PageHeader
           title="Settings"
@@ -345,6 +341,5 @@ export default function Settings() {
           </motion.div>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }
