@@ -9,27 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      available_exercises: {
-        Row: {
-          id: string
-          name: string
-          primary_muscle_group: string
-          secondary_muscle_group: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          primary_muscle_group: string
-          secondary_muscle_group?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          primary_muscle_group?: string
-          secondary_muscle_group?: string | null
-        }
-        Relationships: []
-      }
       daily_volume: {
         Row: {
           date: string
@@ -56,19 +35,112 @@ export type Database = {
           },
         ]
       }
+      equipment: {
+        Row: {
+          id: string
+          is_deleted: boolean | null
+          name: string
+        }
+        Insert: {
+          id?: string
+          is_deleted?: boolean | null
+          name: string
+        }
+        Update: {
+          id?: string
+          is_deleted?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      exercise_equipment: {
+        Row: {
+          equipment_id: string
+          exercise_id: string
+        }
+        Insert: {
+          equipment_id: string
+          exercise_id: string
+        }
+        Update: {
+          equipment_id?: string
+          exercise_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_equipment_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          id: string
+          is_deleted: boolean | null
+          name: string
+          primary_muscle_group: Database["public"]["Enums"]["muscle_group"]
+          secondary_muscle_group:
+            | Database["public"]["Enums"]["muscle_group"]
+            | null
+          uses_distance: boolean | null
+          uses_duration: boolean | null
+          uses_reps: boolean | null
+          uses_weight: boolean | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          id?: string
+          is_deleted?: boolean | null
+          name: string
+          primary_muscle_group: Database["public"]["Enums"]["muscle_group"]
+          secondary_muscle_group?:
+            | Database["public"]["Enums"]["muscle_group"]
+            | null
+          uses_distance?: boolean | null
+          uses_duration?: boolean | null
+          uses_reps?: boolean | null
+          uses_weight?: boolean | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["exercise_category"]
+          id?: string
+          is_deleted?: boolean | null
+          name?: string
+          primary_muscle_group?: Database["public"]["Enums"]["muscle_group"]
+          secondary_muscle_group?:
+            | Database["public"]["Enums"]["muscle_group"]
+            | null
+          uses_distance?: boolean | null
+          uses_duration?: boolean | null
+          uses_reps?: boolean | null
+          uses_weight?: boolean | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           body_fat_percentage: number | null
           created_at: string
           date_of_birth: string | null
-          gender: string | null
+          gender: Database["public"]["Enums"]["gender_type"] | null
           height_cm: number | null
           id: string
           name: string
-          theme_preference: string
+          theme_preference: Database["public"]["Enums"]["theme_preference_type"]
           total_volume: number
           total_workouts: number
-          unit_preference: string
+          unit_preference: Database["public"]["Enums"]["unit_preference_type"]
           updated_at: string
           weight_kg: number | null
         }
@@ -76,14 +148,14 @@ export type Database = {
           body_fat_percentage?: number | null
           created_at?: string
           date_of_birth?: string | null
-          gender?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
           height_cm?: number | null
           id: string
           name: string
-          theme_preference?: string
+          theme_preference?: Database["public"]["Enums"]["theme_preference_type"]
           total_volume?: number
           total_workouts?: number
-          unit_preference?: string
+          unit_preference?: Database["public"]["Enums"]["unit_preference_type"]
           updated_at?: string
           weight_kg?: number | null
         }
@@ -91,14 +163,14 @@ export type Database = {
           body_fat_percentage?: number | null
           created_at?: string
           date_of_birth?: string | null
-          gender?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
           height_cm?: number | null
           id?: string
           name?: string
-          theme_preference?: string
+          theme_preference?: Database["public"]["Enums"]["theme_preference_type"]
           total_volume?: number
           total_workouts?: number
-          unit_preference?: string
+          unit_preference?: Database["public"]["Enums"]["unit_preference_type"]
           updated_at?: string
           weight_kg?: number | null
         }
@@ -107,26 +179,32 @@ export type Database = {
       sets: {
         Row: {
           created_at: string
+          distance_meters: number | null
+          duration_seconds: number | null
           id: string
-          reps: number
+          reps: number | null
           set_number: number
-          weight_kg: number
+          weight_kg: number | null
           workout_exercise_id: string
         }
         Insert: {
           created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
           id?: string
-          reps: number
+          reps?: number | null
           set_number: number
-          weight_kg: number
+          weight_kg?: number | null
           workout_exercise_id: string
         }
         Update: {
           created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
           id?: string
-          reps?: number
+          reps?: number | null
           set_number?: number
-          weight_kg?: number
+          weight_kg?: number | null
           workout_exercise_id?: string
         }
         Relationships: [
@@ -139,34 +217,136 @@ export type Database = {
           },
         ]
       }
+      user_exercise_equipment: {
+        Row: {
+          equipment_id: string
+          user_exercise_id: string
+        }
+        Insert: {
+          equipment_id: string
+          user_exercise_id: string
+        }
+        Update: {
+          equipment_id?: string
+          user_exercise_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_exercise_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_exercise_equipment_user_exercise_id_fkey"
+            columns: ["user_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "user_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_exercises: {
+        Row: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          created_at: string | null
+          id: string
+          name: string
+          primary_muscle_group: Database["public"]["Enums"]["muscle_group"]
+          secondary_muscle_group:
+            | Database["public"]["Enums"]["muscle_group"]
+            | null
+          user_id: string
+          uses_distance: boolean | null
+          uses_duration: boolean | null
+          uses_reps: boolean | null
+          uses_weight: boolean | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          created_at?: string | null
+          id?: string
+          name: string
+          primary_muscle_group: Database["public"]["Enums"]["muscle_group"]
+          secondary_muscle_group?:
+            | Database["public"]["Enums"]["muscle_group"]
+            | null
+          user_id: string
+          uses_distance?: boolean | null
+          uses_duration?: boolean | null
+          uses_reps?: boolean | null
+          uses_weight?: boolean | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["exercise_category"]
+          created_at?: string | null
+          id?: string
+          name?: string
+          primary_muscle_group?: Database["public"]["Enums"]["muscle_group"]
+          secondary_muscle_group?:
+            | Database["public"]["Enums"]["muscle_group"]
+            | null
+          user_id?: string
+          uses_distance?: boolean | null
+          uses_duration?: boolean | null
+          uses_reps?: boolean | null
+          uses_weight?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_exercises_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workout_exercises: {
         Row: {
           created_at: string
-          exercise_id: string
+          effort_level: Database["public"]["Enums"]["effort_level_type"] | null
+          exercise_type: Database["public"]["Enums"]["exercise_source"]
           id: string
           order: number
+          predefined_exercise_id: string | null
+          user_exercise_id: string | null
           workout_id: string
         }
         Insert: {
           created_at?: string
-          exercise_id: string
+          effort_level?: Database["public"]["Enums"]["effort_level_type"] | null
+          exercise_type: Database["public"]["Enums"]["exercise_source"]
           id?: string
           order: number
+          predefined_exercise_id?: string | null
+          user_exercise_id?: string | null
           workout_id: string
         }
         Update: {
           created_at?: string
-          exercise_id?: string
+          effort_level?: Database["public"]["Enums"]["effort_level_type"] | null
+          exercise_type?: Database["public"]["Enums"]["exercise_source"]
           id?: string
           order?: number
+          predefined_exercise_id?: string | null
+          user_exercise_id?: string | null
           workout_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "workout_exercises_exercise_id_fkey"
-            columns: ["exercise_id"]
+            foreignKeyName: "workout_exercises_predefined_exercise_id_fkey"
+            columns: ["predefined_exercise_id"]
             isOneToOne: false
-            referencedRelation: "available_exercises"
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_exercises_user_exercise_id_fkey"
+            columns: ["user_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "user_exercises"
             referencedColumns: ["id"]
           },
           {
@@ -189,7 +369,7 @@ export type Database = {
           created_at?: string
           id?: string
           user_id: string
-          workout_date?: string
+          workout_date: string
         }
         Update: {
           created_at?: string
@@ -215,7 +395,24 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      effort_level_type: "super_easy" | "easy" | "ok" | "hard" | "super_hard"
+      exercise_category:
+        | "strength_training"
+        | "cardio"
+        | "flexibility"
+        | "other"
+      exercise_source: "predefined" | "user"
+      gender_type: "male" | "female" | "other"
+      muscle_group:
+        | "chest"
+        | "back"
+        | "legs"
+        | "arms"
+        | "core"
+        | "full_body"
+        | "other"
+      theme_preference_type: "light" | "dark"
+      unit_preference_type: "metric" | "imperial"
     }
     CompositeTypes: {
       [_ in never]: never
