@@ -33,6 +33,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Function: Adjusts volume and counts when a workout is deleted
+-- Documentation: Decrements total_volume and total_workouts in profiles, adjusts daily_volume, and cleans up zero-volume entries
 CREATE OR REPLACE FUNCTION public.on_workout_delete()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -73,6 +74,7 @@ CREATE TRIGGER trigger_on_workout_delete
   FOR EACH ROW EXECUTE FUNCTION public.on_workout_delete();
 
 -- Function: Increments total_workouts when a workout is added
+-- Documentation: Increases the total_workouts count in profiles for the user who added the workout
 CREATE OR REPLACE FUNCTION public.on_workout_insert()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -89,6 +91,7 @@ CREATE TRIGGER trigger_on_workout_insert
   FOR EACH ROW EXECUTE FUNCTION public.on_workout_insert();
 
 -- Function: Updates volume when a set is inserted (only for weighted exercises)
+-- Documentation: Updates total_volume in profiles and daily_volume for weighted sets, using advisory locks for atomicity
 CREATE OR REPLACE FUNCTION public.update_volume_on_set_insert()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -135,6 +138,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function: Adjusts volume when a set is deleted (only for weighted exercises)
+-- Documentation: Decrements total_volume in profiles and daily_volume for deleted weighted sets, using advisory locks
 CREATE OR REPLACE FUNCTION public.update_volume_on_set_delete()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -180,6 +184,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function: Adjusts volume when a set is updated (only for weighted exercises)
+-- Documentation: Adjusts total_volume and daily_volume based on changes to weighted sets, using advisory locks
 CREATE OR REPLACE FUNCTION public.update_volume_on_set_update()
 RETURNS TRIGGER AS $$
 DECLARE

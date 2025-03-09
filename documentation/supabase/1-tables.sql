@@ -11,7 +11,6 @@ CREATE TYPE theme_preference_type AS ENUM ('light', 'dark');
 CREATE TYPE exercise_category AS ENUM ('strength_training', 'cardio', 'flexibility', 'other');
 CREATE TYPE muscle_group AS ENUM ('chest', 'back', 'legs', 'arms', 'core', 'full_body', 'other');
 
-
 -- Define ENUMs for consistency doe workout exercises
 CREATE TYPE exercise_source AS ENUM ('predefined', 'user');
 CREATE TYPE effort_level_type AS ENUM ('super_easy', 'easy', 'ok', 'hard', 'super_hard');
@@ -118,8 +117,10 @@ CREATE TABLE public.exercises (
   uses_weight BOOLEAN DEFAULT TRUE, -- Indicates if exercise uses weight
   uses_duration BOOLEAN DEFAULT FALSE, -- Indicates if exercise uses duration
   uses_distance BOOLEAN DEFAULT FALSE, -- Indicates if exercise uses distance
-  is_deleted BOOLEAN DEFAULT FALSE -- Soft delete flag, managed by admin
+  is_deleted BOOLEAN DEFAULT FALSE, -- Soft delete flag, managed by admin
   -- Optional: CHECK (uses_reps OR uses_weight OR uses_duration OR uses_distance) -- Ensure at least one metric
+  -- Added: Ensures at least one metric is required, matching user_exercises for consistency
+  CONSTRAINT at_least_one_metric CHECK (uses_reps OR uses_weight OR uses_duration OR uses_distance)
 );
 
 -- Add case-insensitive unique index for exercises

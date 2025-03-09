@@ -154,10 +154,8 @@ CREATE POLICY "Users can delete their own sets"
   -- Updated: Added delete policy for sets to prevent unauthorized deletions
 
 -- Policies for daily_volume
+-- Only allows users to view their own daily volume; insert/update restricted to triggers
 CREATE POLICY "Users can view their own daily volume" 
   ON public.daily_volume FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own daily volume" 
-  ON public.daily_volume FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own daily volume" 
-  ON public.daily_volume FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- Removed: "Users can create their own daily volume" and "Users can update their own daily volume" policies
+-- Rationale: Direct access to daily_volume is restricted; updates are managed solely by triggers
