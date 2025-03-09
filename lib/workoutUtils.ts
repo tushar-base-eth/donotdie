@@ -1,4 +1,4 @@
-import { supabase } from "./supabaseClient";
+import { supabase } from '@/lib/supabase/browser';
 import type { UIExtendedWorkout, NewWorkout, WorkoutExercise } from "@/types/workouts";
 import { parseISO } from "date-fns";
 import { format } from "date-fns";

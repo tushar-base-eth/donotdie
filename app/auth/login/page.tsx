@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from '@/lib/supabase/browser';
 import * as Toast from "@radix-ui/react-toast";
 import { Suspense } from "react";
 

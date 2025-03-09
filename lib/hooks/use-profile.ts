@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from '@/lib/supabase/browser';
 import type { UpdatableProfile } from "@/contexts/auth-context";
 
 // Hook to manage profile updates

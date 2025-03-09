@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from '@/lib/supabase/browser';
 
 // Define the user profile interface
 export interface UserProfile {

@@ -1,4 +1,4 @@
-import { supabase } from "./supabaseClient";
+import { supabase } from '@/lib/supabase/browser';
 
 /**
  * Fetches profile data for a user.
