@@ -67,7 +67,7 @@ BEGIN
 
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function: Increments total_workouts when a workout is added
 -- Documentation: Increases the total_workouts count in profiles for the user who added the workout
