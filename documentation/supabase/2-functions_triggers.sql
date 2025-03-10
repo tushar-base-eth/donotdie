@@ -22,7 +22,7 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'name', 'New User'),
     CASE
       WHEN NEW.raw_user_meta_data->>'unit_preference' IN ('metric', 'imperial')
-      THEN CAST(NEW.raw_user_meta_data->>'unit_preference' AS unit_preference_type)
+      THEN CAST(NEW.raw_user_meta_data->>'unit_preference' AS public.unit_preference_type)
       ELSE 'metric'
     END
   );
