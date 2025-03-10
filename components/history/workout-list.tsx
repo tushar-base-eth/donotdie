@@ -1,11 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
-import { format } from "date-fns";
-import { useState } from "react";
+import { format, parseISO } from "date-fns";
 
 interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
@@ -20,7 +20,7 @@ export function WorkoutList({
   onWorkoutDelete,
   selectedDate,
 }: WorkoutListProps) {
-  const { formatWeight } = useUnitPreference(); // Use user's unit preference
+  const { formatWeight } = useUnitPreference();
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
   const handleDelete = (workoutId: string) => {
@@ -28,6 +28,14 @@ export function WorkoutList({
     onWorkoutDelete(workoutId);
   };
 
+  // Log workout volumes for debugging, executed after render
+  useEffect(() => {
+    workouts.forEach((workout) => {
+      console.log(`Workout ${workout.id} volume: ${workout.totalVolume}`);
+    });
+  }, [workouts]);
+
+  // Display a message if no workouts are available
   if (workouts.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
@@ -55,73 +63,78 @@ export function WorkoutList({
     );
   }
 
+  // Render the list of workouts
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
       <AnimatePresence initial={false}>
-        {workouts.filter(workout => !deletingIds.includes(workout.id)).map((workout) => (
-          <motion.div
-            key={workout.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -100, height: 0 }}
-            transition={{ duration: 0.3 }}
-            layout
-          >
+        {workouts
+          .filter((workout) => !deletingIds.includes(workout.id))
+          .map((workout) => (
             <motion.div
-              drag="x"
-              dragConstraints={{ left: -100, right: 0 }}
-              dragElastic={0.1}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -50) {
-                  handleDelete(workout.id);
-                }
-              }}
-              className="cursor-grab active:cursor-grabbing relative"
-              whileDrag={{ scale: 1.02 }}
-              whileHover={{ scale: 1.01 }}
+              key={workout.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -100, height: 0 }}
+              transition={{ duration: 0.3 }}
+              layout
             >
               <motion.div
-                className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-destructive to-transparent flex items-center justify-end pr-4"
-                style={{
-                  borderTopRightRadius: "0.5rem",
-                  borderBottomRightRadius: "0.5rem",
+                drag="x"
+                dragConstraints={{ left: -100, right: 0 }}
+                dragElastic={0.1}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x < -50) {
+                    handleDelete(workout.id);
+                  }
                 }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0 }}
-                whileDrag={{ opacity: 1, transition: { duration: 0.2 } }}
+                className="cursor-grab active:cursor-grabbing relative"
+                whileDrag={{ scale: 1.02 }}
+                whileHover={{ scale: 1.01 }}
               >
-                <span className="text-destructive-foreground font-medium">Delete</span>
-              </motion.div>
+                <motion.div
+                  className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-destructive to-transparent flex items-center justify-end pr-4"
+                  style={{
+                    borderTopRightRadius: "0.5rem",
+                    borderBottomRightRadius: "0.5rem",
+                  }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0 }}
+                  whileDrag={{ opacity: 1, transition: { duration: 0.2 } }}
+                >
+                  <span className="text-destructive-foreground font-medium">Delete</span>
+                </motion.div>
 
-              <Card
-                className="overflow-hidden cursor-pointer hover:bg-accent/5 transition-colors rounded-3xl"
-                onClick={() => onWorkoutSelect(workout)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium">
-                        {new Date(workout.date).toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                <Card
+                  className="overflow-hidden cursor-pointer hover:bg-accent/5 transition-colors rounded-3xl"
+                  onClick={() => onWorkoutSelect(workout)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">
+                          {workout.date && workout.time ? (
+                            format(parseISO(`${workout.date}T${workout.time}`), "eeee, MMMM d")
+                          ) : (
+                            "Invalid Date"
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {workout.time || "No Time"}
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">{workout.time}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Total Volume</div>
-                      <div className="font-medium">
-                        {formatWeight(workout.totalVolume)} {/* Use user's unit preference */}
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">Total Volume</div>
+                        <div className="font-medium">
+                          {formatWeight(workout.totalVolume)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        ))}
+          ))}
       </AnimatePresence>
     </div>
   );
