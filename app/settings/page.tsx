@@ -210,6 +210,7 @@ export default function Settings() {
                             field.onChange(value === "null" ? null : value as "male" | "female" | "other")
                           }
                           value={field.value ?? "null"}
+                          key={field.value} // Added to force re-render on value change, fixing navigation reset
                         >
                           <FormControl>
                             <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
