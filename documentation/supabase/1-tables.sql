@@ -89,8 +89,7 @@ CREATE TABLE public.profiles (
 CREATE TABLE public.workouts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Auto-generated unique identifier
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE, -- Required, links to profiles
-  workout_date DATE NOT NULL, -- Required, defaults to today, can be updated
-  -- Updated: Removed DEFAULT CURRENT_DATE to allow flexibility in logging past/future workouts
+  workout_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Changed to TIMESTAMPTZ with default
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP -- Auto-generated on insert
 );
 

@@ -1,3 +1,5 @@
+-- FUNCTIONS SECTION --
+
 -- Function: Updates the updated_at timestamp
 CREATE OR REPLACE FUNCTION public.update_timestamp()
 RETURNS TRIGGER AS $$
@@ -6,11 +8,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
--- Trigger: Updates updated_at on profile changes
-CREATE TRIGGER update_profiles_timestamp
-  BEFORE UPDATE ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.update_timestamp();
 
 -- Function: Handles new user creation, populating profiles table
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -35,18 +32,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- which already has sufficient permissions to insert into profiles. 
 -- The RLS policy will handle restricting the operation to supabase_auth_admin.
 
--- Trigger: Calls handle_new_user after user signup
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
 -- Function: Adjusts volume and counts when a workout is deleted
 -- Documentation: Decrements total_volume and total_workouts in profiles, adjusts daily_volume, and cleans up zero-volume entries
 CREATE OR REPLACE FUNCTION public.on_workout_delete()
 RETURNS TRIGGER AS $$
 DECLARE
   workout_volume NUMERIC;
-  workout_date DATE;
+  workout_date DATE; -- Still DATE because daily_volume uses DATE
 BEGIN
   -- Calculate total volume with rounding per set (only for weighted exercises)
   SELECT SUM(ROUND(CAST(s.reps * s.weight_kg AS numeric), 2)) INTO workout_volume
@@ -55,7 +47,8 @@ BEGIN
   WHERE we.workout_id = OLD.id AND s.reps IS NOT NULL AND s.weight_kg IS NOT NULL;
 
   workout_volume := COALESCE(workout_volume, 0);
-  workout_date := OLD.workout_date;
+  -- Workout_date Update: Cast TIMESTAMPTZ to DATE for daily_volume compatibility
+  workout_date := OLD.workout_date::DATE;
 
   -- Update profiles
   UPDATE public.profiles
@@ -76,11 +69,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger: Adjusts volumes on workout deletion
-CREATE TRIGGER trigger_on_workout_delete
-  BEFORE DELETE ON public.workouts
-  FOR EACH ROW EXECUTE FUNCTION public.on_workout_delete();
-
 -- Function: Increments total_workouts when a workout is added
 -- Documentation: Increases the total_workouts count in profiles for the user who added the workout
 CREATE OR REPLACE FUNCTION public.on_workout_insert()
@@ -93,11 +81,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger: Increments total_workouts on workout insertion
-CREATE TRIGGER trigger_on_workout_insert
-  AFTER INSERT ON public.workouts
-  FOR EACH ROW EXECUTE FUNCTION public.on_workout_insert();
-
 -- Function: Updates volume when a set is inserted (only for weighted exercises)
 -- Documentation: Updates total_volume in profiles and daily_volume for weighted sets, using advisory locks for atomicity
 CREATE OR REPLACE FUNCTION public.update_volume_on_set_insert()
@@ -105,7 +88,7 @@ RETURNS TRIGGER AS $$
 DECLARE
   workout_id UUID;
   func_user_id UUID;
-  workout_date DATE;
+  workout_date DATE; -- Still DATE because daily_volume uses DATE
   set_volume NUMERIC;
 BEGIN
   -- Skip if not a weighted set
@@ -119,7 +102,7 @@ BEGIN
   WHERE we.id = NEW.workout_exercise_id;
 
   -- Get user_id and workout_date
-  SELECT w.user_id, w.workout_date INTO func_user_id, workout_date
+  SELECT w.user_id, w.workout_date::DATE INTO func_user_id, workout_date -- Workout_date Update: Cast to DATE
   FROM public.workouts w
   WHERE w.id = workout_id;
 
@@ -152,7 +135,7 @@ RETURNS TRIGGER AS $$
 DECLARE
   workout_id UUID;
   func_user_id UUID;
-  workout_date DATE;
+  workout_date DATE; -- Still DATE because daily_volume uses DATE
   set_volume NUMERIC;
 BEGIN
   -- Skip if not a weighted set
@@ -166,7 +149,7 @@ BEGIN
   WHERE we.id = OLD.workout_exercise_id;
 
   -- Get user_id and workout_date
-  SELECT w.user_id, w.workout_date INTO func_user_id, workout_date
+  SELECT w.user_id, w.workout_date::DATE INTO func_user_id, workout_date -- Workout_date Update: Cast to DATE
   FROM public.workouts w
   WHERE w.id = workout_id;
 
@@ -198,7 +181,7 @@ RETURNS TRIGGER AS $$
 DECLARE
   workout_id UUID;
   func_user_id UUID;
-  workout_date DATE;
+  workout_date DATE; -- Still DATE because daily_volume uses DATE
   old_volume NUMERIC;
   new_volume NUMERIC;
   volume_diff NUMERIC;
@@ -216,7 +199,7 @@ BEGIN
   WHERE we.id = NEW.workout_exercise_id;
 
   -- Get user_id and workout_date
-  SELECT w.user_id, w.workout_date INTO func_user_id, workout_date
+  SELECT w.user_id, w.workout_date::DATE INTO func_user_id, workout_date -- Workout_date Update: Cast to DATE
   FROM public.workouts w
   WHERE w.id = workout_id;
 
@@ -319,13 +302,39 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Triggers for set operations
+-- TRIGGERS SECTION --
+
+-- Trigger: Updates updated_at on profile changes
+CREATE TRIGGER update_profiles_timestamp
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.update_timestamp();
+
+-- Trigger: Calls handle_new_user after user signup
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Trigger: Adjusts volumes on workout deletion
+CREATE TRIGGER trigger_on_workout_delete
+  BEFORE DELETE ON public.workouts
+  FOR EACH ROW EXECUTE FUNCTION public.on_workout_delete();
+
+-- Trigger: Increments total_workouts on workout insertion
+CREATE TRIGGER trigger_on_workout_insert
+  AFTER INSERT ON public.workouts
+  FOR EACH ROW EXECUTE FUNCTION public.on_workout_insert();
+
+-- Trigger: Updates volume after set insert
 CREATE TRIGGER update_volume_after_set_insert
   AFTER INSERT ON public.sets
   FOR EACH ROW EXECUTE FUNCTION public.update_volume_on_set_insert();
+
+-- Trigger: Updates volume after set delete
 CREATE TRIGGER update_volume_after_set_delete
   AFTER DELETE ON public.sets
   FOR EACH ROW EXECUTE FUNCTION public.update_volume_on_set_delete();
+
+-- Trigger: Updates volume after set update
 CREATE TRIGGER update_volume_after_set_update
   AFTER UPDATE ON public.sets
   FOR EACH ROW
