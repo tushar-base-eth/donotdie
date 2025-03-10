@@ -20,12 +20,20 @@ BEGIN
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'name', 'New User'),
-    COALESCE(NEW.raw_user_meta_data->>'unit_preference', 'metric')
+    CASE
+      WHEN NEW.raw_user_meta_data->>'unit_preference' IN ('metric', 'imperial')
+      THEN CAST(NEW.raw_user_meta_data->>'unit_preference' AS unit_preference_type)
+      ELSE 'metric'
+    END
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET ROLE supabase_auth_admin;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Updated: Added SET ROLE to limit privileges to supabase_auth_admin
+-- Change: Removed SET ROLE supabase_auth_admin.
+-- Why: The function should run with the privileges of its creator (e.g., postgres or a Supabase admin role), 
+-- which already has sufficient permissions to insert into profiles. 
+-- The RLS policy will handle restricting the operation to supabase_auth_admin.
 
 -- Trigger: Calls handle_new_user after user signup
 CREATE TRIGGER on_auth_user_created
