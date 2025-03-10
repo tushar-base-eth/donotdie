@@ -20,7 +20,7 @@ export function WorkoutList({
   onWorkoutDelete,
   selectedDate,
 }: WorkoutListProps) {
-  const { formatWeight } = useUnitPreference();
+  const { formatWeight } = useUnitPreference(); // Use user's unit preference
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
   const handleDelete = (workoutId: string) => {
@@ -112,7 +112,9 @@ export function WorkoutList({
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-muted-foreground">Total Volume</div>
-                      <div className="font-medium">{formatWeight(workout.totalVolume)}</div>
+                      <div className="font-medium">
+                        {formatWeight(workout.totalVolume)} {/* Use user's unit preference */}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

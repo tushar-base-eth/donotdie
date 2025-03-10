@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react"; // Added useState
+import { useState, useEffect, useRef } from "react";
 import { X, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,7 +146,7 @@ export function ExerciseEditor({
                               <div className="w-8 text-left" />
                               {uses_reps && <div className="w-[140px] text-left">Reps</div>}
                               {uses_weight && (
-                                <div className="w-[140px] text-left">Weight ({unitLabel})</div>
+                                <div className="w-[140px] text-left">Weight ({unitLabel})</div> // Corrected syntax with proper template literal
                               )}
                               {uses_duration && (
                                 <div className="w-[140px] text-left">Duration (s)</div>

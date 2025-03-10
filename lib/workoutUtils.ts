@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase/browser';
 import type { UIExtendedWorkout, NewWorkout, UIWorkoutExercise, Database } from "@/types/workouts";
 import { parseISO } from "date-fns";
 import { format } from "date-fns";
+import { formatUtcToLocalDate, formatUtcToLocalTime } from '@/lib/utils'; // Import local time functions
 
 /**
  * Fetches all workouts for a user with pagination, including exercises and sets, formatted for UI display.
@@ -45,11 +46,25 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
   }
 
   const formattedWorkouts: UIExtendedWorkout[] = (data || [])
-    .filter((rawWorkout) => rawWorkout.created_at !== null)
+    .filter((rawWorkout) => rawWorkout.created_at !== null && rawWorkout.workout_date !== null)
     .map((rawWorkout) => {
-      const utcDate = parseISO(rawWorkout.created_at as string);
-      const localDate = format(utcDate, "yyyy-MM-dd");
-      const localTime = format(utcDate, "hh:mm a");
+      // Prioritize workout_date (UTC) for date and time, fall back to created_at if invalid
+      let utcDate: Date;
+      try {
+        utcDate = parseISO(rawWorkout.workout_date as string); // Use workout_date as primary UTC source
+        if (isNaN(utcDate.getTime())) {
+          throw new Error("Invalid workout_date");
+        }
+      } catch (e) {
+        console.warn(`Invalid workout_date for workout ${rawWorkout.id}: ${rawWorkout.workout_date}, falling back to created_at`);
+        utcDate = parseISO(rawWorkout.created_at as string);
+        if (isNaN(utcDate.getTime())) {
+          console.warn(`Invalid created_at for workout ${rawWorkout.id}: ${rawWorkout.created_at}, using current date as fallback`);
+          utcDate = new Date();
+        }
+      }
+      const localDate = formatUtcToLocalDate(utcDate.toISOString()); // Convert to local date
+      const localTime = formatUtcToLocalTime(utcDate.toISOString()); // Convert to local time
 
       const exercises: UIWorkoutExercise[] = rawWorkout.workout_exercises.map((we: WorkoutRow["workout_exercises"][number]) => {
         const exerciseData = we.exercise_type === "predefined" ? we.exercises : we.user_exercises;
@@ -92,7 +107,11 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
           (sum, ex) =>
             sum +
             ex.sets.reduce(
-              (setSum, set) => setSum + ((set.reps || 0) * (set.weight_kg || 0)),
+              (setSum, set) => {
+                const reps = Number(set.reps) || 0; // Ensure reps is a number
+                const weight_kg = Number(set.weight_kg) || 0; // Ensure weight_kg is a number
+                return setSum + (reps * weight_kg);
+              },
               0
             ),
           0
@@ -110,7 +129,7 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
  */
 export async function saveWorkout(workout: NewWorkout): Promise<void> {
   try {
-    const workoutDate = workout.workout_date || new Date().toISOString().split("T")[0];
+    const workoutDate = workout.workout_date || new Date().toISOString();
     const { data: workoutData, error: workoutError } = await supabase
       .from("workouts")
       .insert({ user_id: workout.user_id, workout_date: workoutDate })

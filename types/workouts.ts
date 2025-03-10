@@ -15,7 +15,7 @@ export type DailyVolume = Database["public"]["Tables"]["daily_volume"]["Row"];
  */
 export interface InsertWorkout {
   user_id: string; // UUID from auth.users
-  workout_date: string; // ISO date string (e.g., "2025-03-09")
+  workout_date: string; // ISO date string (e.g., "2025-03-09T14:30:00.000Z" in UTC)
 }
 
 export interface InsertWorkoutExercise {
@@ -51,7 +51,7 @@ export interface UpdateProfile {
 }
 
 export interface UpdateWorkout {
-  workout_date?: string; // ISO date string
+  workout_date?: string; // ISO date string (e.g., "2025-03-09T14:30:00.000Z" in UTC)
 }
 
 /**
@@ -65,16 +65,16 @@ export interface UIWorkoutExercise extends WorkoutExercise {
 
 export interface UIExtendedWorkout extends Workout {
   exercises: UIWorkoutExercise[];
-  date: string; // UI-friendly date
-  time: string; // UI-friendly time
-  totalVolume: number; // Calculated total volume
+  date: string; // Local timezone date (e.g., "2025-03-10")
+  time: string; // Local timezone time (e.g., "10:30 AM")
+  totalVolume: number; // Total volume in kg, to be converted by frontend
 }
 
 // Add this new interface
 export interface NewSet {
   set_number: number;
   reps?: number | null;
-  weight_kg?: number | null;
+  weight_kg?: number | null; // Stored and calculated in kg
   duration_seconds?: number | null;
   distance_meters?: number | null;
 }
@@ -82,7 +82,7 @@ export interface NewSet {
 // Update NewWorkout to use NewSet
 export interface NewWorkout {
   user_id: string;
-  workout_date?: string;
+  workout_date?: string; // ISO UTC string (e.g., "2025-03-09T14:30:00.000Z")
   exercises: {
     exercise_type: "predefined";
     predefined_exercise_id: string;
