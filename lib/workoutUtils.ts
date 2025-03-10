@@ -1,27 +1,13 @@
 import { supabase } from '@/lib/supabase/browser';
-import type { UIExtendedWorkout, NewWorkout, UIWorkoutExercise, Database } from "@/types/workouts";
-import { parseISO } from "date-fns";
-import { formatUtcToLocalDate, formatUtcToLocalTime } from '@/lib/utils';
+import type { UIExtendedWorkout, UIWorkoutExercise } from "@/types/workouts";
+import { parseISO, format, isValid } from "date-fns";
 
 /**
- * Fetches all workouts for a user with pagination, including exercises and sets, formatted for UI display.
- * @param userId - The ID of the user whose workouts to fetch.
- * @param pageIndex - The page number (0-based) for pagination.
- * @param pageSize - Number of workouts per page.
- * @returns A promise resolving to an array of formatted workouts.
+ * Fetches all workouts for a given user from Supabase.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves to an array of UIExtendedWorkout objects.
  */
-export async function fetchWorkouts(userId: string, pageIndex: number, pageSize: number): Promise<UIExtendedWorkout[]> {
-  const start = pageIndex * pageSize;
-  const end = start + pageSize - 1;
-
-  type WorkoutRow = Database["public"]["Tables"]["workouts"]["Row"] & {
-    workout_exercises: (Database["public"]["Tables"]["workout_exercises"]["Row"] & {
-      exercises: Database["public"]["Tables"]["exercises"]["Row"] | null;
-      user_exercises: any | null; // Not used currently, placeholder for future support
-      sets: Database["public"]["Tables"]["sets"]["Row"][];
-    })[];
-  };
-
+export async function fetchAllWorkouts(userId: string): Promise<UIExtendedWorkout[]> {
   const { data, error } = await supabase
     .from("workouts")
     .select(`
@@ -36,13 +22,14 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .order("order", { ascending: true, foreignTable: "workout_exercises" })
-    .order("set_number", { ascending: true, foreignTable: "workout_exercises.sets" })
-    .range(start, end) as { data: WorkoutRow[] | null; error: any };
+    .order("set_number", { ascending: true, foreignTable: "workout_exercises.sets" });
 
   if (error) {
     console.error("Supabase error:", error);
     throw new Error(error.message);
   }
+
+  console.log("Raw data from Supabase:", data); // Debug log to confirm data fetching
 
   const formattedWorkouts: UIExtendedWorkout[] = (data || [])
     .filter((rawWorkout) => rawWorkout.created_at !== null && rawWorkout.workout_date !== null)
@@ -50,7 +37,7 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
       let utcDate: Date;
       if (rawWorkout.workout_date && typeof rawWorkout.workout_date === "string") {
         utcDate = parseISO(rawWorkout.workout_date);
-        if (isNaN(utcDate.getTime())) {
+        if (!isValid(utcDate)) {
           console.error(`Invalid workout_date for workout ${rawWorkout.id}: ${rawWorkout.workout_date}`);
           utcDate = parseISO(rawWorkout.created_at as string) || new Date();
         }
@@ -58,10 +45,10 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
         console.warn(`Missing workout_date for workout ${rawWorkout.id}, using created_at`);
         utcDate = parseISO(rawWorkout.created_at as string) || new Date();
       }
-      const localDate = formatUtcToLocalDate(utcDate.toISOString());
-      const localTime = formatUtcToLocalTime(utcDate.toISOString());
+      const localDate = format(utcDate, "yyyy-MM-dd");
+      const localTime = format(utcDate, "hh:mm a");
 
-      const exercises: UIWorkoutExercise[] = rawWorkout.workout_exercises.map((we: WorkoutRow["workout_exercises"][number]) => {
+      const exercises: UIWorkoutExercise[] = rawWorkout.workout_exercises.map((we: any) => {
         const exerciseData = we.exercise_type === "predefined" ? we.exercises : we.user_exercises;
         return {
           id: we.id,
@@ -90,6 +77,22 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
         };
       });
 
+      const totalVolume = exercises.reduce((sum, ex) => {
+        const sets = Array.isArray(ex.sets) ? ex.sets : [];
+        return sum + sets.reduce((setSum, set) => {
+          const reps = Number(set.reps) || 0;
+          const weight_kg = Number(set.weight_kg) || 0;
+          const volume = reps * weight_kg;
+          if (isNaN(volume)) {
+            console.warn(`NaN in volume calc for set in workout ${rawWorkout.id}:`, set);
+            return setSum;
+          }
+          return setSum + volume;
+        }, 0);
+      }, 0);
+
+      console.log(`Total Volume for workout ${rawWorkout.id}: ${totalVolume}`);
+
       return {
         id: rawWorkout.id,
         user_id: rawWorkout.user_id ?? "",
@@ -98,24 +101,10 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
         exercises,
         date: localDate,
         time: localTime,
-        totalVolume: exercises.reduce((sum, ex) => {
-          const sets = Array.isArray(ex.sets) ? ex.sets : [];
-          if (!Array.isArray(ex.sets)) {
-            console.warn(`Invalid sets for exercise in workout ${rawWorkout.id}:`, ex);
-          }
-          return sum + sets.reduce((setSum, set) => {
-            const reps = Number(set.reps) || 0;
-            const weight_kg = Number(set.weight_kg) || 0;
-            if (isNaN(reps * weight_kg)) {
-              console.warn(`NaN in volume calc for set in workout ${rawWorkout.id}:`, set);
-            }
-            return setSum + (reps * weight_kg);
-          }, 0);
-        }, 0),
+        totalVolume,
       };
     });
 
+  console.log("Formatted workouts:", formattedWorkouts);
   return formattedWorkouts;
 }
-
-// ... (other functions remain unchanged)

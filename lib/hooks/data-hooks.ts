@@ -1,15 +1,23 @@
 "use client";
 
 import { useCallback } from "react";
-import useSWR, { KeyedMutator } from "swr";
+import useSWR from "swr";
 import { createBrowserClient } from "@supabase/ssr";
-import type { NewWorkout, Exercise, NewSet } from "@/types/workouts"; // Updated import
+import type { NewWorkout, Exercise, NewSet } from "@/types/workouts";
+import { fetchAllWorkouts } from "@/lib/workoutUtils"; // Import fetchAllWorkouts
+import type { UIDailyVolume } from "@/types/workouts";
+import { useMemo } from "react";
 
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+/**
+ * Hook to fetch volume data for a given user over a specified time range.
+ * @param userId - The ID of the user.
+ * @param timeRange - The time range to fetch ("7days", "8weeks", or "all").
+ */
 const fetcher = async (key: string | [string, any]) => {
   if (Array.isArray(key)) {
     const [table, options] = key;
@@ -27,30 +35,37 @@ export function useVolumeData(userId: string, timeRange: string) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - daysToFetch);
 
-  const { data, error, mutate } = useSWR(
+  const { data, error, mutate } = useSWR<UIDailyVolume[]>(
     userId ? ["daily_volume", { select: "date, volume", match: { user_id: userId } }] : null,
     fetcher,
     {
       revalidateOnFocus: false,
-      onSuccess: (data) =>
-        data
-          .filter((row: any) => new Date(row.date) >= startDate)
-          .map((row: any) => ({ date: row.date, volume: row.volume })),
     }
   );
 
+  const volumeData = useMemo(() => {
+    if (!data) return [];
+    return data
+      .filter((row) => row.date && new Date(row.date) >= startDate)
+      .map((row) => ({ date: row.date, volume: row.volume }));
+  }, [data, startDate]);
+
   return {
-    volumeData: data || [],
+    volumeData,
     isLoading: !error && !data,
     isError: !!error,
     mutate,
   };
 }
 
+/**
+ * Hook to fetch all workouts for a given user.
+ * @param userId - The ID of the user.
+ */
 export function useWorkouts(userId: string) {
   const { data, error, mutate } = useSWR(
-    userId ? ["workouts", { select: "*", match: { user_id: userId } }] : null,
-    fetcher
+    userId ? [`workouts-${userId}`, userId] : null,
+    () => fetchAllWorkouts(userId) // Use fetchAllWorkouts instead of generic fetcher
   );
 
   return {
@@ -61,6 +76,9 @@ export function useWorkouts(userId: string) {
   };
 }
 
+/**
+ * Hook to delete a workout and refresh the workout data.
+ */
 export function useDeleteWorkout() {
   const mutateWorkouts = useWorkouts("").mutate;
 
@@ -73,6 +91,9 @@ export function useDeleteWorkout() {
   return { deleteWorkout: deleteWorkoutHandler };
 }
 
+/**
+ * Hook to fetch available strength training exercises.
+ */
 export function useAvailableExercises() {
   const { data, error, mutate } = useSWR(
     "exercises_strength_training",
@@ -91,23 +112,22 @@ export function useAvailableExercises() {
   };
 }
 
+/**
+ * Hook to save a new workout and refresh the workout data.
+ */
 export function useSaveWorkout() {
   const mutateWorkouts = useWorkouts("").mutate;
 
-
-
   const saveWorkoutHandler = useCallback(async (workout: NewWorkout) => {
-      // Log what the frontend sends for workout_date
     console.log("Frontend sent workout_date:", workout.workout_date);
-    
-    // Prepare insert data, omitting workout_date unless provided
+
     const insertData: { user_id: string; workout_date?: string } = {
       user_id: workout.user_id,
     };
     if (workout.workout_date) {
       insertData.workout_date = workout.workout_date;
     }
-    
+
     const { data: workoutData, error: workoutError } = await supabase
       .from("workouts")
       .insert(insertData)

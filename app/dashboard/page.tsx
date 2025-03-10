@@ -21,11 +21,7 @@ import { formatUtcToLocalDate } from "@/lib/utils";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { useVolumeData } from "@/lib/hooks/data-hooks";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
-
-interface VolumeData {
-  date: string;
-  volume: number;
-}
+import type { UIDailyVolume } from "@/types/workouts";
 
 export default function DashboardPage() {
   const { state } = useAuth();
@@ -34,7 +30,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
   const { formatWeight, formatHeight } = useUnitPreference();
-  // console.log("User ID from auth:", user?.id);
   const { profile, isLoading: profileLoading, error: profileError, mutate: mutateProfile } = useProfile(user?.id || "");
   const { volumeData, isLoading: volumeLoading, isError: volumeError, mutate: mutateVolume } = useVolumeData(
     user?.id || "",
@@ -76,11 +71,11 @@ export default function DashboardPage() {
     );
   }
 
-  const formattedVolumeData: VolumeData[] = (() => {
+  const formattedVolumeData: UIDailyVolume[] = (() => {
     const today = new Date();
-    let formattedData: VolumeData[] = [];
+    let formattedData: UIDailyVolume[] = [];
 
-    const localVolumeData = (volumeData || []).map((d) => ({
+    const localVolumeData = (volumeData || []).map((d: UIDailyVolume) => ({
       date: formatUtcToLocalDate(d.date + "T00:00:00Z"),
       volume: Math.round(d.volume * 100) / 100,
     }));

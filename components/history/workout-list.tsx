@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
-import { format, parseISO } from "date-fns";
+import { format, parse } from "date-fns";
 
 interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
@@ -28,14 +28,13 @@ export function WorkoutList({
     onWorkoutDelete(workoutId);
   };
 
-  // Log workout volumes for debugging, executed after render
+  // Log workout volumes for debugging
   useEffect(() => {
     workouts.forEach((workout) => {
       console.log(`Workout ${workout.id} volume: ${workout.totalVolume}`);
     });
   }, [workouts]);
 
-  // Display a message if no workouts are available
   if (workouts.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
@@ -63,7 +62,6 @@ export function WorkoutList({
     );
   }
 
-  // Render the list of workouts
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
@@ -113,11 +111,9 @@ export function WorkoutList({
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="font-medium">
-                          {workout.date && workout.time ? (
-                            format(parseISO(`${workout.date}T${workout.time}`), "eeee, MMMM d")
-                          ) : (
-                            "Invalid Date"
-                          )}
+                          {workout.date
+                            ? format(parse(workout.date, "yyyy-MM-dd", new Date()), "eeee, MMMM d")
+                            : "Invalid Date"}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {workout.time || "No Time"}
@@ -126,7 +122,9 @@ export function WorkoutList({
                       <div className="text-right">
                         <div className="text-sm text-muted-foreground">Total Volume</div>
                         <div className="font-medium">
-                          {formatWeight(workout.totalVolume)}
+                          {typeof workout.totalVolume === "number"
+                            ? formatWeight(workout.totalVolume)
+                            : "N/A"}
                         </div>
                       </div>
                     </div>

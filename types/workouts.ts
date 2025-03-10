@@ -92,5 +92,10 @@ export interface NewWorkout {
   }[];
 }
 
+export type UIDailyVolume = {
+  date: string;
+  volume: number;
+};
+
 // Export Database type
 export { Database };
