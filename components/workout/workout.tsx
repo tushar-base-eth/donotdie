@@ -10,7 +10,7 @@ import { ExerciseEditor } from "@/components/workout/exercise-editor";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { generateUUID } from "@/lib/utils";
-import type { ExtendedExercise, UIExtendedWorkout, NewWorkout, Set, UIWorkoutExercise } from "@/types/workouts";
+import type { Exercise, UIExtendedWorkout, NewWorkout, UIWorkoutExercise } from "@/types/workouts";
 import { useRouter } from "next/navigation";
 import { useWorkout } from "@/contexts/workout-context";
 import { toast } from "@/components/ui/use-toast";
@@ -28,7 +28,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const router = useRouter();
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const { trigger: saveWorkoutTrigger } = useSaveWorkout();
+  const { saveWorkout } = useSaveWorkout();
 
   useEffect(() => {
     if (!user && !isLoading) {
@@ -41,23 +41,17 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     state.currentWorkout.exercises.every((exercise) =>
       exercise.sets.length > 0 &&
       exercise.sets.every((set) =>
-        (exercise.exercise.uses_reps ? (set.reps ?? 0) > 0 : true) ||
-        (exercise.exercise.uses_weight ? (set.weight_kg ?? 0) > 0 : true) ||
-        (exercise.exercise.uses_duration ? (set.duration_seconds ?? 0) > 0 : true) ||
-        (exercise.exercise.uses_distance ? (set.distance_meters ?? 0) > 0 : true)
+        (exercise.exercise.uses_reps ? (set.reps ?? 0) > 0 : true) &&
+        (exercise.exercise.uses_weight ? (set.weight_kg ?? 0) > 0 : true)
       )
     );
 
-  const handleExerciseToggle = (exercise: ExtendedExercise) => {
-    const selected = state.currentWorkout.selectedExerciseIds.find(
-      (se) => se.id === exercise.id && se.source === exercise.source
-    );
+  const handleExerciseToggle = (exercise: Exercise) => {
+    const selected = state.currentWorkout.selectedExerciseIds.find((se) => se.id === exercise.id);
     if (selected) {
       dispatch({
         type: "SET_SELECTED_EXERCISE_IDS",
-        ids: state.currentWorkout.selectedExerciseIds.filter(
-          (se) => !(se.id === exercise.id && se.source === exercise.source)
-        ),
+        ids: state.currentWorkout.selectedExerciseIds.filter((se) => se.id !== exercise.id),
       });
     } else {
       dispatch({
@@ -67,15 +61,15 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     }
   };
 
-  const handleAddExercises = (selected: ExtendedExercise[]) => {
+  const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
       const newExercises: UIWorkoutExercise[] = selected.map((exercise, index) => ({
         instance_id: generateUUID(),
         id: generateUUID(),
         workout_id: "",
-        exercise_type: exercise.source,
-        predefined_exercise_id: exercise.source === "predefined" ? exercise.id : null,
-        user_exercise_id: exercise.source === "user" ? exercise.id : null,
+        exercise_type: "predefined",
+        predefined_exercise_id: exercise.id,
+        user_exercise_id: null,
         order: state.currentWorkout.exercises.length + index + 1,
         effort_level: null,
         created_at: new Date().toISOString(),
@@ -91,13 +85,11 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     });
   };
 
-  const handleUpdateSets = (exerciseIndex: number, newSets: Set[]) => {
+  const handleUpdateSets = (exerciseIndex: number, newSets: any[]) => {
     if (exerciseIndex < 0 || exerciseIndex >= state.currentWorkout.exercises.length) {
       throw new Error(`Invalid exercise index: ${exerciseIndex}`);
     }
-    const updatedExercises = [...state.currentWorkout.exercises];
-    updatedExercises[exerciseIndex] = { ...updatedExercises[exerciseIndex], sets: newSets };
-    dispatch({ type: "SET_EXERCISES", exercises: updatedExercises });
+    dispatch({ type: "UPDATE_EXERCISE_SETS", exerciseIndex, sets: newSets });
   };
 
   const handleRemoveExercise = (index: number) => {
@@ -115,22 +107,14 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         const newWorkout: NewWorkout = {
           user_id: user.id,
           exercises: state.currentWorkout.exercises.map((ex) => ({
-            exercise_type: ex.exercise_type,
-            predefined_exercise_id: ex.predefined_exercise_id,
-            user_exercise_id: ex.user_exercise_id,
+            exercise_type: "predefined",
+            predefined_exercise_id: ex.predefined_exercise_id!,
             order: ex.order,
             effort_level: ex.effort_level,
-            sets: ex.sets.map((set) => ({
-              workout_exercise_id: set.workout_exercise_id,
-              set_number: set.set_number,
-              reps: set.reps,
-              weight_kg: set.weight_kg,
-              duration_seconds: set.duration_seconds,
-              distance_meters: set.distance_meters,
-            })),
+            sets: ex.sets,
           })),
         };
-        await saveWorkoutTrigger(newWorkout);
+        await saveWorkout(newWorkout);
 
         dispatch({ type: "SET_EXERCISES", exercises: [] });
         dispatch({ type: "SET_SELECTED_EXERCISE_IDS", ids: [] });
@@ -207,7 +191,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         <ExerciseSelector
           open={showExerciseModal}
           onOpenChange={setShowExerciseModal}
-          selectedExercises={state.currentWorkout.selectedExerciseIds} // Now ExtendedExercise[]
+          selectedExercises={state.currentWorkout.selectedExerciseIds}
           onExerciseToggle={handleExerciseToggle}
           onAddExercises={handleAddExercises}
         />

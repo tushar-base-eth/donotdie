@@ -21,8 +21,8 @@ function HistoryPage() {
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
 
-  const { workouts, isLoading, error, size, setSize, mutate } = useWorkouts(user?.id || "", 10);
-  const { trigger: deleteWorkout } = useDeleteWorkout(user?.id || "");
+  const { workouts, isLoading, isError: error, mutate } = useWorkouts(user?.id || "");
+  const { deleteWorkout } = useDeleteWorkout();
 
   const displayedWorkouts = useMemo(() => {
     const filtered = workouts.filter((w) => !pendingDeletions.includes(w.id));
@@ -73,8 +73,8 @@ function HistoryPage() {
     <div className="h-full overflow-auto p-4 space-y-6">
       <InfiniteScroll
         dataLength={workouts.length}
-        next={() => setSize(size + 1)}
-        hasMore={workouts.length % 10 === 0}
+        next={() => {}} // No pagination implemented
+        hasMore={false} // Disable infinite scroll for now
         loader={<p className="text-center">Loading...</p>}
         endMessage={
           !selectedDate && (
@@ -113,7 +113,5 @@ function HistoryPage() {
 }
 
 export default function History() {
-  return (
-      <HistoryPage />
-  );
+  return <HistoryPage />;
 }

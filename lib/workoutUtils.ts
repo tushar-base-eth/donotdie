@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/browser';
-import type { UIExtendedWorkout, NewWorkout, UIWorkoutExercise } from "@/types/workouts";
+import type { UIExtendedWorkout, NewWorkout, UIWorkoutExercise, Database } from "@/types/workouts";
 import { parseISO } from "date-fns";
 import { format } from "date-fns";
 
@@ -13,6 +13,15 @@ import { format } from "date-fns";
 export async function fetchWorkouts(userId: string, pageIndex: number, pageSize: number): Promise<UIExtendedWorkout[]> {
   const start = pageIndex * pageSize;
   const end = start + pageSize - 1;
+
+  type WorkoutRow = Database["public"]["Tables"]["workouts"]["Row"] & {
+    workout_exercises: (Database["public"]["Tables"]["workout_exercises"]["Row"] & {
+      exercises: Database["public"]["Tables"]["exercises"]["Row"] | null;
+      user_exercises: any | null; // Not used currently, placeholder for future support
+      sets: Database["public"]["Tables"]["sets"]["Row"][];
+    })[];
+  };
+
   const { data, error } = await supabase
     .from("workouts")
     .select(`
@@ -28,30 +37,30 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
     .order("created_at", { ascending: false })
     .order("order", { ascending: true, foreignTable: "workout_exercises" })
     .order("set_number", { ascending: true, foreignTable: "workout_exercises.sets" })
-    .range(start, end);
+    .range(start, end) as { data: WorkoutRow[] | null; error: any };
 
   if (error) {
     console.error("Supabase error:", error);
     throw new Error(error.message);
   }
 
-  const formattedWorkouts: UIExtendedWorkout[] = data
+  const formattedWorkouts: UIExtendedWorkout[] = (data || [])
     .filter((rawWorkout) => rawWorkout.created_at !== null)
     .map((rawWorkout) => {
       const utcDate = parseISO(rawWorkout.created_at as string);
-      const localDate = format(utcDate, "yyyy-MM-dd"); // Uses local timezone
-      const localTime = format(utcDate, "hh:mm a"); // Uses local timezone
+      const localDate = format(utcDate, "yyyy-MM-dd");
+      const localTime = format(utcDate, "hh:mm a");
 
-      const exercises: UIWorkoutExercise[] = rawWorkout.workout_exercises.map((we: any) => {
+      const exercises: UIWorkoutExercise[] = rawWorkout.workout_exercises.map((we: WorkoutRow["workout_exercises"][number]) => {
         const exerciseData = we.exercise_type === "predefined" ? we.exercises : we.user_exercises;
         return {
           id: we.id,
           workout_id: we.workout_id,
           exercise_type: we.exercise_type,
           predefined_exercise_id: we.predefined_exercise_id,
-          user_exercise_id: we.user_exercise_id,
+          user_exercise_id: we.user_exercise_id || null,
           order: we.order,
-          effort_level: we.effort_level || null, // Ensure effort_level matches enum type
+          effort_level: we.effort_level || null,
           created_at: we.created_at,
           instance_id: `${we.id}-${we.order}`,
           exercise: {
@@ -64,8 +73,8 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
             uses_weight: exerciseData?.uses_weight ?? true,
             uses_duration: exerciseData?.uses_duration ?? false,
             uses_distance: exerciseData?.uses_distance ?? false,
-            is_deleted: exerciseData?.is_deleted ?? false, // Added to match Exercise type
-            source: we.exercise_type, // Added for UI consistency
+            is_deleted: exerciseData?.is_deleted ?? false,
+            source: we.exercise_type,
           },
           sets: we.sets ?? [],
         };
@@ -101,7 +110,7 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
  */
 export async function saveWorkout(workout: NewWorkout): Promise<void> {
   try {
-    const workoutDate = workout.workout_date || new Date().toISOString().split("T")[0]; // Default to today if not provided
+    const workoutDate = workout.workout_date || new Date().toISOString().split("T")[0];
     const { data: workoutData, error: workoutError } = await supabase
       .from("workouts")
       .insert({ user_id: workout.user_id, workout_date: workoutDate })
@@ -122,9 +131,8 @@ export async function saveWorkout(workout: NewWorkout): Promise<void> {
           workout_id: workoutId,
           exercise_type: ex.exercise_type,
           predefined_exercise_id: ex.predefined_exercise_id,
-          user_exercise_id: ex.user_exercise_id,
           order: ex.order,
-          effort_level: ex.effort_level || null, // Ensure effort_level matches enum type
+          effort_level: ex.effort_level || null,
         })
         .select("id")
         .single();
@@ -184,12 +192,11 @@ export async function fetchVolumeData(userId: string, timeRange: string) {
     .from("daily_volume")
     .select("date, volume")
     .eq("user_id", userId)
-    .gte("date", startDate.toISOString().split("T")[0]) // 'YYYY-MM-DD' format
+    .gte("date", startDate.toISOString().split("T")[0])
     .order("date", { ascending: true });
 
   if (error) throw error;
 
-  // Ensure data is in the expected format: { date: string, volume: number }[]
   return data.map((row) => ({ date: row.date, volume: row.volume }));
 }
 

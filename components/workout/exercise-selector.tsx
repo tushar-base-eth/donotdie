@@ -8,15 +8,15 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { useAvailableExercises } from "@/lib/hooks/data-hooks";
-import type { ExtendedExercise } from "@/types/workouts"; // Updated to use ExtendedExercise
+import type { Exercise } from "@/types/workouts";
 import { useAuth } from "@/contexts/auth-context";
 
 interface ExerciseSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedExercises: ExtendedExercise[]; // Updated type
-  onExerciseToggle: (exercise: ExtendedExercise) => void; // Updated type
-  onAddExercises: (selected: ExtendedExercise[]) => void; // Updated type
+  selectedExercises: Exercise[];
+  onExerciseToggle: (exercise: Exercise) => void;
+  onAddExercises: (selected: Exercise[]) => void;
 }
 
 export function ExerciseSelector({
@@ -33,13 +33,13 @@ export function ExerciseSelector({
   const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
 
-  const { exercises: availableExercises, isLoading, error, mutate } = useAvailableExercises(user?.id || "");
+  const { exercises: availableExercises, isLoading, isError, mutate } = useAvailableExercises();
 
   if (isLoading) {
     return <div className="p-4">Loading exercises...</div>;
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="p-4">
         Failed to load exercises.{" "}
@@ -58,7 +58,7 @@ export function ExerciseSelector({
       acc[group] = acc[group] || [];
       acc[group].push(ex);
       return acc;
-    }, {} as Record<string, ExtendedExercise[]>) // Updated type
+    }, {} as Record<string, Exercise[]>)
   ).reduce((acc, [group, exercises]) => {
     const filtered = exercises.filter(
       (ex) =>
@@ -69,7 +69,7 @@ export function ExerciseSelector({
       acc[group] = filtered;
     }
     return acc;
-  }, {} as Record<string, ExtendedExercise[]>); // Updated type
+  }, {} as Record<string, Exercise[]>);
 
   const handleAdd = () => {
     onAddExercises(selectedExercises);
@@ -146,7 +146,7 @@ export function ExerciseSelector({
                   <div className="space-y-2">
                     {exercises.map((exercise) => (
                       <motion.div
-                        key={`${exercise.id}-${exercise.source}`} // Line 149
+                        key={exercise.id}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                       >
@@ -155,9 +155,7 @@ export function ExerciseSelector({
                           onClick={() => onExerciseToggle(exercise)}
                         >
                           <div className="flex-1">
-                            <div>
-                              {exercise.name} {exercise.source === "user" && "(Custom)"} {/* Line 159 */}
-                            </div>
+                            <div>{exercise.name}</div>
                             <div className="text-sm text-muted-foreground">
                               {exercise.primary_muscle_group}
                               {exercise.secondary_muscle_group && `, ${exercise.secondary_muscle_group}`}
@@ -166,16 +164,12 @@ export function ExerciseSelector({
                           <div
                             className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors
                               ${
-                                selectedExercises.some(
-                                  (se) => se.id === exercise.id && se.source === exercise.source // Line 170 (twice)
-                                )
+                                selectedExercises.some((se) => se.id === exercise.id)
                                   ? "bg-primary border-primary text-primary-foreground"
                                   : "border-input"
                               }`}
                           >
-                            {selectedExercises.some(
-                              (se) => se.id === exercise.id && se.source === exercise.source // Line 177 (twice)
-                            ) && "✓"}
+                            {selectedExercises.some((se) => se.id === exercise.id) && "✓"}
                           </div>
                         </div>
                       </motion.div>

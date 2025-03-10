@@ -18,7 +18,8 @@ import {
 import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
 import { formatUtcToLocalDate } from "@/lib/utils";
-import { useProfile, useVolumeData } from "@/lib/hooks/data-hooks";
+import { useProfile } from "@/lib/hooks/use-profile";
+import { useVolumeData } from "@/lib/hooks/data-hooks";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 
 interface VolumeData {
@@ -33,17 +34,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
   const { formatWeight, formatHeight } = useUnitPreference();
-
+  // console.log("User ID from auth:", user?.id);
   const { profile, isLoading: profileLoading, error: profileError, mutate: mutateProfile } = useProfile(user?.id || "");
-  const { volumeData, isLoading: volumeLoading, error: volumeError, mutate: mutateVolume } = useVolumeData(
+  const { volumeData, isLoading: volumeLoading, isError: volumeError, mutate: mutateVolume } = useVolumeData(
     user?.id || "",
     timeRange
   );
-
-  // if (!user && !isLoading) {
-  //   router.push("/auth/login");
-  //   return null;
-  // }
 
   if (profileError || volumeError) {
     return (
@@ -64,11 +60,11 @@ export default function DashboardPage() {
 
   if (profileLoading || volumeLoading) {
     return (
-        <div className="min-h-screen bg-background pb-16">
-          <div className="p-4 space-y-6">
-            <MetricsSkeleton />
-          </div>
+      <div className="min-h-screen bg-background pb-16">
+        <div className="p-4 space-y-6">
+          <MetricsSkeleton />
         </div>
+      </div>
     );
   }
 
@@ -119,30 +115,30 @@ export default function DashboardPage() {
   })();
 
   return (
-      <div className="min-h-screen bg-background pb-16">
-        <div className="p-4 space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="glass p-4 rounded-3xl shadow-md"
-          >
-            <MetricsCards
-              totalWorkouts={profile.total_workouts ?? 0}
-              totalVolume={profile.total_volume ?? 0}
-              formatWeight={formatWeight}
-              formatHeight={formatHeight}
-            />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="glass p-4 rounded-3xl shadow-md"
-          >
-            <VolumeChart data={formattedVolumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
-          </motion.div>
-        </div>
+    <div className="min-h-screen bg-background pb-16">
+      <div className="p-4 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="glass p-4 rounded-3xl shadow-md"
+        >
+          <MetricsCards
+            totalWorkouts={profile.total_workouts ?? 0}
+            totalVolume={profile.total_volume ?? 0}
+            formatWeight={formatWeight}
+            formatHeight={formatHeight}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="glass p-4 rounded-3xl shadow-md"
+        >
+          <VolumeChart data={formattedVolumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+        </motion.div>
       </div>
+    </div>
   );
 }

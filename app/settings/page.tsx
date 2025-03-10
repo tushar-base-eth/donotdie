@@ -37,7 +37,7 @@ import * as z from "zod";
 // Define the settings schema (assumed from types/forms.ts)
 const settingsSchema = z.object({
   name: z.string().min(1).max(50),
-  gender: z.enum(["male", "female", "other"]).nullable(), // Updated to match UserProfile
+  gender: z.enum(["male", "female", "other"]).nullable(),
   date_of_birth: z.date().nullable(),
   unit_preference: z.enum(["metric", "imperial"]),
   weight_kg: z.number().min(20).max(500).nullable(),
@@ -47,8 +47,8 @@ const settingsSchema = z.object({
 
 export default function Settings() {
   const { state, logout } = useAuth();
-  const { updateProfile } = useProfile();
-  const { user } = state;
+  const { user } = state; // Moved up to be declared before useProfile
+  const { updateProfile } = useProfile(user?.id || "");
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
@@ -58,8 +58,8 @@ export default function Settings() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: "",
-      gender: null, // Changed to null to match UserProfile
-      date_of_birth: null, // Changed to null
+      gender: null,
+      date_of_birth: null,
       unit_preference: "metric",
       weight_kg: null,
       height_cm: null,
@@ -72,7 +72,7 @@ export default function Settings() {
       setIsNewProfile(user.name === "New User");
       form.reset({
         name: user.name,
-        gender: user.gender, // Now matches "male" | "female" | "other" | null
+        gender: user.gender,
         date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null,
         unit_preference: user.unit_preference,
         weight_kg: user.weight_kg,
@@ -90,7 +90,7 @@ export default function Settings() {
     try {
       const updates = {
         name: data.name,
-        gender: data.gender, // Already lowercase or null
+        gender: data.gender,
         date_of_birth: data.date_of_birth ? data.date_of_birth.toISOString().split("T")[0] : null,
         unit_preference: data.unit_preference,
         weight_kg: data.weight_kg,
