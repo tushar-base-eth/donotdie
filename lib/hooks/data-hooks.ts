@@ -94,11 +94,23 @@ export function useAvailableExercises() {
 export function useSaveWorkout() {
   const mutateWorkouts = useWorkouts("").mutate;
 
+
+
   const saveWorkoutHandler = useCallback(async (workout: NewWorkout) => {
-    const workoutDate = workout.workout_date || new Date().toISOString().split("T")[0];
+      // Log what the frontend sends for workout_date
+    console.log("Frontend sent workout_date:", workout.workout_date);
+    
+    // Prepare insert data, omitting workout_date unless provided
+    const insertData: { user_id: string; workout_date?: string } = {
+      user_id: workout.user_id,
+    };
+    if (workout.workout_date) {
+      insertData.workout_date = workout.workout_date;
+    }
+    
     const { data: workoutData, error: workoutError } = await supabase
       .from("workouts")
-      .insert({ user_id: workout.user_id, workout_date: workoutDate })
+      .insert(insertData)
       .select("id")
       .single();
 

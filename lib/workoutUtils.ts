@@ -48,20 +48,20 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
   const formattedWorkouts: UIExtendedWorkout[] = (data || [])
     .filter((rawWorkout) => rawWorkout.created_at !== null && rawWorkout.workout_date !== null)
     .map((rawWorkout) => {
-      // Prioritize workout_date (UTC) for date and time, fall back to created_at if invalid
+      // Robust date parsing for workout_date with fallback to created_at or current date
       let utcDate: Date;
-      try {
-        utcDate = parseISO(rawWorkout.workout_date as string); // Use workout_date as primary UTC source
-        if (isNaN(utcDate.getTime())) {
-          throw new Error("Invalid workout_date");
+      const workoutDate = rawWorkout.workout_date;
+      if (typeof workoutDate === "string" && workoutDate) {
+        try {
+          utcDate = parseISO(workoutDate);
+          if (isNaN(utcDate.getTime())) throw new Error("Invalid workout_date");
+        } catch (e) {
+          console.warn(`Invalid workout_date for workout ${rawWorkout.id}: ${workoutDate}, falling back to created_at`);
+          utcDate = parseISO(rawWorkout.created_at as string) || new Date();
         }
-      } catch (e) {
-        console.warn(`Invalid workout_date for workout ${rawWorkout.id}: ${rawWorkout.workout_date}, falling back to created_at`);
-        utcDate = parseISO(rawWorkout.created_at as string);
-        if (isNaN(utcDate.getTime())) {
-          console.warn(`Invalid created_at for workout ${rawWorkout.id}: ${rawWorkout.created_at}, using current date as fallback`);
-          utcDate = new Date();
-        }
+      } else {
+        console.warn(`Missing or invalid workout_date for workout ${rawWorkout.id}, using created_at or current date`);
+        utcDate = parseISO(rawWorkout.created_at as string) || new Date();
       }
       const localDate = formatUtcToLocalDate(utcDate.toISOString()); // Convert to local date
       const localTime = formatUtcToLocalTime(utcDate.toISOString()); // Convert to local time
@@ -103,19 +103,21 @@ export async function fetchWorkouts(userId: string, pageIndex: number, pageSize:
         exercises,
         date: localDate,
         time: localTime,
-        totalVolume: exercises.reduce(
-          (sum, ex) =>
-            sum +
-            ex.sets.reduce(
-              (setSum, set) => {
-                const reps = Number(set.reps) || 0; // Ensure reps is a number
-                const weight_kg = Number(set.weight_kg) || 0; // Ensure weight_kg is a number
-                return setSum + (reps * weight_kg);
-              },
-              0
-            ),
-          0
-        ),
+        // Updated totalVolume calculation with guard for sets array and debug logging
+        totalVolume: exercises.reduce((sum, ex) => {
+          const sets = Array.isArray(ex.sets) ? ex.sets : [];
+          if (!Array.isArray(ex.sets)) {
+            console.warn(`Invalid sets for exercise in workout ${rawWorkout.id}:`, ex);
+          }
+          return sum + sets.reduce((setSum, set) => {
+            const reps = Number(set.reps) || 0;
+            const weight_kg = Number(set.weight_kg) || 0;
+            if (isNaN(reps * weight_kg)) {
+              console.warn(`NaN in volume calc for set in workout ${rawWorkout.id}:`, set);
+            }
+            return setSum + (reps * weight_kg);
+          }, 0);
+        }, 0),
       };
     });
 

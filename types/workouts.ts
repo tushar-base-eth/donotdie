@@ -82,7 +82,7 @@ export interface NewSet {
 // Update NewWorkout to use NewSet
 export interface NewWorkout {
   user_id: string;
-  workout_date?: string; // ISO UTC string (e.g., "2025-03-09T14:30:00.000Z")
+  workout_date?: string; // Optional ISO UTC string; defaults to CURRENT_TIMESTAMP if omitted
   exercises: {
     exercise_type: "predefined";
     predefined_exercise_id: string;
