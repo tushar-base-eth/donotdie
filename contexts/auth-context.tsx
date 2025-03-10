@@ -9,8 +9,8 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
-  gender: "male" | "female" | "other" | null; // Updated to lowercase enum values
-  date_of_birth: Date | null; // Kept as Date | null
+  gender: "male" | "female" | "other" | null; // Updated to include null as per schema
+  date_of_birth: string | null; // Changed to string | null to match database schema
   weight_kg: number | null;
   height_cm: number | null;
   body_fat_percentage: number | null;
@@ -52,8 +52,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
   });
 
-  // Fetch or create a user profile from Supabase
-  const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
+  /**
+   * Fetch or create a user profile from Supabase.
+   * @param userId - The user's UUID from auth.users
+   * @param name - Optional name provided during signup (email or Google)
+   * @param unitPreference - Optional unit preference provided during signup
+   * @returns A UserProfile object with the user's data
+   */
+  const fetchUserProfile = async (
+    userId: string,
+    name?: string,
+    unitPreference?: "metric" | "imperial"
+  ): Promise<UserProfile> => {
     const { data: userData } = await supabase.auth.getUser();
     const email = userData.user?.email || "";
     const userMetadata = userData.user?.user_metadata || {};
@@ -70,13 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("profiles")
         .insert({
           id: userId, // Required to match auth.users.id, handled by trigger
-          name: userMetadata.name || "New User",
-          gender: "other", // Fixed to lowercase "other"
+          name: name || userMetadata.name || "New User", // Use provided name or fallback
+          gender: null, // Default to null to match schema flexibility
           date_of_birth: "2000-01-01", // Default date string for database
           weight_kg: null,
           height_cm: null,
           body_fat_percentage: null,
-          unit_preference: "metric",
+          unit_preference: unitPreference || "metric", // Use provided unit preference or default
           theme_preference: "light",
         })
         .select("*")
@@ -86,18 +96,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile = newProfile;
     }
 
-    // Handle null date_of_birth and convert to Date object
-    const date_of_birth = profile.date_of_birth ? new Date(profile.date_of_birth) : null;
-
     // Runtime validation for constrained fields
-    const gender = profile.gender ?? "other"; // Use "other" if gender is null
-    if (!["male", "female", "other"].includes(gender)) {
+    const gender = profile.gender ?? null; // Allow null as per schema
+    if (gender && !["male", "female", "other"].includes(gender)) {
       throw new Error(`Invalid gender value: ${gender}`);
     }
 
-    const unitPreference = profile.unit_preference;
-    if (!["metric", "imperial"].includes(unitPreference)) {
-      throw new Error(`Invalid unit preference: ${unitPreference}`);
+    const unitPreferenceValue = profile.unit_preference;
+    if (!["metric", "imperial"].includes(unitPreferenceValue)) {
+      throw new Error(`Invalid unit preference: ${unitPreferenceValue}`);
     }
 
     const themePreference = profile.theme_preference;
@@ -109,12 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: userId,
       email,
       name: profile.name,
-      gender: gender as "male" | "female" | "other",
-      date_of_birth,
+      gender: gender as "male" | "female" | "other" | null,
+      date_of_birth: profile.date_of_birth, // Return as string to match database
       weight_kg: profile.weight_kg,
       height_cm: profile.height_cm,
       body_fat_percentage: profile.body_fat_percentage,
-      unit_preference: unitPreference as "metric" | "imperial",
+      unit_preference: unitPreferenceValue as "metric" | "imperial",
       theme_preference: themePreference as "light" | "dark",
       total_volume: profile.total_volume,
       total_workouts: profile.total_workouts,
@@ -167,13 +174,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  /**
+   * Sign up a new user with email and password, storing name and unit preference.
+   * @param email - User's email address
+   * @param password - User's password
+   * @param name - User's chosen name
+   * @param unitPreference - User's chosen unit preference ("metric" or "imperial")
+   */
   const signup = async (
     email: string,
     password: string,
     name: string,
     unitPreference: "metric" | "imperial"
   ) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -181,20 +195,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) throw error;
+    if (data.user) {
+      const userProfile = await fetchUserProfile(data.user.id, name, unitPreference);
+      setState({ status: "authenticated", user: userProfile });
+    }
   };
 
   const logout = async () => {
     await supabase.auth.signOut();
   };
 
+  /**
+   * Sign in with Google OAuth, extracting name from metadata and defaulting unit preference.
+   */
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) throw error;
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      setState({ status: "unauthenticated", user: null });
+      throw error; // Propagate to caller for UI feedback
+    }
   };
 
   // Refresh profile data from the database

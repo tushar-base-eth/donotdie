@@ -71,10 +71,10 @@ export default function Settings() {
     if (user) {
       setIsNewProfile(user.name === "New User");
       form.reset({
-        name: user.name,
+        name: user.name || "", // Ensure name is always a string
         gender: user.gender,
-        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null,
-        unit_preference: user.unit_preference,
+        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null, // Convert string to Date for UI
+        unit_preference: user.unit_preference || "metric", // Fallback to "metric" if undefined
         weight_kg: user.weight_kg,
         height_cm: user.height_cm,
         body_fat_percentage: user.body_fat_percentage,
@@ -251,7 +251,11 @@ export default function Settings() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Unit Preference</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          key={field.value} // Added to force re-render on value change
+                        >
                           <FormControl>
                             <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
                               <SelectValue placeholder="Select unit preference" />

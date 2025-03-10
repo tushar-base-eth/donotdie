@@ -2,7 +2,7 @@ import * as z from "zod";
 
 export const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  gender: z.enum(["Male", "Female", "Other"]),
+  gender: z.enum(["male", "female", "other"]).nullable(),
   date_of_birth: z.date().nullable(), // Changed to z.date().nullable()
   unit_preference: z.enum(["metric", "imperial"]),
   weight_kg: z.number().positive("Weight must be greater than 0").nullable(),
