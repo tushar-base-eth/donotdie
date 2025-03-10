@@ -34,7 +34,6 @@ import { toast } from "@/components/ui/use-toast";
 import { convertWeight, convertHeightToInches, convertInchesToCm } from "@/lib/utils";
 import * as z from "zod";
 
-// Define the settings schema (assumed from types/forms.ts)
 const settingsSchema = z.object({
   name: z.string().min(1).max(50),
   gender: z.enum(["male", "female", "other"]).nullable(),
@@ -47,7 +46,7 @@ const settingsSchema = z.object({
 
 export default function Settings() {
   const { state, logout } = useAuth();
-  const { user } = state; // Moved up to be declared before useProfile
+  const { user } = state;
   const { updateProfile } = useProfile(user?.id || "");
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -71,10 +70,10 @@ export default function Settings() {
     if (user) {
       setIsNewProfile(user.name === "New User");
       form.reset({
-        name: user.name || "", // Ensure name is always a string
+        name: user.name || "",
         gender: user.gender,
-        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null, // Convert string to Date for UI
-        unit_preference: user.unit_preference || "metric", // Fallback to "metric" if undefined
+        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null,
+        unit_preference: user.unit_preference || "metric",
         weight_kg: user.weight_kg,
         height_cm: user.height_cm,
         body_fat_percentage: user.body_fat_percentage,
@@ -210,7 +209,7 @@ export default function Settings() {
                             field.onChange(value === "null" ? null : value as "male" | "female" | "other")
                           }
                           value={field.value ?? "null"}
-                          key={field.value} // Added to force re-render on value change, fixing navigation reset
+                          key={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
@@ -255,7 +254,7 @@ export default function Settings() {
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
-                          key={field.value} // Added to force re-render on value change
+                          key={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">

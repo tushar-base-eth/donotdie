@@ -5,31 +5,19 @@ import { useRouter } from "next/navigation";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { useAuth } from "@/contexts/auth-context";
-import {
-  format,
-  subDays,
-  eachDayOfInterval,
-  eachWeekOfInterval,
-  eachMonthOfInterval,
-  isSameWeek,
-  isSameMonth,
-  parse,
-} from "date-fns";
 import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
-import { formatUtcToLocalDate } from "@/lib/utils";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { useVolumeData } from "@/lib/hooks/data-hooks";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
-import type { UIDailyVolume } from "@/types/workouts";
+import { formatVolumeData } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { state } = useAuth();
   const { user } = state;
-  const isLoading = state.status === "loading";
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<"7days" | "8weeks" | "12months">("7days");
-  const { formatWeight, formatHeight } = useUnitPreference();
+  const { formatWeight } = useUnitPreference();
   const { profile, isLoading: profileLoading, error: profileError, mutate: mutateProfile } = useProfile(user?.id || "");
   const { volumeData, isLoading: volumeLoading, isError: volumeError, mutate: mutateVolume } = useVolumeData(
     user?.id || "",
@@ -71,43 +59,7 @@ export default function DashboardPage() {
     );
   }
 
-  const formattedVolumeData: UIDailyVolume[] = (() => {
-    const today = new Date();
-    let formattedData: UIDailyVolume[] = [];
-
-    const localVolumeData = (volumeData || []).map((d: UIDailyVolume) => ({
-      date: formatUtcToLocalDate(d.date + "T00:00:00Z"),
-      volume: Math.round(d.volume * 100) / 100,
-    }));
-
-    if (timeRange === "7days") {
-      const days = eachDayOfInterval({ start: subDays(today, 6), end: today });
-      formattedData = days.map((day) => {
-        const dayVolume = localVolumeData
-          .filter((d) => d.date === format(day, "yyyy-MM-dd"))
-          .reduce((sum, d) => sum + d.volume, 0);
-        return { date: format(day, "MMM d"), volume: dayVolume };
-      });
-    } else if (timeRange === "8weeks") {
-      const weeks = eachWeekOfInterval({ start: subDays(today, 55), end: today }, { weekStartsOn: 1 });
-      formattedData = weeks.map((weekStart) => {
-        const weekVolume = localVolumeData
-          .filter((d) => isSameWeek(parse(d.date, "yyyy-MM-dd", new Date()), weekStart, { weekStartsOn: 1 }))
-          .reduce((sum, d) => sum + d.volume, 0);
-        return { date: format(weekStart, "MMM d"), volume: weekVolume };
-      });
-    } else {
-      const months = eachMonthOfInterval({ start: subDays(today, 364), end: today });
-      formattedData = months.map((monthStart) => {
-        const monthVolume = localVolumeData
-          .filter((d) => isSameMonth(parse(d.date, "yyyy-MM-dd", new Date()), monthStart))
-          .reduce((sum, d) => sum + d.volume, 0);
-        return { date: format(monthStart, "MMM yyyy"), volume: monthVolume };
-      });
-    }
-
-    return formattedData;
-  })();
+  const formattedVolumeData = formatVolumeData(volumeData, timeRange);
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -122,7 +74,6 @@ export default function DashboardPage() {
             totalWorkouts={profile.total_workouts ?? 0}
             totalVolume={profile.total_volume ?? 0}
             formatWeight={formatWeight}
-            formatHeight={formatHeight}
           />
         </motion.div>
         <motion.div

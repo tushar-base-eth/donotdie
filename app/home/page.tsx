@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react"; // Added useState for local tracking
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell } from "lucide-react";
 import Workout from "@/components/workout/workout";
 
 export default function HomePage() {
-  // Local state to track exercises from Workout component
   const [exercises, setExercises] = useState([]);
 
-  // Callback to receive exercises from Workout component
   const handleExercisesChange = (updatedExercises: any) => {
     setExercises(updatedExercises);
   };
@@ -47,7 +45,6 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Pass the callback to Workout to update exercises state */}
       <Workout onExercisesChange={handleExercisesChange} />
     </div>
   );

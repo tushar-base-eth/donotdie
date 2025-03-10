@@ -24,14 +24,17 @@ function HistoryPage() {
   const { workouts, isLoading, isError: error, mutate } = useWorkouts(user?.id || "");
   const { deleteWorkout } = useDeleteWorkout();
 
-  const displayedWorkouts = useMemo(() => {
-    const filtered = workouts.filter((w) => !pendingDeletions.includes(w.id));
+  const displayedWorkouts: UIExtendedWorkout[] = useMemo(() => {
+    const filtered = workouts.filter((w: UIExtendedWorkout) => !pendingDeletions.includes(w.id));
     if (!selectedDate) return filtered;
     const selectedLocalDate = format(selectedDate, "yyyy-MM-dd");
-    return filtered.filter((w) => w.date === selectedLocalDate);
+    return filtered.filter((w: UIExtendedWorkout) => w.date === selectedLocalDate);
   }, [selectedDate, workouts, pendingDeletions]);
 
-  const workoutDates = useMemo(() => new Set(workouts.map((w) => w.date)), [workouts]);
+  const workoutDates: Set<string> = useMemo(
+    () => new Set<string>(workouts.map((w: UIExtendedWorkout) => w.date)),
+    [workouts]
+  );
 
   const handleDeleteWorkout = async (workoutId: string) => {
     setPendingDeletions((prev) => [...prev, workoutId]);

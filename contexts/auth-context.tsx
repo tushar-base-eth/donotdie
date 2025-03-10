@@ -1,40 +1,19 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from '@/lib/supabase/browser';
-import type { Database } from "@/types/database"; // Assuming this is where database.ts is
+import { supabase } from '@/lib/hooks/data-hooks'; // Updated import to use data-hooks supabase
+import type { Database } from "@/types/database";
+import type { Profile } from "@/types/workouts";
 
-// Define the user profile interface to match database schema
-export interface UserProfile {
-  id: string;
+interface UserProfile extends Profile {
   email: string;
-  name: string;
-  gender: "male" | "female" | "other" | null; // Updated to include null as per schema
-  date_of_birth: string | null; // Changed to string | null to match database schema
-  weight_kg: number | null;
-  height_cm: number | null;
-  body_fat_percentage: number | null;
-  unit_preference: "metric" | "imperial";
-  theme_preference: "light" | "dark";
-  total_volume: number | null;
-  total_workouts: number | null;
-  created_at: string | null;
-  updated_at: string | null;
 }
 
-// Define fields that can be updated via updateProfile
-export type UpdatableProfile = Pick<
-  UserProfile,
-  "name" | "gender" | "date_of_birth" | "weight_kg" | "height_cm" | "body_fat_percentage" | "unit_preference" | "theme_preference"
->;
-
-// Define the authentication state
 interface AuthState {
   status: "loading" | "authenticated" | "unauthenticated";
   user: UserProfile | null;
 }
 
-// Define the context type with all available methods
 interface AuthContextType {
   state: AuthState;
   login: (email: string, password: string) => Promise<void>;
@@ -47,18 +26,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    status: "loading",
-    user: null,
-  });
+  const [state, setState] = useState<AuthState>({ status: "loading", user: null });
 
-  /**
-   * Fetch or create a user profile from Supabase.
-   * @param userId - The user's UUID from auth.users
-   * @param name - Optional name provided during signup (email or Google)
-   * @param unitPreference - Optional unit preference provided during signup
-   * @returns A UserProfile object with the user's data
-   */
   const fetchUserProfile = async (
     userId: string,
     name?: string,
@@ -75,18 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error || !profile) {
-      // Create a new profile if one doesn’t exist
       const { data: newProfile, error: insertError } = await supabase
         .from("profiles")
         .insert({
-          id: userId, // Required to match auth.users.id, handled by trigger
-          name: name || userMetadata.name || "New User", // Use provided name or fallback
-          gender: null, // Default to null to match schema flexibility
-          date_of_birth: "2000-01-01", // Default date string for database
+          id: userId,
+          name: name || userMetadata.name || "New User",
+          gender: null,
+          date_of_birth: "2000-01-01",
           weight_kg: null,
           height_cm: null,
           body_fat_percentage: null,
-          unit_preference: unitPreference || "metric", // Use provided unit preference or default
+          unit_preference: unitPreference || "metric",
           theme_preference: "light",
         })
         .select("*")
@@ -96,8 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile = newProfile;
     }
 
-    // Runtime validation for constrained fields
-    const gender = profile.gender ?? null; // Allow null as per schema
+    const gender = profile.gender ?? null;
     if (gender && !["male", "female", "other"].includes(gender)) {
       throw new Error(`Invalid gender value: ${gender}`);
     }
@@ -117,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       name: profile.name,
       gender: gender as "male" | "female" | "other" | null,
-      date_of_birth: profile.date_of_birth, // Return as string to match database
+      date_of_birth: profile.date_of_birth,
       weight_kg: profile.weight_kg,
       height_cm: profile.height_cm,
       body_fat_percentage: profile.body_fat_percentage,
@@ -130,10 +97,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  // Restore session on component mount
   useEffect(() => {
     const restoreSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Session restoration error:", error);
+        setState({ status: "unauthenticated", user: null });
+        return;
+      }
       if (session?.user) {
         try {
           const userProfile = await fetchUserProfile(session.user.id);
@@ -149,7 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restoreSession();
   }, []);
 
-  // Listen for auth state changes from Supabase
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
@@ -174,13 +144,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  /**
-   * Sign up a new user with email and password, storing name and unit preference.
-   * @param email - User's email address
-   * @param password - User's password
-   * @param name - User's chosen name
-   * @param unitPreference - User's chosen unit preference ("metric" or "imperial")
-   */
   const signup = async (
     email: string,
     password: string,
@@ -190,9 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { name, unit_preference: unitPreference },
-      },
+      options: { data: { name, unit_preference: unitPreference } },
     });
     if (error) throw error;
     if (data.user) {
@@ -205,30 +166,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  /**
-   * Sign in with Google OAuth, extracting name from metadata and defaulting unit preference.
-   */
   const signInWithGoogle = async () => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) throw error;
     } catch (error) {
       console.error("Google sign-in error:", error);
       setState({ status: "unauthenticated", user: null });
-      throw error; // Propagate to caller for UI feedback
+      throw error;
     }
   };
 
-  // Refresh profile data from the database
   const refreshProfile = async () => {
     if (!state.user) return;
-    const updatedProfile = await fetchUserProfile(state.user.id);
-    setState({ status: "authenticated", user: updatedProfile });
+    try {
+      const updatedProfile = await fetchUserProfile(state.user.id);
+      setState({ status: "authenticated", user: updatedProfile });
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
   };
 
   return (
@@ -240,8 +199,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };

@@ -4,11 +4,10 @@ interface MetricsCardsProps {
   totalWorkouts: number;
   totalVolume: number;
   formatWeight: (weight: number, decimals?: number) => string;
-  formatHeight: (height: number, decimals?: number) => string;
 }
 
 export function MetricsCards({ totalWorkouts, totalVolume, formatWeight }: MetricsCardsProps) {
-  const displayVolume = formatWeight(totalVolume, 0); // Format totalVolume using the provided formatWeight function
+  const displayVolume = formatWeight(totalVolume, 0);
 
   return (
     <div className="grid grid-cols-2 gap-4">
