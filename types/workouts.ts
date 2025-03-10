@@ -70,15 +70,25 @@ export interface UIExtendedWorkout extends Workout {
   totalVolume: number; // Calculated total volume
 }
 
+// Add this new interface
+export interface NewSet {
+  set_number: number;
+  reps?: number | null;
+  weight_kg?: number | null;
+  duration_seconds?: number | null;
+  distance_meters?: number | null;
+}
+
+// Update NewWorkout to use NewSet
 export interface NewWorkout {
   user_id: string;
-  workout_date?: string; // Defaults to current date if omitted
+  workout_date?: string;
   exercises: {
     exercise_type: "predefined";
     predefined_exercise_id: string;
     order: number;
     effort_level?: Database["public"]["Enums"]["effort_level_type"] | null;
-    sets: InsertSet[];
+    sets: NewSet[]; // Changed from InsertSet[]
   }[];
 }
 

@@ -18,7 +18,8 @@ const fetcher = async (userId: string) => {
 
 export function useProfile(userId: string) {
   const { state, refreshProfile } = useAuth();
-  const { data, error, mutate } = useSWR(userId ? `profile_${userId}` : null, fetcher);
+  // Ensure the raw userId is used in fetcher, key is just for caching
+  const { data, error, mutate } = useSWR(userId ? `profile_${userId}` : null, () => fetcher(userId));
 
   const updateProfile = async (updates: Partial<UpdateProfile>) => {
     if (!state.user) throw new Error("No user logged in");
@@ -34,7 +35,6 @@ export function useProfile(userId: string) {
       theme_preference: updates.theme_preference,
     };
 
-    
     const { error } = await supabase
       .from("profiles")
       .update(dbUpdates)

@@ -1,47 +1,54 @@
 "use client";
 
+import { useState } from "react"; // Added useState for local tracking
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell } from "lucide-react";
 import Workout from "@/components/workout/workout";
-import { useWorkout } from "@/contexts/workout-context";
 
 export default function HomePage() {
-  const { state } = useWorkout();
+  // Local state to track exercises from Workout component
+  const [exercises, setExercises] = useState([]);
+
+  // Callback to receive exercises from Workout component
+  const handleExercisesChange = (updatedExercises: any) => {
+    setExercises(updatedExercises);
+  };
 
   return (
-      <div className="min-h-screen bg-background pb-16">
-        <AnimatePresence mode="wait">
-          {state.currentWorkout.exercises.length === 0 && (
+    <div className="min-h-screen bg-background pb-16">
+      <AnimatePresence mode="wait">
+        {exercises.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center space-y-6 glass rounded-3xl shadow-md"
+            style={{ marginBottom: "60px" }}
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-              className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center space-y-6 glass rounded-3xl shadow-md"
-              style={{ marginBottom: "60px" }}
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              className="relative"
             >
+              <Dumbbell className="w-20 h-20 text-primary" />
               <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                className="relative"
+                className="absolute inset-0"
+                animate={{ opacity: [0, 0.2, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
               >
-                <Dumbbell className="w-20 h-20 text-primary" />
-                <motion.div
-                  className="absolute inset-0"
-                  animate={{ opacity: [0, 0.2, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
-                >
-                  <Dumbbell className="w-20 h-20 text-primary blur-md" />
-                </motion.div>
+                <Dumbbell className="w-20 h-20 text-primary blur-md" />
               </motion.div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-semibold text-foreground">Don't Die!</h2>
-                <p className="text-lg text-muted-foreground max-w-sm">Smash that + button below</p>
-              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-        <Workout />
-      </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold text-foreground">Don't Die!</h2>
+              <p className="text-lg text-muted-foreground max-w-sm">Smash that + button below</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Pass the callback to Workout to update exercises state */}
+      <Workout onExercisesChange={handleExercisesChange} />
+    </div>
   );
 }

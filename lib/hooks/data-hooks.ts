@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import useSWR, { KeyedMutator } from "swr";
 import { createBrowserClient } from "@supabase/ssr";
-import type { NewWorkout, Exercise } from "@/types/workouts";
+import type { NewWorkout, Exercise, NewSet } from "@/types/workouts"; // Updated import
 
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -124,13 +124,13 @@ export function useSaveWorkout() {
 
       const weId = weData.id;
 
-      const setsToInsert = ex.sets.map((set, setIndex) => ({
+      const setsToInsert = ex.sets.map((set: NewSet, setIndex) => ({
         workout_exercise_id: weId,
         set_number: set.set_number || setIndex + 1,
-        reps: set.reps,
-        weight_kg: set.weight_kg,
-        duration_seconds: null,
-        distance_meters: null,
+        reps: set.reps ?? null,
+        weight_kg: set.weight_kg ?? null,
+        duration_seconds: set.duration_seconds ?? null,
+        distance_meters: set.distance_meters ?? null,
       }));
 
       const { error: setsError } = await supabase.from("sets").insert(setsToInsert);

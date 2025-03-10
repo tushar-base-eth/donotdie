@@ -143,7 +143,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function: Adjusts volume when a set is deleted (only for weighted exercises)
 -- Documentation: Decrements total_volume in profiles and daily_volume for deleted weighted sets, using advisory locks
@@ -189,7 +189,7 @@ BEGIN
 
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function: Adjusts volume when a set is updated (only for weighted exercises)
 -- Documentation: Adjusts total_volume and daily_volume based on changes to weighted sets, using advisory locks
@@ -241,7 +241,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function: Limits user-created exercises to 10 per user
 CREATE OR REPLACE FUNCTION public.check_exercise_limit()

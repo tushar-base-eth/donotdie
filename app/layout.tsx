@@ -2,7 +2,6 @@ import type React from "react";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
-import { WorkoutProvider } from "@/contexts/workout-context";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { ConditionalBottomNav } from "@/components/navigation/conditional-bottom-nav";
@@ -32,14 +31,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <WorkoutProvider>
               <ErrorBoundary>
                 <div className="h-[calc(100vh-64px)] overflow-auto">{children}</div>
                 <ConditionalBottomNav />
               </ErrorBoundary>
               <Toaster />
               <Analytics />
-            </WorkoutProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
