@@ -1,6 +1,6 @@
 "use client";
 
-import { Dumbbell, Heart, User, ChevronRight } from "lucide-react";
+import { Leaf, Dumbbell, Heart, User, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CategoryListProps {
@@ -11,7 +11,7 @@ export function CategoryList({ onCategorySelect }: CategoryListProps) {
   const categories = [
     { name: "Strength Training", icon: <Dumbbell />, value: "strength_training" },
     { name: "Cardio", icon: <Heart />, value: "cardio" },
-    { name: "Flexibility", icon: <Heart />, value: "flexibility" },
+    { name: "Flexibility", icon: <Leaf />, value: "flexibility" },
     { name: "By Muscles", icon: <Dumbbell />, value: "by_muscles" },
     { name: "By Equipment", icon: <Dumbbell />, value: "by_equipment" },
     { name: "Added by Me", icon: <User />, value: "added_by_me" },

@@ -3,30 +3,45 @@
 import { useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
-import type { Exercise } from "@/types/workouts";
+import type { Exercise, ExerciseEquipment, UserExerciseEquipment, Filter } from "@/types/workouts";
 
 interface ExerciseListProps {
-  category: string;
+  filter: Filter;
   searchQuery: string;
   selectedExercises: Exercise[];
   onExerciseToggle: (exercise: Exercise) => void;
   exercises: Exercise[];
+  exerciseEquipment: ExerciseEquipment[];
+  userExerciseEquipment: UserExerciseEquipment[];
 }
 
-export function ExerciseList({ category, searchQuery, selectedExercises, onExerciseToggle, exercises }: ExerciseListProps) {
+export function ExerciseList({ filter, searchQuery, selectedExercises, onExerciseToggle, exercises, exerciseEquipment, userExerciseEquipment }: ExerciseListProps) {
   const filteredExercises = useMemo(() => {
     let result = exercises;
-    if (category === "by_muscles") {
-      return result.filter((ex) => searchQuery ? ex.primary_muscle_group === searchQuery : true);
-    } else if (category === "by_equipment") {
-      return result.filter((ex) => searchQuery ? ex.name.toLowerCase().includes(searchQuery.toLowerCase()) : true);
-    } else if (category === "added_by_me") {
+    if (filter.type === "category") {
+      result = result.filter((ex) => ex.category === filter.value);
+    } else if (filter.type === "muscle") {
+      result = result.filter(
+        (ex) => ex.primary_muscle_group === filter.value || ex.secondary_muscle_group === filter.value
+      );
+    } else if (filter.type === "equipment") {
+      const equipmentId = filter.value;
+      const predefinedIds = exerciseEquipment
+        .filter((ee) => ee.equipment_id === equipmentId)
+        .map((ee) => ee.exercise_id);
+      const userIds = userExerciseEquipment
+        .filter((uee) => uee.equipment_id === equipmentId)
+        .map((uee) => uee.user_exercise_id);
+      const allIds = new Set([...predefinedIds, ...userIds]);
+      result = result.filter((ex) => allIds.has(ex.id));
+    } else if (filter.type === "added_by_me") {
       result = result.filter((ex) => ex.source === "user");
-    } else if (category !== "all") {
-      result = result.filter((ex) => ex.category === category);
     }
-    return result.filter((ex) => ex.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [exercises, category, searchQuery]);
+    if (searchQuery) {
+      result = result.filter((ex) => ex.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    return result;
+  }, [exercises, filter, searchQuery, exerciseEquipment, userExerciseEquipment]);
 
   return (
     <ScrollArea className="h-full px-6 py-4">

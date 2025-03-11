@@ -185,6 +185,13 @@ export type UIDailyVolume = {
   volume: number; // Volume in kg
 };
 
+export type Filter =
+  | { type: "all" }
+  | { type: "category"; value: string }
+  | { type: "muscle"; value: string }
+  | { type: "equipment"; value: string }
+  | { type: "added_by_me" };
+
 export { Database };
 
 /**

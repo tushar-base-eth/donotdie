@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,10 +9,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import { useAvailableExercises } from "@/lib/hooks/data-hooks";
-import type { Exercise } from "@/types/workouts";
+import type { Exercise, Filter } from "@/types/workouts";
 import { useAuth } from "@/contexts/auth-context";
 import { CategoryList } from "./category-list";
 import { ExerciseList } from "./exercise-list";
+import { MuscleGroupList } from "./muscle-group-list";
+import { EquipmentList } from "./equipment-list";
 
 interface ExerciseSelectorProps {
   open: boolean;
@@ -36,7 +38,16 @@ export function ExerciseSelector({
   const [selectedTab, setSelectedTab] = useState<"all" | "categories">("all");
   const [navStack, setNavStack] = useState<string[]>([]);
 
-  const { exercises: availableExercises, isLoading, isError, mutate } = useAvailableExercises();
+  const { exercises, equipment, exerciseEquipment, userExerciseEquipment, isLoading, isError, mutate } = useAvailableExercises();
+
+  const muscleGroups = useMemo(() => {
+    const groups = new Set<string>();
+    exercises.forEach(ex => {
+      if (ex.primary_muscle_group) groups.add(ex.primary_muscle_group);
+      if (ex.secondary_muscle_group) groups.add(ex.secondary_muscle_group);
+    });
+    return Array.from(groups).sort();
+  }, [exercises]);
 
   if (isLoading) {
     return <div className="p-4">Loading exercises...</div>;
@@ -58,10 +69,44 @@ export function ExerciseSelector({
     onOpenChange(false);
   };
 
-  // Dynamic button text based on selection count
   const buttonText = selectedExercises.length === 0
     ? "Add Exercise"
     : `Add ${selectedExercises.length} Exercise${selectedExercises.length > 1 ? "s" : ""}`;
+
+  const getFilterFromNavStack = (navStack: string[]): Filter => {
+    if (navStack.length === 1) {
+      if (navStack[0] === "added_by_me") {
+        return { type: "added_by_me" };
+      } else {
+        return { type: "category", value: navStack[0] };
+      }
+    } else if (navStack.length === 2) {
+      if (navStack[0] === "by_muscles") {
+        return { type: "muscle", value: navStack[1] };
+      } else if (navStack[0] === "by_equipment") {
+        return { type: "equipment", value: navStack[1] };
+      }
+    }
+    return { type: "all" };
+  };
+
+  const getTitle = () => {
+    if (selectedTab === "all") return "All Exercises";
+    if (navStack.length === 0) return "Categories";
+    if (navStack.length === 1) {
+      if (navStack[0] === "by_muscles") return "Select Muscle Group";
+      if (navStack[0] === "by_equipment") return "Select Equipment";
+      return navStack[0].replace('_', ' ');
+    }
+    if (navStack.length === 2) {
+      if (navStack[0] === "by_muscles") return `${navStack[1]}`;
+      if (navStack[0] === "by_equipment") {
+        const equipmentName = equipment.find(eq => eq.id === navStack[1])?.name || "Equipment";
+        return `${equipmentName}`;
+      }
+    }
+    return "Exercises";
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -71,15 +116,18 @@ export function ExerciseSelector({
         aria-describedby="exercise-selector-description"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        {/* Header */}
         <div className="px-6 pb-6 flex items-center border-b shrink-0">
-          <SheetTitle className="text-xl">Add Exercise</SheetTitle>
+          {navStack.length > 0 && (
+            <Button variant="ghost" onClick={() => setNavStack(navStack.slice(0, -1))} className="mr-2">
+              <ChevronLeft />
+            </Button>
+          )}
+          <SheetTitle className="text-xl">{getTitle()}</SheetTitle>
           <span id="exercise-selector-description" className="sr-only">
             Select exercises to add to your workout. You can search or filter by category.
           </span>
         </div>
 
-        {/* Search and Tabs */}
         <div className="px-6 pt-4 space-y-4 shrink-0">
           <Input
             ref={inputRef}
@@ -108,44 +156,50 @@ export function ExerciseSelector({
           </Tabs>
         </div>
 
-        {/* Scrollable Content Area */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             {selectedTab === "all" && (
               <ExerciseList
-                category="all"
+                filter={{ type: "all" }}
                 searchQuery={searchQuery}
                 selectedExercises={selectedExercises}
                 onExerciseToggle={onExerciseToggle}
-                exercises={availableExercises}
+                exercises={exercises}
+                exerciseEquipment={exerciseEquipment}
+                userExerciseEquipment={userExerciseEquipment}
               />
             )}
-            {selectedTab === "categories" && !navStack.length && (
+            {selectedTab === "categories" && navStack.length === 0 && (
               <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
                 <CategoryList onCategorySelect={(category) => setNavStack([category])} />
               </motion.div>
             )}
-            {navStack.length > 0 && (
+            {selectedTab === "categories" && navStack.length === 1 && navStack[0] === "by_muscles" && (
               <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
-                <div className="flex items-center p-4 border-b">
-                  <Button variant="ghost" onClick={() => setNavStack(navStack.slice(0, -1))}>
-                    <ChevronLeft />
-                  </Button>
-                  <SheetTitle>{navStack[navStack.length - 1]}</SheetTitle>
-                </div>
+                <MuscleGroupList muscleGroups={muscleGroups} onSelect={(muscle) => setNavStack([...navStack, muscle])} />
+              </motion.div>
+            )}
+            {selectedTab === "categories" && navStack.length === 1 && navStack[0] === "by_equipment" && (
+              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+                <EquipmentList equipment={equipment} onSelect={(eqId) => setNavStack([...navStack, eqId])} />
+              </motion.div>
+            )}
+            {selectedTab === "categories" && (navStack.length > 1 || (navStack.length === 1 && navStack[0] !== "by_muscles" && navStack[0] !== "by_equipment")) && (
+              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
                 <ExerciseList
-                  category={navStack[navStack.length - 1]}
+                  filter={getFilterFromNavStack(navStack)}
                   searchQuery={searchQuery}
                   selectedExercises={selectedExercises}
                   onExerciseToggle={onExerciseToggle}
-                  exercises={availableExercises}
+                  exercises={exercises}
+                  exerciseEquipment={exerciseEquipment}
+                  userExerciseEquipment={userExerciseEquipment}
                 />
               </motion.div>
             )}
           </ScrollArea>
         </div>
 
-        {/* Footer with Button */}
         <div className="p-4 bg-background/80 backdrop-blur-sm border-t shrink-0">
           <Button
             onClick={handleAdd}

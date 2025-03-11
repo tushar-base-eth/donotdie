@@ -4,7 +4,7 @@ import { useCallback, useMemo } from "react";
 import useSWR from "swr";
 import { supabase } from "@/lib/supabase/browser";
 import type { Database } from "@/types/database";
-import type { DailyVolume, Exercise, UIExtendedWorkout, UIDailyVolume, NewWorkout, NewSet } from "@/types/workouts";
+import type { DailyVolume, Exercise, UIExtendedWorkout, UIDailyVolume, NewWorkout, NewSet, Equipment, ExerciseEquipment, UserExerciseEquipment } from "@/types/workouts";
 import { fetchAllWorkouts } from "@/lib/workoutUtils";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -78,11 +78,11 @@ export function useAvailableExercises() {
       const { data, error } = await supabase
         .from("exercises")
         .select("id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance, is_deleted")
-        .eq("is_deleted", false); // Filter out deleted exercises
+        .eq("is_deleted", false);
       if (error) throw error;
       return data;
     },
-    { dedupingInterval: 7200000 } // 2 hours
+    { dedupingInterval: 7200000 }
   );
 
   const { data: userData, error: userError, mutate: mutateUser } = useSWR(
@@ -95,7 +95,37 @@ export function useAvailableExercises() {
       if (error) throw error;
       return data;
     },
-    { dedupingInterval: 7200000 } // 2 hours
+    { dedupingInterval: 7200000 }
+  );
+
+  const { data: equipmentData, error: equipError } = useSWR(
+    "equipment",
+    async () => {
+      const { data, error } = await supabase.from("equipment").select("*");
+      if (error) throw error;
+      return data;
+    },
+    { dedupingInterval: 7200000 }
+  );
+
+  const { data: exerciseEquipmentData, error: eeError } = useSWR(
+    "exercise_equipment",
+    async () => {
+      const { data, error } = await supabase.from("exercise_equipment").select("*");
+      if (error) throw error;
+      return data;
+    },
+    { dedupingInterval: 7200000 }
+  );
+
+  const { data: userExerciseEquipmentData, error: ueeError } = useSWR(
+    user ? `user_exercise_equipment-${user.id}` : null,
+    async () => {
+      const { data, error } = await supabase.from("user_exercise_equipment").select("*");
+      if (error) throw error;
+      return data;
+    },
+    { dedupingInterval: 7200000 }
   );
 
   const exercises: Exercise[] = useMemo(() => {
@@ -105,11 +135,11 @@ export function useAvailableExercises() {
       category: ex.category,
       primary_muscle_group: ex.primary_muscle_group,
       secondary_muscle_group: ex.secondary_muscle_group,
-      uses_reps: ex.uses_reps ?? false, // Coerce null to false
+      uses_reps: ex.uses_reps ?? false,
       uses_weight: ex.uses_weight ?? false,
       uses_duration: ex.uses_duration ?? false,
       uses_distance: ex.uses_distance ?? false,
-      is_deleted: ex.is_deleted ?? false, // Should always be false due to filter
+      is_deleted: ex.is_deleted ?? false,
       source: "predefined" as const,
     }));
 
@@ -119,21 +149,31 @@ export function useAvailableExercises() {
       category: ex.category,
       primary_muscle_group: ex.primary_muscle_group,
       secondary_muscle_group: ex.secondary_muscle_group,
-      uses_reps: ex.uses_reps ?? false, // Coerce null to false
+      uses_reps: ex.uses_reps ?? false,
       uses_weight: ex.uses_weight ?? false,
       uses_duration: ex.uses_duration ?? false,
       uses_distance: ex.uses_distance ?? false,
-      is_deleted: false, // User exercises don’t have this field
+      is_deleted: false,
       source: "user" as const,
     }));
 
     return [...predefined, ...user];
   }, [predefinedData, userData]);
 
+  const equipment: Equipment[] = equipmentData || [];
+  const exerciseEquipment: ExerciseEquipment[] = exerciseEquipmentData || [];
+  const userExerciseEquipment: UserExerciseEquipment[] = userExerciseEquipmentData || [];
+
+  const isLoading = !predefinedData || !equipmentData || !exerciseEquipmentData || (user && (!userData || !userExerciseEquipmentData));
+  const isError = preError || userError || equipError || eeError || ueeError;
+
   return {
     exercises,
-    isLoading: (!preError && !predefinedData) || (!userError && !userData && user),
-    isError: preError || userError,
+    equipment,
+    exerciseEquipment,
+    userExerciseEquipment,
+    isLoading,
+    isError,
     mutate: mutateUser
   };
 }
