@@ -42,22 +42,27 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
           transition={{ duration: 0.3 }}
           className="p-4 space-y-6"
         >
-          {workout.exercises.map((exercise, index) => (
-            <div key={index} className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary">{exercise.exercise.name}</h3>
-              {exercise.sets.map((set, setIndex) => (
-                <div key={setIndex} className="flex items-center gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      {setIndex + 1}
+          {workout.exercises.map((exercise, index) => {
+            const { uses_reps, uses_weight, uses_duration, uses_distance } = exercise.exercise;
+            return (
+              <div key={index} className="space-y-4">
+                <h3 className="text-lg font-semibold text-primary">{exercise.exercise.name}</h3>
+                {exercise.sets.map((set, setIndex) => (
+                  <div key={setIndex} className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                        {setIndex + 1}
+                      </div>
+                      {uses_reps && <span className="text-muted-foreground">{set.reps || 0} reps</span>}
+                      {uses_weight && <span className="text-muted-foreground">{formatWeight(set.weight_kg || 0)}</span>}
+                      {uses_duration && <span className="text-muted-foreground">{set.duration_seconds || 0} s</span>}
+                      {uses_distance && <span className="text-muted-foreground">{set.distance_meters?.toFixed(1) || 0} m</span>}
                     </div>
-                    <span className="text-muted-foreground">{set.reps} reps</span>
-                    <span className="text-muted-foreground">{formatWeight(set.weight_kg ?? 0)}</span> {/* Default to 0 if null */}
                   </div>
-                </div>
-              ))}
-            </div>
-          ))}
+                ))}
+              </div>
+            );
+          })}
         </motion.div>
       </SheetContent>
     </Sheet>

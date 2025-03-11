@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
@@ -27,13 +27,6 @@ export function WorkoutList({
     setDeletingIds((prev) => [...prev, workoutId]);
     onWorkoutDelete(workoutId);
   };
-
-  // Log workout volumes for debugging
-  useEffect(() => {
-    workouts.forEach((workout) => {
-      console.log(`Workout ${workout.id} volume: ${workout.totalVolume}`);
-    });
-  }, [workouts]);
 
   if (workouts.length === 0) {
     return (
@@ -119,13 +112,25 @@ export function WorkoutList({
                           {workout.time || "No Time"}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm text-muted-foreground">Total Volume</div>
-                        <div className="font-medium">
-                          {typeof workout.totalVolume === "number"
-                            ? formatWeight(workout.totalVolume)
-                            : "N/A"}
-                        </div>
+                      <div className="text-right space-y-1">
+                        {workout.totalVolume !== null && (
+                          <div>
+                            <div className="text-sm text-muted-foreground">Total Volume</div>
+                            <div className="font-medium">{formatWeight(workout.totalVolume)}</div>
+                          </div>
+                        )}
+                        {workout.totalDistance !== null && (
+                          <div>
+                            <div className="text-sm text-muted-foreground">Total Distance</div>
+                            <div className="font-medium">{workout.totalDistance.toFixed(1)} m</div>
+                          </div>
+                        )}
+                        {workout.totalDuration !== null && (
+                          <div>
+                            <div className="text-sm text-muted-foreground">Total Duration</div>
+                            <div className="font-medium">{workout.totalDuration} s</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

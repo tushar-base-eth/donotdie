@@ -2,11 +2,6 @@ import { supabase } from '@/lib/supabase/browser';
 import type { UIExtendedWorkout, UIWorkoutExercise } from "@/types/workouts";
 import { parseISO, format, isValid } from "date-fns";
 
-/**
- * Fetches all workouts for a given user from Supabase.
- * @param userId - The ID of the user.
- * @returns A promise that resolves to an array of UIExtendedWorkout objects.
- */
 export async function fetchAllWorkouts(userId: string): Promise<UIExtendedWorkout[]> {
   const { data, error } = await supabase
     .from("workouts")
@@ -28,8 +23,6 @@ export async function fetchAllWorkouts(userId: string): Promise<UIExtendedWorkou
     console.error("Supabase error:", error);
     throw new Error(error.message);
   }
-
-  console.log("Raw data from Supabase:", data); // Debug log to confirm data fetching
 
   const formattedWorkouts: UIExtendedWorkout[] = (data || [])
     .filter((rawWorkout) => rawWorkout.created_at !== null && rawWorkout.workout_date !== null)
@@ -66,8 +59,8 @@ export async function fetchAllWorkouts(userId: string): Promise<UIExtendedWorkou
             primary_muscle_group: exerciseData?.primary_muscle_group ?? "other",
             secondary_muscle_group: exerciseData?.secondary_muscle_group ?? null,
             category: exerciseData?.category ?? "other",
-            uses_reps: exerciseData?.uses_reps ?? true,
-            uses_weight: exerciseData?.uses_weight ?? true,
+            uses_reps: exerciseData?.uses_reps ?? false,
+            uses_weight: exerciseData?.uses_weight ?? false,
             uses_duration: exerciseData?.uses_duration ?? false,
             uses_distance: exerciseData?.uses_distance ?? false,
             is_deleted: exerciseData?.is_deleted ?? false,
@@ -82,16 +75,37 @@ export async function fetchAllWorkouts(userId: string): Promise<UIExtendedWorkou
         return sum + sets.reduce((setSum, set) => {
           const reps = Number(set.reps) || 0;
           const weight_kg = Number(set.weight_kg) || 0;
-          const volume = reps * weight_kg;
-          if (isNaN(volume)) {
-            console.warn(`NaN in volume calc for set in workout ${rawWorkout.id}:`, set);
-            return setSum;
-          }
-          return setSum + volume;
+          return setSum + (reps * weight_kg);
         }, 0);
       }, 0);
 
-      console.log(`Total Volume for workout ${rawWorkout.id}: ${totalVolume}`);
+      const totalDistance = exercises.reduce((sum, ex) => {
+        const sets = Array.isArray(ex.sets) ? ex.sets : [];
+        return sum + sets.reduce((setSum, set) => {
+          const distance = Number(set.distance_meters) || 0;
+          return setSum + distance;
+        }, 0);
+      }, 0);
+
+      const totalDuration = exercises.reduce((sum, ex) => {
+        const sets = Array.isArray(ex.sets) ? ex.sets : [];
+        return sum + sets.reduce((setSum, set) => {
+          const duration = Number(set.duration_seconds) || 0;
+          return setSum + duration;
+        }, 0);
+      }, 0);
+
+      const hasWeight = exercises.some((ex) =>
+        ex.sets.some((set) => set.weight_kg != null && set.weight_kg > 0)
+      );
+
+      const hasDistance = exercises.some((ex) =>
+        ex.sets.some((set) => set.distance_meters != null && set.distance_meters > 0)
+      );
+
+      const hasDuration = exercises.some((ex) =>
+        ex.sets.some((set) => set.duration_seconds != null && set.duration_seconds > 0)
+      );
 
       return {
         id: rawWorkout.id,
@@ -101,10 +115,11 @@ export async function fetchAllWorkouts(userId: string): Promise<UIExtendedWorkou
         exercises,
         date: localDate,
         time: localTime,
-        totalVolume,
+        totalVolume: hasWeight ? totalVolume : null,
+        totalDistance: hasDistance ? totalDistance : null,
+        totalDuration: hasDuration ? totalDuration : null,
       };
     });
 
-  console.log("Formatted workouts:", formattedWorkouts);
   return formattedWorkouts;
 }

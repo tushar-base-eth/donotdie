@@ -153,7 +153,9 @@ export interface UIExtendedWorkout extends Workout {
   exercises: UIWorkoutExercise[]; // Exercises with sets
   date: string; // Local date (e.g., "2023-11-01")
   time: string; // Local time (e.g., "2:30 PM")
-  totalVolume: number; // Total volume in kg, calculated by frontend
+  totalVolume: number | null; // Total volume in kg, calculated by frontend
+  totalDistance: number | null;
+  totalDuration: number | null;
 }
 
 /** Structure for a new set in the UI */
