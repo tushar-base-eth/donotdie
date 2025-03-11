@@ -127,7 +127,9 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
-      const newExercises = exercises.filter((_, i) => i !== index);
+      const newExercises = exercises
+      .filter((_, i) => i !== index)
+      .map((ex, i) => ({ ...ex, order: i + 1 }));
       setExercises(newExercises);
     });
   };
