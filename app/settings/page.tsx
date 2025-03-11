@@ -4,7 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { LogOut, AlertCircle, Sun, Moon } from "lucide-react";
+import {
+  LogOut,
+  AlertCircle,
+  Sun,
+  Moon,
+  User,
+  Ruler,
+  Weight,
+  Percent,
+  Calendar,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,16 +32,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PageHeader } from "@/components/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 import { toast } from "@/components/ui/use-toast";
-import { convertWeight, convertHeightToInches, convertInchesToCm } from "@/lib/utils";
+import {
+  convertWeight,
+  convertHeightToInches,
+  convertInchesToCm,
+} from "@/lib/utils";
 import * as z from "zod";
 
 const settingsSchema = z.object({
@@ -52,6 +72,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const [isNewProfile, setIsNewProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -90,7 +111,9 @@ export default function Settings() {
       const updates = {
         name: data.name,
         gender: data.gender,
-        date_of_birth: data.date_of_birth ? data.date_of_birth.toISOString().split("T")[0] : null,
+        date_of_birth: data.date_of_birth
+          ? data.date_of_birth.toISOString().split("T")[0]
+          : null,
         unit_preference: data.unit_preference,
         weight_kg: data.weight_kg,
         height_cm: data.height_cm,
@@ -130,40 +153,45 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16">
-      <PageHeader
-        title="Settings"
-        rightContent={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                const newTheme = theme === "dark" ? "light" : "dark";
-                setTheme(newTheme);
-                updateProfile({ theme_preference: newTheme });
-              }}
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Log out">
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        }
-      />
+    <div className={`min-h-screen bg-background pb-16 ${theme === "dark" ? "dark" : ""}`}>
+      <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg rounded-b-3xl">
+        <h1 className="text-lg font-semibold">Settings</h1>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const newTheme = theme === "dark" ? "light" : "dark";
+              setTheme(newTheme);
+              updateProfile({ theme_preference: newTheme });
+            }}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="rounded-full hover:bg-secondary"
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            aria-label="Log out"
+            className="rounded-full hover:bg-secondary"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
 
-      <div className="p-4 space-y-6">
+      <div className="container max-w-4xl mx-auto p-4 space-y-6">
         {isNewProfile && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Alert variant="default" className="glass shadow-md rounded-3xl">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Profile Setup</AlertTitle>
+            <Alert variant="default" className="glass shadow-md rounded-2xl border-primary/20">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              <AlertTitle className="font-medium">Profile Setup</AlertTitle>
               <AlertDescription>
                 Please complete your profile information to get started.
               </AlertDescription>
@@ -175,188 +203,271 @@ export default function Settings() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="max-w-md mx-auto"
+          className="w-full mx-auto"
         >
-          <Card className="border-0 glass shadow-md rounded-3xl">
-            <CardContent className="p-4">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter your name"
-                            className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="gender"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Gender</FormLabel>
-                        <Select
-                          onValueChange={(value) =>
-                            field.onChange(value === "null" ? null : value as "male" | "female" | "other")
-                          }
-                          value={field.value ?? "null"}
-                          key={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                            <SelectItem value="null">Not specified</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="date_of_birth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date of Birth</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="date"
-                            value={field.value ? field.value.toISOString().split("T")[0] : ""}
-                            onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-                            className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="unit_preference"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit Preference</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          key={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring">
-                              <SelectValue placeholder="Select unit preference" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="metric">Metric (kg/cm)</SelectItem>
-                            <SelectItem value="imperial">Imperial (lb/in)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="weight_kg"
-                    render={({ field }) => {
-                      const unitPreference = form.watch("unit_preference");
-                      const isImperial = unitPreference === "imperial";
-                      const displayValue = field.value && isImperial ? convertWeight(field.value, true) : field.value;
-                      return (
-                        <FormItem>
-                          <FormLabel>Weight ({isImperial ? "lbs" : "kg"})</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              value={displayValue ?? ""}
-                              onChange={(e) => {
-                                const inputValue = e.target.value ? Number(e.target.value) : null;
-                                const valueInKg = inputValue && isImperial ? inputValue / 2.20462 : inputValue;
-                                field.onChange(valueInKg);
-                              }}
-                              placeholder={`Enter weight in ${isImperial ? "lbs" : "kg"}`}
-                              className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="height_cm"
-                    render={({ field }) => {
-                      const unitPreference = form.watch("unit_preference");
-                      const isImperial = unitPreference === "imperial";
-                      const displayValue = field.value && isImperial ? convertHeightToInches(field.value) : field.value;
-                      return (
-                        <FormItem>
-                          <FormLabel>Height ({isImperial ? "in" : "cm"})</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              value={displayValue ?? ""}
-                              onChange={(e) => {
-                                const inputValue = e.target.value ? Number(e.target.value) : null;
-                                const valueInCm = inputValue && isImperial ? convertInchesToCm(inputValue) : inputValue;
-                                field.onChange(valueInCm);
-                              }}
-                              placeholder={`Enter height in ${isImperial ? "inches" : "cm"}`}
-                              className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="body_fat_percentage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Body Fat Percentage (%)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            value={field.value ?? ""}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                            placeholder="Enter body fat percentage"
-                            className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isSaving || !form.formState.isDirty}
-                    className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors duration-200"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Tabs
+                defaultValue="profile"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="grid grid-cols-2 mb-6 glass rounded-xl p-1">
+                  <TabsTrigger
+                    value="profile"
+                    className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
-                    {isSaving ? "Saving..." : "Save"}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="measurements"
+                    className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    <Ruler className="h-4 w-4 mr-2" />
+                    Measurements
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="profile" className="space-y-6 mt-0">
+                  <Card className="border glass shadow-md rounded-2xl overflow-hidden">
+                    <CardHeader className="bg-muted/30 pb-4">
+                      <CardTitle className="flex items-center text-xl">
+                        <User className="h-5 w-5 mr-2 text-primary" />
+                        Personal Information
+                      </CardTitle>
+                      <CardDescription>Update your personal details</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-6">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground/80">Name</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="Enter your name"
+                                className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="gender"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground/80">Gender</FormLabel>
+                              <Select
+                                onValueChange={(value) =>
+                                  field.onChange(
+                                    value === "null" ? null : value as "male" | "female" | "other"
+                                  )
+                                }
+                                value={field.value ?? "null"}
+                                key={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5">
+                                    <SelectValue placeholder="Select gender" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-xl">
+                                  <SelectItem value="male">Male</SelectItem>
+                                  <SelectItem value="female">Female</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                  <SelectItem value="null">Not specified</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="date_of_birth"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center text-foreground/80">
+                                <Calendar className="h-4 w-4 mr-1 inline" />
+                                Date of Birth
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="date"
+                                  value={
+                                    field.value ? field.value.toISOString().split("T")[0] : ""
+                                  }
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value ? new Date(e.target.value) : null)
+                                  }
+                                  className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="unit_preference"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground/80">Unit Preference</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              key={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5">
+                                  <SelectValue placeholder="Select unit preference" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="rounded-xl">
+                                <SelectItem value="metric">Metric (kg/cm)</SelectItem>
+                                <SelectItem value="imperial">Imperial (lb/in)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1.5">
+                              This will affect how your measurements are displayed
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="measurements" className="space-y-6 mt-0">
+                  <Card className="border glass shadow-md rounded-2xl overflow-hidden">
+                    <CardHeader className="bg-muted/30 pb-4">
+                      <CardTitle className="flex items-center text-xl">
+                        <Ruler className="h-5 w-5 mr-2 text-primary" />
+                        Body Measurements
+                      </CardTitle>
+                      <CardDescription>Track your physical measurements</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="weight_kg"
+                          render={({ field }) => {
+                            const unitPreference = form.watch("unit_preference");
+                            const isImperial = unitPreference === "imperial";
+                            const displayValue =
+                              field.value && isImperial ? convertWeight(field.value, true) : field.value;
+                            return (
+                              <FormItem>
+                                <FormLabel className="flex items-center text-foreground/80">
+                                  <Weight className="h-4 w-4 mr-1 inline" />
+                                  Weight ({isImperial ? "lbs" : "kg"})
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    value={displayValue ?? ""}
+                                    onChange={(e) => {
+                                      const inputValue = e.target.value ? Number(e.target.value) : null;
+                                      const valueInKg = inputValue && isImperial ? inputValue / 2.20462 : inputValue;
+                                      field.onChange(valueInKg);
+                                    }}
+                                    placeholder={`Enter weight`}
+                                    className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            );
+                          }}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="height_cm"
+                          render={({ field }) => {
+                            const unitPreference = form.watch("unit_preference");
+                            const isImperial = unitPreference === "imperial";
+                            const displayValue =
+                              field.value && isImperial ? convertHeightToInches(field.value) : field.value;
+                            return (
+                              <FormItem>
+                                <FormLabel className="flex items-center text-foreground/80">
+                                  <Ruler className="h-4 w-4 mr-1 inline" />
+                                  Height ({isImperial ? "in" : "cm"})
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    value={displayValue ?? ""}
+                                    onChange={(e) => {
+                                      const inputValue = e.target.value ? Number(e.target.value) : null;
+                                      const valueInCm = inputValue && isImperial ? convertInchesToCm(inputValue) : inputValue;
+                                      field.onChange(valueInCm);
+                                    }}
+                                    placeholder={`Enter height`}
+                                    className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            );
+                          }}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="body_fat_percentage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center text-foreground/80">
+                              <Percent className="h-4 w-4 mr-1 inline" />
+                              Body Fat Percentage
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                value={field.value ?? ""}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value ? Number(e.target.value) : null)
+                                }
+                                placeholder="Enter body fat percentage"
+                                className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              <div className="sticky bottom-20 pt-4 pb-2 bg-background/80 backdrop-blur-md z-10">
+                <Button
+                  type="submit"
+                  disabled={isSaving || !form.formState.isDirty}
+                  className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors duration-200 shadow-md"
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </motion.div>
       </div>
     </div>
