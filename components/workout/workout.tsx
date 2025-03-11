@@ -29,7 +29,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const { saveWorkout } = useSaveWorkout();
 
   const [exercises, setExercises] = useState<UIWorkoutExercise[]>([]);
-  const [selectedExerciseIds, setSelectedExerciseIds] = useState<Exercise[]>([]);
+  const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]); // Persisted state
   const [selectedExercise, setSelectedExercise] = useState<UIWorkoutExercise | null>(null);
 
   useEffect(() => {
@@ -53,21 +53,20 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     );
 
   const handleExerciseToggle = (exercise: Exercise) => {
-    const selected = selectedExerciseIds.find((se) => se.id === exercise.id);
+    const selected = selectedExercises.find((se) => se.id === exercise.id);
     if (selected) {
-      setSelectedExerciseIds(selectedExerciseIds.filter((se) => se.id !== exercise.id));
+      setSelectedExercises(selectedExercises.filter((se) => se.id !== exercise.id));
     } else {
-      setSelectedExerciseIds([...selectedExerciseIds, exercise]);
+      setSelectedExercises([...selectedExercises, exercise]);
     }
   };
 
   const handleAddExercises = (selected: Exercise[]) => {
     startTransition(() => {
       const newExercises: UIWorkoutExercise[] = selected.map((exercise, index) => {
-        // Create an initial empty set for each new exercise
         const initialSet: Set = {
-          id: "1", // Temporary ID, will be unique per exercise
-          workout_exercise_id: generateUUID(), // Temporary UUID
+          id: "1",
+          workout_exercise_id: generateUUID(),
           set_number: 1,
           reps: exercise.uses_reps ? 0 : null,
           weight_kg: exercise.uses_weight ? 0 : null,
@@ -86,11 +85,11 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
           effort_level: null,
           created_at: new Date().toISOString(),
           exercise,
-          sets: [initialSet], // Start with one empty set
+          sets: [initialSet],
         };
       });
       setExercises([...exercises, ...newExercises]);
-      setSelectedExerciseIds([]);
+      setSelectedExercises([]); // Clear only on add
       setShowExerciseModal(false);
     });
   };
@@ -103,7 +102,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     const updatedExercises = [...exercises];
     updatedExercises[exerciseIndex] = { ...updatedExercises[exerciseIndex], sets: newSets };
     setExercises(updatedExercises);
-    // Update selectedExercise if it’s the one being edited
     if (selectedExercise && selectedExercise.instance_id === updatedExercises[exerciseIndex].instance_id) {
       setSelectedExercise(updatedExercises[exerciseIndex]);
     }
@@ -139,7 +137,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         };
         await saveWorkout(newWorkout);
         setExercises([]);
-        setSelectedExerciseIds([]);
+        setSelectedExercises([]);
         setSelectedExercise(null);
         toast({
           title: "Success",
@@ -211,7 +209,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         <ExerciseSelector
           open={showExerciseModal}
           onOpenChange={setShowExerciseModal}
-          selectedExercises={selectedExerciseIds}
+          selectedExercises={selectedExercises}
           onExerciseToggle={handleExerciseToggle}
           onAddExercises={handleAddExercises}
         />

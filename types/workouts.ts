@@ -18,7 +18,7 @@ export type WorkoutExercise = Database["public"]["Tables"]["workout_exercises"][
 export type Set = Database["public"]["Tables"]["sets"]["Row"];
 
 /** Predefined exercise available to all users (read-only) */
-export type Exercise = Database["public"]["Tables"]["exercises"]["Row"];
+export type Exercise = Database["public"]["Tables"]["exercises"]["Row"] & { source: "predefined" | "user" };
 
 /** Daily workout volume per user */
 export type DailyVolume = Database["public"]["Tables"]["daily_volume"]["Row"];

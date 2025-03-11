@@ -4,18 +4,20 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell } from "lucide-react";
 import Workout from "@/components/workout/workout";
+import { useAvailableExercises } from "@/lib/hooks/data-hooks";
 
 export default function HomePage() {
-  const [exercises, setExercises] = useState([]);
+  const { exercises, isLoading } = useAvailableExercises(); // Eager fetch on mount
+  const [exercisesState, setExercisesState] = useState([]);
 
   const handleExercisesChange = (updatedExercises: any) => {
-    setExercises(updatedExercises);
+    setExercisesState(updatedExercises);
   };
 
   return (
     <div className="min-h-screen bg-background pb-16">
       <AnimatePresence mode="wait">
-        {exercises.length === 0 && (
+        {exercisesState.length === 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}

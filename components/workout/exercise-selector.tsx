@@ -7,9 +7,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 import { useAvailableExercises } from "@/lib/hooks/data-hooks";
 import type { Exercise } from "@/types/workouts";
 import { useAuth } from "@/contexts/auth-context";
+import { CategoryList } from "@/components/workout/category-list";
+import { ExerciseList } from "@/components/workout/exercise-list";
 
 interface ExerciseSelectorProps {
   open: boolean;
@@ -30,8 +33,8 @@ export function ExerciseSelector({
   const { user } = authState;
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const [selectedTab, setSelectedTab] = useState<"all" | "byMuscle">("all");
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<"all" | "categories">("all");
+  const [navStack, setNavStack] = useState<string[]>([]);
 
   const { exercises: availableExercises, isLoading, isError, mutate } = useAvailableExercises();
 
@@ -50,27 +53,6 @@ export function ExerciseSelector({
     );
   }
 
-  const muscleGroups = Array.from(new Set(availableExercises.map((ex) => ex.primary_muscle_group)));
-
-  const filteredExercises = Object.entries(
-    availableExercises.reduce((acc, ex) => {
-      const group = ex.primary_muscle_group || "Other";
-      acc[group] = acc[group] || [];
-      acc[group].push(ex);
-      return acc;
-    }, {} as Record<string, Exercise[]>)
-  ).reduce((acc, [group, exercises]) => {
-    const filtered = exercises.filter(
-      (ex) =>
-        ex.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (selectedTab === "all" || !selectedMuscleGroup || ex.primary_muscle_group === selectedMuscleGroup)
-    );
-    if (filtered.length > 0) {
-      acc[group] = filtered;
-    }
-    return acc;
-  }, {} as Record<string, Exercise[]>);
-
   const handleAdd = () => {
     onAddExercises(selectedExercises);
     onOpenChange(false);
@@ -88,7 +70,7 @@ export function ExerciseSelector({
           <div className="px-6 pb-6 flex items-center border-b">
             <SheetTitle className="text-xl">Add Exercise</SheetTitle>
             <span id="exercise-selector-description" className="sr-only">
-              Select exercises to add to your workout. You can search or filter by muscle group.
+              Select exercises to add to your workout. You can search or filter by category.
             </span>
           </div>
 
@@ -104,8 +86,8 @@ export function ExerciseSelector({
             <Tabs
               value={selectedTab}
               onValueChange={(value) => {
-                setSelectedTab(value as "all" | "byMuscle");
-                setSelectedMuscleGroup(null);
+                setSelectedTab(value as "all" | "categories");
+                setNavStack([]);
               }}
               className="w-full"
             >
@@ -113,72 +95,46 @@ export function ExerciseSelector({
                 <TabsTrigger value="all" className="flex-1 rounded-lg">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="byMuscle" className="flex-1 rounded-lg">
-                  By Muscle
+                <TabsTrigger value="categories" className="flex-1 rounded-lg">
+                  Categories
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
-          <ScrollArea className="flex-1">
-            <div className="px-6 space-y-6 py-4">
-              {selectedTab === "byMuscle" && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {muscleGroups.map((muscle) => (
-                    <Button
-                      key={muscle}
-                      variant={selectedMuscleGroup === muscle ? "default" : "outline"}
-                      onClick={() =>
-                        setSelectedMuscleGroup(selectedMuscleGroup === muscle ? null : muscle)
-                      }
-                      className="rounded-full"
-                      size="sm"
-                    >
-                      {muscle}
-                    </Button>
-                  ))}
+          <div className="flex-1 relative">
+            {selectedTab === "all" && (
+              <ExerciseList
+                category="all"
+                searchQuery={searchQuery}
+                selectedExercises={selectedExercises}
+                onExerciseToggle={onExerciseToggle}
+                exercises={availableExercises}
+              />
+            )}
+            {selectedTab === "categories" && !navStack.length && (
+              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+                <CategoryList onCategorySelect={(category) => setNavStack([category])} />
+              </motion.div>
+            )}
+            {navStack.length > 0 && (
+              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+                <div className="flex items-center p-4 border-b">
+                  <Button variant="ghost" onClick={() => setNavStack(navStack.slice(0, -1))}>
+                    <ChevronLeft />
+                  </Button>
+                  <SheetTitle>{navStack[navStack.length - 1]}</SheetTitle>
                 </div>
-              )}
-
-              {Object.entries(filteredExercises).map(([group, exercises]) => (
-                <div key={group}>
-                  <h3 className="font-semibold mb-2">{group}</h3>
-                  <div className="space-y-2">
-                    {exercises.map((exercise) => (
-                      <motion.div
-                        key={exercise.id}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                      >
-                        <div
-                          className="flex items-center gap-4 p-4 rounded-3xl border cursor-pointer hover:bg-accent/5 transition-colors"
-                          onClick={() => onExerciseToggle(exercise)}
-                        >
-                          <div className="flex-1">
-                            <div>{exercise.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {exercise.primary_muscle_group}
-                              {exercise.secondary_muscle_group && `, ${exercise.secondary_muscle_group}`}
-                            </div>
-                          </div>
-                          <div
-                            className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors
-                              ${
-                                selectedExercises.some((se) => se.id === exercise.id)
-                                  ? "bg-primary border-primary text-primary-foreground"
-                                  : "border-input"
-                              }`}
-                          >
-                            {selectedExercises.some((se) => se.id === exercise.id) && "✓"}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+                <ExerciseList
+                  category={navStack[navStack.length - 1]}
+                  searchQuery={searchQuery}
+                  selectedExercises={selectedExercises}
+                  onExerciseToggle={onExerciseToggle}
+                  exercises={availableExercises}
+                />
+              </motion.div>
+            )}
+          </div>
 
           <div className="p-4 bg-background/80 backdrop-blur-sm border-t">
             <Button
