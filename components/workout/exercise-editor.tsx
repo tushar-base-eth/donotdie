@@ -31,15 +31,11 @@ export function ExerciseEditor({
     setExercise(initialExercise);
   }, [initialExercise]);
 
-  const { category, uses_reps, uses_weight, uses_duration, uses_distance } = exercise.exercise;
-  const isStrength = category === "strength_training";
-  const isCardio = category === "cardio";
-  const isFlexibility = category === "flexibility";
-  const isBodyweight = category === "other" && uses_reps && !uses_weight;
-  const showReps = isStrength || isBodyweight || uses_reps;
-  const showWeight = isStrength || uses_weight;
-  const showDuration = (isCardio || isFlexibility) || uses_duration;
-  const showDistance = isCardio || uses_distance;
+  const { uses_reps, uses_weight, uses_duration, uses_distance } = exercise.exercise;
+  const showReps = uses_reps;
+  const showWeight = uses_weight;
+  const showDuration = uses_duration;
+  const showDistance = uses_distance;
 
   const handleInput = (value: string, isInt: boolean = false): number => {
     if (value === "") return 0;

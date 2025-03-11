@@ -2,16 +2,11 @@
 
 import { useCallback, useMemo } from "react";
 import useSWR from "swr";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from "@/lib/supabase/browser";
 import type { Database } from "@/types/database";
 import type { DailyVolume, Exercise, UIExtendedWorkout, UIDailyVolume, NewWorkout, NewSet } from "@/types/workouts";
 import { fetchAllWorkouts } from "@/lib/workoutUtils";
 import { useAuth } from "@/contexts/auth-context";
-
-export const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 type TableName = keyof Database["public"]["Tables"];
 type FetcherKey = TableName | [TableName, any];

@@ -112,8 +112,8 @@ CREATE TABLE public.exercises (
   category exercise_category NOT NULL, -- Required, ENUM for exercise type
   primary_muscle_group muscle_group NOT NULL, -- Required, ENUM for main muscle targeted
   secondary_muscle_group muscle_group, -- Optional, ENUM for secondary muscle targeted
-  uses_reps BOOLEAN DEFAULT TRUE, -- Indicates if exercise uses reps
-  uses_weight BOOLEAN DEFAULT TRUE, -- Indicates if exercise uses weight
+  uses_reps BOOLEAN DEFAULT FALSE, -- Indicates if exercise uses reps
+  uses_weight BOOLEAN DEFAULT FALSE, -- Indicates if exercise uses weight
   uses_duration BOOLEAN DEFAULT FALSE, -- Indicates if exercise uses duration
   uses_distance BOOLEAN DEFAULT FALSE, -- Indicates if exercise uses distance
   is_deleted BOOLEAN DEFAULT FALSE, -- Soft delete flag, managed by admin

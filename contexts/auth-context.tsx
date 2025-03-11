@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from '@/lib/hooks/data-hooks'; // Updated import to use data-hooks supabase
+import { supabase } from "@/lib/supabase/browser";
 import type { Database } from "@/types/database";
 import type { Profile } from "@/types/workouts";
 
