@@ -108,6 +108,14 @@ export function ExerciseSelector({
     return "Exercises";
   };
 
+  // Handler to reset navStack when "Categories" tab is clicked
+  const handleCategoriesClick = () => {
+    if (selectedTab !== "categories" || navStack.length > 0) {
+      setSelectedTab("categories");
+      setNavStack([]);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -140,8 +148,11 @@ export function ExerciseSelector({
           <Tabs
             value={selectedTab}
             onValueChange={(value) => {
-              setSelectedTab(value as "all" | "categories");
-              setNavStack([]);
+              const newTab = value as "all" | "categories";
+              setSelectedTab(newTab);
+              if (newTab === "categories" && navStack.length > 0) {
+                setNavStack([]);
+              }
             }}
             className="w-full"
           >
@@ -149,7 +160,11 @@ export function ExerciseSelector({
               <TabsTrigger value="all" className="flex-1 rounded-lg">
                 All
               </TabsTrigger>
-              <TabsTrigger value="categories" className="flex-1 rounded-lg">
+              <TabsTrigger
+                value="categories"
+                className="flex-1 rounded-lg"
+                onClick={handleCategoriesClick} // Added custom click handler
+              >
                 Categories
               </TabsTrigger>
             </TabsList>
