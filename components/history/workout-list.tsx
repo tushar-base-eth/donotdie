@@ -99,39 +99,38 @@ export function WorkoutList({
                 <Card
                   className="overflow-hidden cursor-pointer hover:bg-accent/5 transition-colors rounded-3xl"
                   onClick={() => onWorkoutSelect(workout)}
+                  style={{ minHeight: "80px" }} // Reduced height since content is in one row
                 >
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-medium">
-                          {workout.date
-                            ? format(parse(workout.date, "yyyy-MM-dd", new Date()), "eeee, MMMM d")
-                            : "Invalid Date"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {workout.time || "No Time"}
-                        </div>
+                  <CardContent className="p-4 flex justify-between items-center h-full">
+                    <div>
+                      <div className="font-medium">
+                        {workout.date
+                          ? format(parse(workout.date, "yyyy-MM-dd", new Date()), "eeee, MMMM d")
+                          : "Invalid Date"}
                       </div>
-                      <div className="text-right space-y-1">
-                        {workout.totalVolume !== null && (
-                          <div>
-                            <div className="text-sm text-muted-foreground">Total Volume</div>
-                            <div className="font-medium">{formatWeight(workout.totalVolume)}</div>
-                          </div>
-                        )}
-                        {workout.totalDistance !== null && (
-                          <div>
-                            <div className="text-sm text-muted-foreground">Total Distance</div>
-                            <div className="font-medium">{workout.totalDistance.toFixed(1)} m</div>
-                          </div>
-                        )}
-                        {workout.totalDuration !== null && (
-                          <div>
-                            <div className="text-sm text-muted-foreground">Total Duration</div>
-                            <div className="font-medium">{workout.totalDuration} s</div>
-                          </div>
-                        )}
+                      <div className="text-sm text-muted-foreground">
+                        {workout.time || "No Time"}
                       </div>
+                    </div>
+                    <div className="text-right space-y-1">
+                      {workout.totalVolume !== null && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Vol: </span>
+                          <span className="font-medium">{formatWeight(workout.totalVolume)}</span>
+                        </div>
+                      )}
+                      {workout.totalDistance !== null && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Dist: </span>
+                          <span className="font-medium">{workout.totalDistance.toFixed(1)} m</span>
+                        </div>
+                      )}
+                      {workout.totalDuration !== null && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Dur: </span>
+                          <span className="font-medium">{workout.totalDuration} s</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
