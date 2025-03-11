@@ -1,197 +1,230 @@
--- Seed File Summary:
--- strength_training (8 exercises):
--- 1. Bench Press -> reps, weight
--- 2. Squat -> reps, weight
--- 3. Deadlift -> reps, weight
--- 4. Dumbbell Row -> reps, weight
--- 5. Shoulder Press -> reps, weight
--- 6. Bicep Curl -> reps, weight
--- 7. Tricep Extension -> reps, weight
--- 8. Push-up -> reps
---
--- cardio (6 exercises):
--- 1. Treadmill Run -> duration, distance
--- 2. Stationary Bike -> duration
--- 3. Jogging -> duration, distance
--- 4. Jump Rope -> duration
--- 5. Rowing Machine -> duration
--- 6. High Knees -> duration
---
--- flexibility (6 exercises):
--- 1. Downward Dog -> duration
--- 2. Cat-Cow Stretch -> duration
--- 3. Seated Forward Bend -> duration
--- 4. Hip Flexor Stretch -> duration
--- 5. Child’s Pose -> duration
--- 6. Cobra Stretch -> duration
---
--- other (5 exercises):
--- 1. Plank -> reps
--- 2. Lunges -> reps
--- 3. Mountain Climbers -> reps
--- 4. Burpees -> reps
--- 5. Band Pull-Apart -> reps, weight
+-- Seed Data SQL Script for Supabase
+-- Purpose: Populate exercises and equipment tables with realistic data
+-- Date: March 11, 2025
+-- Notes: 
+-- - Includes 5 popular exercises per exercise_category and muscle_group combination
+-- - Uses realistic equipment and links them via exercise_equipment table
+-- - All data adheres to schema constraints (e.g., ENUMs, CHECKs, length limits)
 
--- Seed equipment
+-- Enable UUID extension (already in schema, included for completeness)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Insert Equipment Data
+-- Purpose: Add common fitness equipment used in exercises
 INSERT INTO public.equipment (id, name) VALUES
-  (uuid_generate_v4(), 'Dumbbell'),
-  (uuid_generate_v4(), 'Barbell'),
-  (uuid_generate_v4(), 'Bench'),
-  (uuid_generate_v4(), 'Treadmill'),
-  (uuid_generate_v4(), 'Stationary Bike'),
-  (uuid_generate_v4(), 'Yoga Mat'),
-  (uuid_generate_v4(), 'Resistance Band'),
-  (uuid_generate_v4(), 'None');
+  (uuid_generate_v4(), 'Barbell'),           -- For heavy lifting (e.g., squats, bench press)
+  (uuid_generate_v4(), 'Dumbbell'),          -- Versatile for many exercises
+  (uuid_generate_v4(), 'Kettlebell'),        -- For swings and dynamic movements
+  (uuid_generate_v4(), 'Treadmill'),         -- For cardio running
+  (uuid_generate_v4(), 'Yoga Mat'),          -- For flexibility and bodyweight exercises
+  (uuid_generate_v4(), 'Bench'),             -- For presses and step-ups
+  (uuid_generate_v4(), 'Pull-Up Bar'),       -- For back and arm exercises
+  (uuid_generate_v4(), 'Resistance Band'),   -- For flexibility and light strength
+  (uuid_generate_v4(), 'Cable Machine'),     -- For targeted muscle work
+  (uuid_generate_v4(), 'Stationary Bike');   -- For cardio cycling
 
--- Seed exercises and equipment mappings
-DO $$
-DECLARE
-  dumbbell_id UUID;
-  barbell_id UUID;
-  bench_id UUID;
-  treadmill_id UUID;
-  bike_id UUID;
-  mat_id UUID;
-  band_id UUID;
-  none_id UUID;
-  exercise_id UUID;
-BEGIN
-  -- Retrieve equipment IDs
-  SELECT id INTO dumbbell_id FROM public.equipment WHERE name = 'Dumbbell';
-  SELECT id INTO barbell_id FROM public.equipment WHERE name = 'Barbell';
-  SELECT id INTO bench_id FROM public.equipment WHERE name = 'Bench';
-  SELECT id INTO treadmill_id FROM public.equipment WHERE name = 'Treadmill';
-  SELECT id INTO bike_id FROM public.equipment WHERE name = 'Stationary Bike';
-  SELECT id INTO mat_id FROM public.equipment WHERE name = 'Yoga Mat';
-  SELECT id INTO band_id FROM public.equipment WHERE name = 'Resistance Band';
-  SELECT id INTO none_id FROM public.equipment WHERE name = 'None';
+-- Insert Exercises Data
+-- Notes:
+-- - 5 exercises per category (strength_training, cardio, flexibility) and muscle group (chest, back, legs, arms, core)
+-- - Each exercise has appropriate metric flags (uses_reps, uses_weight, etc.)
+-- - Names are unique, within 50 chars, and use printable characters
 
-  -- Strength Training (8 exercises)
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Bench Press', 'strength_training', 'chest', 'arms', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, barbell_id), (exercise_id, bench_id);
+-- Strength Training Exercises
+-- Chest
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Barbell Bench Press', 'strength_training', 'chest', 'arms', TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Dumbbell Flyes', 'strength_training', 'chest', NULL, TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Push-Ups', 'strength_training', 'chest', 'arms', TRUE, FALSE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Incline Dumbbell Press', 'strength_training', 'chest', 'arms', TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Cable Crossovers', 'strength_training', 'chest', NULL, TRUE, TRUE, FALSE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Squat', 'strength_training', 'legs', 'other', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, barbell_id);
+-- Back
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Deadlift', 'strength_training', 'back', 'legs', TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Pull-Ups', 'strength_training', 'back', 'arms', TRUE, FALSE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Bent-Over Barbell Row', 'strength_training', 'back', 'arms', TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Lat Pulldown', 'strength_training', 'back', NULL, TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Dumbbell Row', 'strength_training', 'back', 'arms', TRUE, TRUE, FALSE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Deadlift', 'strength_training', 'back', 'legs', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, barbell_id);
+-- Legs
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Barbell Squat', 'strength_training', 'legs', 'core', TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Leg Press', 'strength_training', 'legs', NULL, TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Lunges', 'strength_training', 'legs', 'core', TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Romanian Deadlift', 'strength_training', 'legs', 'back', TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Calf Raises', 'strength_training', 'legs', NULL, TRUE, TRUE, FALSE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Dumbbell Row', 'strength_training', 'back', 'arms', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, dumbbell_id);
+-- Arms
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Bicep Curl', 'strength_training', 'arms', NULL, TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Tricep Dips', 'strength_training', 'arms', 'chest', TRUE, FALSE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Overhead Tricep Extension', 'strength_training', 'arms', NULL, TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Hammer Curl', 'strength_training', 'arms', NULL, TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Cable Tricep Pushdown', 'strength_training', 'arms', NULL, TRUE, TRUE, FALSE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Shoulder Press', 'strength_training', 'arms', 'other', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, dumbbell_id);
+-- Core
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Plank', 'strength_training', 'core', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Russian Twist', 'strength_training', 'core', NULL, TRUE, TRUE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Hanging Leg Raise', 'strength_training', 'core', NULL, TRUE, FALSE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Ab Crunch', 'strength_training', 'core', NULL, TRUE, FALSE, FALSE, FALSE),
+  (uuid_generate_v4(), 'Kettlebell Swing', 'strength_training', 'core', 'legs', TRUE, TRUE, FALSE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Bicep Curl', 'strength_training', 'arms', NULL, TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, dumbbell_id);
+-- Cardio Exercises
+-- Chest
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Burpees', 'cardio', 'chest', 'core', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Mountain Climbers', 'cardio', 'chest', 'core', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Jumping Push-Ups', 'cardio', 'chest', 'arms', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Boxing Punches', 'cardio', 'chest', 'arms', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Chest-Focused HIIT', 'cardio', 'chest', NULL, FALSE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Tricep Extension', 'strength_training', 'arms', NULL, TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, dumbbell_id);
+-- Back
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Rowing Machine', 'cardio', 'back', 'arms', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Jump Rope', 'cardio', 'back', 'legs', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Back-Focused HIIT', 'cardio', 'back', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Swimming (Backstroke)', 'cardio', 'back', 'arms', FALSE, FALSE, TRUE, TRUE),
+  (uuid_generate_v4(), 'Battle Rope Pulls', 'cardio', 'back', 'arms', TRUE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Push-up', 'strength_training', 'chest', 'arms', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+-- Legs
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Running', 'cardio', 'legs', 'core', FALSE, FALSE, TRUE, TRUE),
+  (uuid_generate_v4(), 'Cycling', 'cardio', 'legs', NULL, FALSE, FALSE, TRUE, TRUE),
+  (uuid_generate_v4(), 'Jump Squats', 'cardio', 'legs', 'core', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Stair Climbing', 'cardio', 'legs', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'High Knees', 'cardio', 'legs', 'core', TRUE, FALSE, TRUE, FALSE);
 
-  -- Cardio (6 exercises)
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_distance)
-  VALUES (uuid_generate_v4(), 'Treadmill Run', 'cardio', 'legs', 'other', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, treadmill_id);
+-- Arms
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Arm Circles', 'cardio', 'arms', 'chest', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Shadow Boxing', 'cardio', 'arms', 'chest', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Battle Rope Slams', 'cardio', 'arms', 'core', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Arm-Focused HIIT', 'cardio', 'arms', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Rowing Sprints', 'cardio', 'arms', 'back', FALSE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Stationary Bike', 'cardio', 'legs', 'other', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, bike_id);
+-- Core
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Bicycle Crunches', 'cardio', 'core', NULL, TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Plank Jacks', 'cardio', 'core', 'legs', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Core-Focused HIIT', 'cardio', 'core', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Skater Jumps', 'cardio', 'core', 'legs', TRUE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Tuck Jumps', 'cardio', 'core', 'legs', TRUE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_distance)
-  VALUES (uuid_generate_v4(), 'Jogging', 'cardio', 'legs', 'other', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+-- Flexibility Exercises
+-- Chest
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Chest Opener Stretch', 'flexibility', 'chest', 'arms', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Doorway Chest Stretch', 'flexibility', 'chest', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Cat-Cow Pose', 'flexibility', 'chest', 'back', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Thread the Needle', 'flexibility', 'chest', 'back', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Chest Expansion Stretch', 'flexibility', 'chest', NULL, FALSE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Jump Rope', 'cardio', 'legs', 'other', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+-- Back
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Child’s Pose', 'flexibility', 'back', 'core', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Cobra Stretch', 'flexibility', 'back', 'chest', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Seated Forward Bend', 'flexibility', 'back', 'legs', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Supine Spinal Twist', 'flexibility', 'back', 'core', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Bridge Pose', 'flexibility', 'back', 'legs', FALSE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Rowing Machine', 'cardio', 'back', 'other', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+-- Legs
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Hamstring Stretch', 'flexibility', 'legs', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Quad Stretch', 'flexibility', 'legs', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Butterfly Stretch', 'flexibility', 'legs', 'core', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Lunge Stretch', 'flexibility', 'legs', 'core', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Calf Stretch', 'flexibility', 'legs', NULL, FALSE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'High Knees', 'cardio', 'legs', 'other', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+-- Arms
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Tricep Stretch', 'flexibility', 'arms', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Bicep Stretch', 'flexibility', 'arms', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Wrist Flexor Stretch', 'flexibility', 'arms', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Shoulder Stretch', 'flexibility', 'arms', 'chest', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Arm Circles Stretch', 'flexibility', 'arms', NULL, FALSE, FALSE, TRUE, FALSE);
 
-  -- Flexibility (6 exercises)
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Downward Dog', 'flexibility', 'legs', 'arms', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, mat_id);
+-- Core
+INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance) VALUES
+  (uuid_generate_v4(), 'Seated Twist Stretch', 'flexibility', 'core', 'back', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Side Bend Stretch', 'flexibility', 'core', NULL, FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Downward Dog', 'flexibility', 'core', 'legs', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Pigeon Pose', 'flexibility', 'core', 'legs', FALSE, FALSE, TRUE, FALSE),
+  (uuid_generate_v4(), 'Cat Stretch', 'flexibility', 'core', 'back', FALSE, FALSE, TRUE, FALSE);
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Cat-Cow Stretch', 'flexibility', 'back', 'core', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, mat_id);
+-- Insert Exercise-Equipment Relationships
+-- Notes: Links exercises to appropriate equipment based on common usage
+-- Using subqueries to reference IDs dynamically; assumes equipment names are unique
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Seated Forward Bend', 'flexibility', 'legs', 'back', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, mat_id);
+-- Strength Training Equipment Links
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Barbell'
+WHERE e.name IN ('Barbell Bench Press', 'Deadlift', 'Barbell Squat', 'Bent-Over Barbell Row');
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Hip Flexor Stretch', 'flexibility', 'other', NULL, TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, mat_id);
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Dumbbell'
+WHERE e.name IN ('Dumbbell Flyes', 'Incline Dumbbell Press', 'Dumbbell Row', 'Bicep Curl', 'Overhead Tricep Extension', 'Hammer Curl', 'Lunges');
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Child’s Pose', 'flexibility', 'back', 'other', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, mat_id);
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Kettlebell'
+WHERE e.name = 'Kettlebell Swing';
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_duration, uses_weight)
-  VALUES (uuid_generate_v4(), 'Cobra Stretch', 'flexibility', 'core', 'chest', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, mat_id);
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Bench'
+WHERE e.name IN ('Barbell Bench Press', 'Incline Dumbbell Press', 'Tricep Dips');
 
-  -- Other (Bodyweight, 5 exercises)
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Plank', 'other', 'core', NULL, TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Pull-Up Bar'
+WHERE e.name IN ('Pull-Ups', 'Hanging Leg Raise');
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Lunges', 'other', 'legs', 'other', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Cable Machine'
+WHERE e.name IN ('Cable Crossovers', 'Lat Pulldown', 'Cable Tricep Pushdown');
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Mountain Climbers', 'other', 'core', 'legs', TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+-- Cardio Equipment Links
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Treadmill'
+WHERE e.name = 'Running';
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Burpees', 'other', 'full_body', NULL, TRUE, FALSE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, none_id);
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Stationary Bike'
+WHERE e.name = 'Cycling';
 
-  INSERT INTO public.exercises (id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight)
-  VALUES (uuid_generate_v4(), 'Band Pull-Apart', 'other', 'arms', 'back', TRUE, TRUE)
-  RETURNING id INTO exercise_id;
-  INSERT INTO public.exercise_equipment (exercise_id, equipment_id) VALUES (exercise_id, band_id);
-END $$;
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Yoga Mat'
+WHERE e.name IN ('Burpees', 'Mountain Climbers', 'Jumping Push-Ups', 'Bicycle Crunches', 'Plank Jacks');
+
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Resistance Band'
+WHERE e.name = 'Battle Rope Pulls'; -- Assuming resistance band as a substitute
+
+-- Flexibility Equipment Links
+INSERT INTO public.exercise_equipment (exercise_id, equipment_id)
+SELECT e.id, eq.id
+FROM public.exercises e
+JOIN public.equipment eq ON eq.name = 'Yoga Mat'
+WHERE e.category = 'flexibility' AND e.name IN (
+  'Chest Opener Stretch', 'Child’s Pose', 'Cobra Stretch', 'Hamstring Stretch', 'Downward Dog'
+);
+
+-- End of Seed Data Script
