@@ -8,8 +8,8 @@ CREATE TYPE unit_preference_type AS ENUM ('metric', 'imperial');
 CREATE TYPE theme_preference_type AS ENUM ('light', 'dark');
 
 -- Create ENUM types for stricter enforcement for exercises
-CREATE TYPE exercise_category AS ENUM ('strength_training', 'cardio', 'flexibility', 'other');
-CREATE TYPE muscle_group AS ENUM ('chest', 'back', 'legs', 'arms', 'core', 'full_body', 'other');
+CREATE TYPE exercise_category AS ENUM ('strength_training', 'cardio', 'flexibility');
+CREATE TYPE muscle_group AS ENUM ('chest', 'back', 'legs', 'arms', 'core');
 
 -- Define ENUMs for consistency doe workout exercises
 CREATE TYPE exercise_source AS ENUM ('predefined', 'user');
