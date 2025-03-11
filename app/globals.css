@@ -6,13 +6,13 @@
 @layer base {
   :root {
     /* Updated to match reference page light mode */
-    --background: 0 0% 98%; /* Slightly off-white background */
-    --foreground: 240 10% 3.9%; /* Darker text */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%; /* Dark gray primary */
+    --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -25,7 +25,7 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5% 64.9%;
-    --radius: 1rem; /* Slightly smaller radius than your original */
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -57,17 +57,16 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans; /* Added font-sans to match reference */
+    @apply bg-background text-foreground font-sans;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium; /* Matches reference page heading style */
-    letter-spacing: -0.01em; /* Slightly looser than your original */
+    @apply font-medium;
+    letter-spacing: -0.01em;
   }
 }
 
-/* Rest of your original utilities and components remain unchanged */
 @layer utilities {
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
