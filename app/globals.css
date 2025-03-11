@@ -5,50 +5,98 @@
 
 @layer base {
   :root {
-    /* Updated to match reference page light mode */
+    /* Light theme - clean and minimal */
     --background: 0 0% 98%;
     --foreground: 240 10% 3.9%;
+    
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
+    
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
+    
     --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
+    
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
+    
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
+    
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
+    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+    
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5% 64.9%;
+    
     --radius: 0.75rem;
   }
 
   .dark {
-    /* Unchanged dark mode from your original */
-    --background: 210 10% 8%;
+    /* Dark theme - futuristic with red accent */
+    --background: 220 40% 2.5%;
     --foreground: 0 0% 95%;
-    --card: 210 10% 12%;
+    
+    --card: 220 25% 5%;
     --card-foreground: 0 0% 95%;
-    --popover: 210 10% 10%;
+    
+    --popover: 220 45% 3.5%;
     --popover-foreground: 0 0% 95%;
-    --primary: 10 80% 55%;
+    
+    --primary: 0 90% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 12% 15%;
+    
+    --secondary: 220 35% 15%;
     --secondary-foreground: 0 0% 95%;
-    --muted: 210 12% 20%;
-    --muted-foreground: 0 0% 70%;
-    --accent: 10 80% 55%;
+    
+    --muted: 220 35% 10%;
+    --muted-foreground: 220 10% 70%;
+    
+    --accent: 0 90% 60%;
     --accent-foreground: 0 0% 100%;
+    
     --destructive: 0 80% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 15%;
-    --input: 0 0% 20%;
-    --ring: 10 80% 55%;
+    
+    --border: 220 40% 12%;
+    --input: 220 40% 10%;
+    --ring: 0 90% 60%;
+  }
+
+  .colorful {
+    /* Colorful theme - vibrant and energetic */
+    --background: 240 20% 3%;
+    --foreground: 0 0% 95%;
+    
+    --card: 240 25% 6%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 240 45% 4%;
+    --popover-foreground: 0 0% 95%;
+    
+    --primary: 320 90% 60%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 260 35% 50%;
+    --secondary-foreground: 0 0% 95%;
+    
+    --muted: 240 35% 10%;
+    --muted-foreground: 240 10% 70%;
+    
+    --accent: 180 90% 60%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 240 40% 12%;
+    --input: 240 40% 10%;
+    --ring: 320 90% 60%;
   }
 }
 
@@ -56,69 +104,281 @@
   * {
     @apply border-border;
   }
+  
+  html {
+    font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+  }
+  
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
+  
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium;
-    letter-spacing: -0.01em;
+    @apply font-medium tracking-tight;
+    letter-spacing: -0.02em;
+  }
+  
+  /* Smooth transitions between themes */
+  :root,
+  .dark,
+  .colorful {
+    color-scheme: light;
+    --transition-duration: 0.3s;
+  }
+  
+  .dark {
+    color-scheme: dark;
+  }
+  
+  @media (prefers-reduced-motion: no-preference) {
+    :root {
+      scroll-behavior: smooth;
+    }
+    
+    *, *::before, *::after {
+      transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: var(--transition-duration);
+    }
   }
 }
 
+/* Futuristic UI Components */
+@layer components {
+  /* Glass morphism components */
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl border border-border/30 backdrop-saturate-150;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  .glass-hover {
+    @apply hover:bg-background/80 transition-all duration-300;
+  }
+  
+  .glass-card {
+    @apply glass rounded-[var(--radius)] overflow-hidden;
+  }
+  
+  /* Neon effects for dark theme */
+  .dark .neon-text {
+    text-shadow: 0 0 5px hsl(var(--primary) / 0.5), 0 0 10px hsl(var(--primary) / 0.3);
+  }
+  
+  .dark .neon-border {
+    box-shadow: 0 0 5px hsl(var(--primary) / 0.5), 0 0 10px hsl(var(--primary) / 0.3);
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+  }
+  
+  /* Navigation components */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 h-16 bg-background/80 backdrop-blur-lg border-t border-border safe-area-bottom glass;
+  }
+  
+  .bottom-nav-item {
+    @apply inline-flex flex-col items-center justify-center px-5 glass-hover transition-all duration-200;
+  }
+  
+  .bottom-nav-icon {
+    @apply w-6 h-6;
+  }
+  
+  .bottom-nav-label {
+    @apply text-xs;
+  }
+  
+  /* Futuristic button styles */
+  .btn-glow {
+    @apply relative overflow-hidden;
+  }
+  
+  .btn-glow::after {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+    background: radial-gradient(circle, hsl(var(--primary) / 0.7) 0%, transparent 70%);
+  }
+  
+  .btn-glow:hover::after {
+    @apply opacity-100;
+  }
+  
+  /* Futuristic card styles */
+  .card-highlight {
+    @apply relative overflow-hidden;
+  }
+  
+  .card-highlight::before {
+    content: '';
+    @apply absolute -inset-1 opacity-0 transition-opacity duration-500 rounded-[calc(var(--radius)+0.25rem)];
+    background: linear-gradient(45deg, 
+      transparent 25%, 
+      hsl(var(--primary) / 0.3) 50%, 
+      transparent 75%
+    );
+    z-index: -1;
+  }
+  
+  .card-highlight:hover::before {
+    @apply opacity-100;
+  }
+}
+
+/* Utility classes */
 @layer utilities {
+  /* Safe area utilities */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* Scrolling utilities */
   .smooth-scroll {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Backdrop blur utilities */
+  .backdrop-blur-xs {
+    backdrop-filter: blur(2px);
+  }
+  
+  .backdrop-blur-2xl {
+    backdrop-filter: blur(40px);
+  }
+  
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Futuristic grid */
+  .grid-futuristic {
+    @apply grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 1.5rem;
+  }
+  
+  /* Responsive utilities */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* iOS active state */
+  .ios-active:active {
+    transform: scale(0.96);
+  }
 }
 
-@layer components {
-  .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 z-50 h-16 bg-background/80 backdrop-blur-lg border-t border-border safe-area-bottom glass;
-  }
-  .bottom-nav-item {
-    @apply inline-flex flex-col items-center justify-center px-5 glass-hover transition-colors duration-200;
-  }
-  .bottom-nav-icon {
-    @apply w-6 h-6;
-  }
-  .bottom-nav-label {
-    @apply text-xs;
-  }
-}
-
-.glass {
-  @apply bg-background/80 backdrop-blur-xl border border-background/10 backdrop-saturate-150;
-}
-
-.glass-hover {
-  @apply hover:bg-background/90 transition-colors duration-200;
-}
-
+/* Animations */
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px hsl(var(--primary) / 0.5); }
+  50% { box-shadow: 0 0 20px hsl(var(--primary) / 0.7); }
+}
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
 
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--muted) / 0.3),
+    transparent
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.dark .animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-muted;
+  @apply bg-muted/50 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/50 rounded-full;
+  @apply bg-muted-foreground/50 rounded-full hover:bg-muted-foreground/70 transition-colors;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-primary/30 hover:bg-primary/50;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 640px) {
+  :root {
+    --radius: 0.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --radius: 0.75rem;
+  }
+}
+
+/* Futuristic focus styles */
+:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+.dark :focus-visible {
+  @apply ring-primary/70 ring-offset-1;
+}
+
+/* Improved selection styling */
+::selection {
+  @apply bg-primary/20 text-foreground;
+}
+
+.dark ::selection {
+  @apply bg-primary/30 text-foreground;
 }
