@@ -82,7 +82,7 @@ export function useAvailableExercises() {
       if (error) throw error;
       return data;
     },
-    { dedupingInterval: 600000 } // 10 minutes
+    { dedupingInterval: 7200000 } // 2 hours
   );
 
   const { data: userData, error: userError, mutate: mutateUser } = useSWR(
@@ -95,7 +95,7 @@ export function useAvailableExercises() {
       if (error) throw error;
       return data;
     },
-    { dedupingInterval: 60000 } // 1 minute
+    { dedupingInterval: 7200000 } // 2 hours
   );
 
   const exercises: Exercise[] = useMemo(() => {
