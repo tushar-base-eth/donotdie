@@ -42,15 +42,33 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     onExercisesChange?.(exercises);
   }, [exercises, onExercisesChange]);
 
-  const isWorkoutValid =
-    exercises.length > 0 &&
-    exercises.every((exercise) =>
-      exercise.sets.length > 0 &&
-      exercise.sets.every((set) =>
-        (exercise.exercise.uses_reps ? (set.reps ?? 0) > 0 : true) &&
-        (exercise.exercise.uses_weight ? (set.weight_kg ?? 0) > 0 : true)
-      )
-    );
+  const isSetValid = (set: Set, uses_reps: boolean, uses_weight: boolean, uses_duration: boolean, uses_distance: boolean) => {
+    const reps = set.reps ?? 0;
+    const weight_kg = set.weight_kg ?? 0;
+    const duration_seconds = set.duration_seconds ?? 0;
+    const distance_meters = set.distance_meters ?? 0;
+
+    // Count applicable metrics that are non-zero
+    let validMetrics = 0;
+    let requiredMetrics = 0;
+
+    if (uses_reps) { requiredMetrics++; if (reps > 0) validMetrics++; }
+    if (uses_weight) { requiredMetrics++; if (weight_kg > 0) validMetrics++; }
+    if (uses_duration) { requiredMetrics++; if (duration_seconds > 0) validMetrics++; }
+    if (uses_distance) { requiredMetrics++; if (distance_meters > 0) validMetrics++; }
+
+    // If multiple metrics are applicable, all must be non-zero; if single metric, one is enough
+    return requiredMetrics === 0 || (requiredMetrics > 1 ? validMetrics === requiredMetrics : validMetrics > 0);
+  };
+
+  const isWorkoutValid = 
+    exercises
+      .filter(ex => ex.sets.length > 0) // Ignore exercises with no sets
+      .some(ex => 
+        ex.sets.some(set => 
+          isSetValid(set, ex.exercise.uses_reps!, ex.exercise.uses_weight!, ex.exercise.uses_duration!, ex.exercise.uses_distance!)
+        )
+      );
 
   const handleExerciseToggle = (exercise: Exercise) => {
     const selected = selectedExercises.find((se) => se.id === exercise.id);
@@ -119,9 +137,19 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
     startTransition(async () => {
       try {
+        // Filter exercises and sets for saving
+        const filteredExercises = exercises
+          .map(ex => ({
+            ...ex,
+            sets: ex.sets.filter(set => 
+              isSetValid(set, ex.exercise.uses_reps!, ex.exercise.uses_weight!, ex.exercise.uses_duration!, ex.exercise.uses_distance!)
+            )
+          }))
+          .filter(ex => ex.sets.length > 0);
+
         const newWorkout: NewWorkout = {
           user_id: user.id,
-          exercises: exercises.map((ex) => ({
+          exercises: filteredExercises.map((ex) => ({
             exercise_type: "predefined",
             predefined_exercise_id: ex.predefined_exercise_id!,
             order: ex.order,
