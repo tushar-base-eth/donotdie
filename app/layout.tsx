@@ -19,8 +19,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>DoNotDie - Track your workouts and stay alive</title>
-        <meta name="description" content="Track your workouts and stay alive with DoNotDie" />
+        <title>Zero - Simple way to not die</title>
+        <meta name="description" content="Things changes when you start from zero" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={cn("min-h-screen bg-background antialiased vsc-initialized", inter.className)}>

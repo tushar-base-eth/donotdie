@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "DoNotDie",
     short_name: "DoNotDie",
-    description: "Track your workouts and stay alive",
+    description: "Things changes when you start from zero",
     start_url: "/",
     display: "standalone",
     background_color: "#1E1E1E",
