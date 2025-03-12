@@ -40,8 +40,8 @@ export default function LandingPage() {
           transition={{ duration: 0.6 }}
           className="mb-4"
         >
-          <h1 className="text-3xl font-bold">Do Not Die 😺</h1>
-          <p className="text-lg text-muted-foreground">stay alive!</p>
+          <h1 className="text-3xl font-bold">Zero 😺</h1>
+          <p className="text-lg text-muted-foreground">Simple way to not die!</p>
         </motion.div>
       </div>
 
