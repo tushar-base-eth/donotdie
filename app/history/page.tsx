@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
 import { useAuth } from "@/contexts/auth-context";
-import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { useWorkouts, useDeleteWorkout } from "@/lib/hooks/data-hooks";
+import { useDeleteWorkout } from "@/lib/hooks/data-hooks";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { useFilteredWorkouts } from "@/lib/hooks/use-filtered-workouts";
 
 function HistoryPage() {
   const { state, refreshProfile } = useAuth();
@@ -21,20 +21,10 @@ function HistoryPage() {
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
 
-  const { workouts, isLoading, isError: error, mutate } = useWorkouts(user?.id || "");
+  const { displayedWorkouts, isLoading, isError, mutate } = useFilteredWorkouts(user?.id || "", selectedDate, pendingDeletions);
   const { deleteWorkout } = useDeleteWorkout();
 
-  const displayedWorkouts: UIExtendedWorkout[] = useMemo(() => {
-    const filtered = workouts.filter((w: UIExtendedWorkout) => !pendingDeletions.includes(w.id));
-    if (!selectedDate) return filtered;
-    const selectedLocalDate = format(selectedDate, "yyyy-MM-dd");
-    return filtered.filter((w: UIExtendedWorkout) => w.date === selectedLocalDate);
-  }, [selectedDate, workouts, pendingDeletions]);
-
-  const workoutDates: Set<string> = useMemo(
-    () => new Set<string>(workouts.map((w: UIExtendedWorkout) => w.date)),
-    [workouts]
-  );
+  const workoutDates: Set<string> = new Set<string>(displayedWorkouts.map((w: UIExtendedWorkout) => w.date));
 
   const handleDeleteWorkout = async (workoutId: string) => {
     setPendingDeletions((prev) => [...prev, workoutId]);
@@ -53,7 +43,7 @@ function HistoryPage() {
     }
   };
 
-  if (error) {
+  if (isError) {
     return (
       <div className="p-4">
         Failed to load workouts.{" "}
@@ -64,7 +54,7 @@ function HistoryPage() {
     );
   }
 
-  if (isLoading && workouts.length === 0) {
+  if (isLoading && displayedWorkouts.length === 0) {
     return (
       <div className="flex justify-center items-center min-h-screen p-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -75,7 +65,7 @@ function HistoryPage() {
   return (
     <div className="h-full overflow-auto p-4 space-y-6">
       <InfiniteScroll
-        dataLength={workouts.length}
+        dataLength={displayedWorkouts.length}
         next={() => {}} // No pagination implemented
         hasMore={false} // Disable infinite scroll for now
         loader={<p className="text-center">Loading...</p>}

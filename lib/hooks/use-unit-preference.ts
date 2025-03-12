@@ -1,50 +1,47 @@
 import { useAuth } from "@/contexts/auth-context";
-import type { Profile } from "@/types/workouts"; // Import updated Profile type
 
-// Utility hook to handle unit preferences and conversions
 export function useUnitPreference() {
   const { state } = useAuth();
   const { user } = state;
   const isImperial = user?.unit_preference === "imperial";
 
-  // Weight conversion functions
-  const convertWeight = (weight: number, toImperial: boolean) => {
-    return toImperial ? weight * 2.20462 : weight;
+  const convertUnit = (type: "weight" | "height", value: number, toImperial: boolean) => {
+    if (type === "weight") {
+      return toImperial ? value * 2.20462 : value;
+    } else if (type === "height") {
+      return toImperial ? value / 2.54 : value;
+    }
+    return value;
   };
 
   const formatWeight = (weightInKg: number, decimals: number = 1): string => {
-    const converted = isImperial ? convertWeight(weightInKg, true) : weightInKg;
+    const converted = isImperial ? convertUnit("weight", weightInKg, true) : weightInKg;
     const rounded = Math.round(converted * Math.pow(10, decimals)) / Math.pow(10, decimals);
     return `${rounded}${isImperial ? 'lb' : 'kg'}`;
   };
 
   const parseInputToKg = (value: string): number => {
     const numValue = parseFloat(value);
-    return isImperial ? numValue / 2.20462 : numValue;
+    return isImperial ? convertUnit("weight", numValue, false) : numValue;
   };
 
   const convertFromKg = (weightInKg: number): number => {
-    return isImperial ? convertWeight(weightInKg, true) : weightInKg;
-  };
-
-  // Height conversion functions
-  const convertHeight = (height: number, toImperial: boolean) => {
-    return toImperial ? height / 2.54 : height;
+    return isImperial ? convertUnit("weight", weightInKg, true) : weightInKg;
   };
 
   const formatHeight = (heightInCm: number, decimals: number = 1): string => {
-    const converted = isImperial ? convertHeight(heightInCm, true) : heightInCm;
+    const converted = isImperial ? convertUnit("height", heightInCm, true) : heightInCm;
     const rounded = Math.round(converted * Math.pow(10, decimals)) / Math.pow(10, decimals);
     return `${rounded}${isImperial ? 'in' : 'cm'}`;
   };
 
   const parseInputToCm = (value: string): number => {
     const numValue = parseFloat(value);
-    return isImperial ? numValue * 2.54 : numValue;
+    return isImperial ? convertUnit("height", numValue, false) : numValue;
   };
 
   const convertFromCm = (heightInCm: number): number => {
-    return isImperial ? convertHeight(heightInCm, true) : heightInCm;
+    return isImperial ? convertUnit("height", heightInCm, true) : heightInCm;
   };
 
   return {
@@ -57,6 +54,6 @@ export function useUnitPreference() {
     convertFromCm,
     weightUnit: isImperial ? 'lb' : 'kg',
     heightUnit: isImperial ? 'in' : 'cm',
-    unitLabel: isImperial ? 'lb' : 'kg', // Added for convenience in UI components
+    unitLabel: isImperial ? 'lb' : 'kg',
   };
 }

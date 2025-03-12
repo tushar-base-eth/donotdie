@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form"; // Add FormProvider
 import {
   LogOut,
   AlertCircle,
@@ -11,34 +11,9 @@ import {
   Moon,
   User,
   Ruler,
-  Weight,
-  Percent,
-  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "next-themes";
@@ -47,12 +22,9 @@ import { useProfile } from "@/lib/hooks/use-profile";
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 import { toast } from "@/components/ui/use-toast";
-import {
-  convertWeight,
-  convertHeightToInches,
-  convertInchesToCm,
-} from "@/lib/utils";
 import * as z from "zod";
+import { ProfileSettings } from "@/components/settings/ProfileSettings";
+import { MeasurementsSettings } from "@/components/settings/MeasurementsSettings";
 
 const settingsSchema = z.object({
   name: z.string().min(1).max(50),
@@ -205,7 +177,7 @@ export default function Settings() {
           transition={{ duration: 0.3, delay: 0.1 }}
           className="w-full mx-auto"
         >
-          <Form {...form}>
+          <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs
                 defaultValue="profile"
@@ -240,112 +212,7 @@ export default function Settings() {
                       <CardDescription>Update your personal details</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80">Name</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Enter your name"
-                                className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="gender"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground/80">Gender</FormLabel>
-                              <Select
-                                onValueChange={(value) =>
-                                  field.onChange(
-                                    value === "null" ? null : value as "male" | "female" | "other"
-                                  )
-                                }
-                                value={field.value ?? "null"}
-                                key={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5">
-                                    <SelectValue placeholder="Select gender" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="rounded-xl">
-                                  <SelectItem value="male">Male</SelectItem>
-                                  <SelectItem value="female">Female</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                                  <SelectItem value="null">Not specified</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="date_of_birth"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center text-foreground/80">
-                                <Calendar className="h-4 w-4 mr-1 inline" />
-                                Date of Birth
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="date"
-                                  value={
-                                    field.value ? field.value.toISOString().split("T")[0] : ""
-                                  }
-                                  onChange={(e) =>
-                                    field.onChange(e.target.value ? new Date(e.target.value) : null)
-                                  }
-                                  className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="unit_preference"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80">Unit Preference</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              key={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5">
-                                  <SelectValue placeholder="Select unit preference" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="rounded-xl">
-                                <SelectItem value="metric">Metric (kg/cm)</SelectItem>
-                                <SelectItem value="imperial">Imperial (lb/in)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground mt-1.5">
-                              This will affect how your measurements are displayed
-                            </p>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <ProfileSettings />
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -360,114 +227,17 @@ export default function Settings() {
                       <CardDescription>Track your physical measurements</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="weight_kg"
-                          render={({ field }) => {
-                            const unitPreference = form.watch("unit_preference");
-                            const isImperial = unitPreference === "imperial";
-                            const displayValue =
-                              field.value && isImperial ? convertWeight(field.value, true) : field.value;
-                            return (
-                              <FormItem>
-                                <FormLabel className="flex items-center text-foreground/80">
-                                  <Weight className="h-4 w-4 mr-1 inline" />
-                                  Weight ({isImperial ? "lbs" : "kg"})
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    value={displayValue ?? ""}
-                                    onChange={(e) => {
-                                      const inputValue = e.target.value ? Number(e.target.value) : null;
-                                      const valueInKg = inputValue && isImperial ? inputValue / 2.20462 : inputValue;
-                                      field.onChange(valueInKg);
-                                    }}
-                                    placeholder={`Enter weight`}
-                                    className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            );
-                          }}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="height_cm"
-                          render={({ field }) => {
-                            const unitPreference = form.watch("unit_preference");
-                            const isImperial = unitPreference === "imperial";
-                            const displayValue =
-                              field.value && isImperial ? convertHeightToInches(field.value) : field.value;
-                            return (
-                              <FormItem>
-                                <FormLabel className="flex items-center text-foreground/80">
-                                  <Ruler className="h-4 w-4 mr-1 inline" />
-                                  Height ({isImperial ? "in" : "cm"})
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    value={displayValue ?? ""}
-                                    onChange={(e) => {
-                                      const inputValue = e.target.value ? Number(e.target.value) : null;
-                                      const valueInCm = inputValue && isImperial ? convertInchesToCm(inputValue) : inputValue;
-                                      field.onChange(valueInCm);
-                                    }}
-                                    placeholder={`Enter height`}
-                                    className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            );
-                          }}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="body_fat_percentage"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center text-foreground/80">
-                              <Percent className="h-4 w-4 mr-1 inline" />
-                              Body Fat Percentage
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                value={field.value ?? ""}
-                                onChange={(e) =>
-                                  field.onChange(e.target.value ? Number(e.target.value) : null)
-                                }
-                                placeholder="Enter body fat percentage"
-                                className="rounded-xl focus:ring-2 focus:ring-ring focus:border-ring w-full mt-1.5"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <MeasurementsSettings />
                     </CardContent>
                   </Card>
                 </TabsContent>
               </Tabs>
 
-              <div className="sticky bottom-20 pt-4 pb-2 bg-background/80 backdrop-blur-md z-10">
-                <Button
-                  type="submit"
-                  disabled={isSaving || !form.formState.isDirty}
-                  className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors duration-200 shadow-md"
-                >
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
+              <Button type="submit" className="w-full" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Profile"}
+              </Button>
             </form>
-          </Form>
+          </FormProvider>
         </motion.div>
       </div>
     </div>
