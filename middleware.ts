@@ -5,8 +5,8 @@ import { createClient } from './lib/supabase/server';
 const protectedRoutes = ['/home', '/history', '/dashboard', '/settings'];
 
 export async function middleware(request: NextRequest) {
-  // Create Supabase client instance
-  const supabase = createClient();
+  // Create Supabase client instance by awaiting the createClient function
+  const supabase = await createClient();
 
   // Get the user from the session (via cookies)
   const { data: { user }, error } = await supabase.auth.getUser();
