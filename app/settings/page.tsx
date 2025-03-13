@@ -35,7 +35,6 @@ export default function Settings() {
   const { updateProfile } = useProfile(user?.id || "");
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const [isNewProfile, setIsNewProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -54,7 +53,6 @@ export default function Settings() {
 
   useEffect(() => {
     if (user) {
-      setIsNewProfile(user.name === "New User");
       form.reset({
         name: user.name || "",
         gender: user.gender,
@@ -164,22 +162,6 @@ export default function Settings() {
       </header>
 
       <div className="container max-w-4xl mx-auto p-4 space-y-6">
-        {isNewProfile && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Alert variant="default" className="glass shadow-md rounded-2xl border-primary/20">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              <AlertTitle className="font-medium">Profile Setup</AlertTitle>
-              <AlertDescription>
-                Please complete your profile information to get started.
-              </AlertDescription>
-            </Alert>
-          </motion.div>
-        )}
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
