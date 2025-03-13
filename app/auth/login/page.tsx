@@ -23,10 +23,6 @@ function LoginContent() {
   const [toastOpen, setToastOpen] = useState(false);
 
   useEffect(() => {
-    if (state.status === "authenticated") router.replace("/home");
-  }, [state.status, router]);
-
-  useEffect(() => {
     const error = searchParams.get("error");
     if (error) {
       setMessage({ text: decodeURIComponent(error), isError: true });
