@@ -8,14 +8,14 @@ interface UserProfile extends Profile {
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error || !session) {
+  if (error || !user) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  const userId = session.user.id;
-  const email = session.user.email ?? "";
+  const userId = user.id;
+  const email = user.email ?? "";
 
   let { data: profile, error: profileError } = await supabase
     .from("profiles")

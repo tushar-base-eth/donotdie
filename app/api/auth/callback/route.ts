@@ -6,9 +6,6 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/home";
 
-  console.log(request.url)
-  console.log(searchParams)
-
   if (!code) {
     return NextResponse.redirect(
       new URL(`/auth/login?error=${encodeURIComponent("No authorization code provided")}`, request.url)

@@ -4,13 +4,13 @@ import type { Profile, UpdateProfile } from "@/types/workouts";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error || !session) {
+  if (error || !user) {
     return NextResponse.json({ profile: null }, { status: 401 });
   }
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -27,13 +27,13 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   const supabase = await createClient();
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (sessionError || !session) {
+  if (userError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = session.user.id;
+  const userId = user.id;
   const updates: Partial<UpdateProfile> = await request.json();
 
   const { error } = await supabase

@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
+  const { data: { user }, error: getUserError } = await supabase.auth.getUser();
 
-  if (getSessionError || !session) {
+  if (getUserError || !user) {
     return NextResponse.json({ error: "No active session" }, { status: 401 });
   }
 
