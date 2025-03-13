@@ -33,12 +33,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const [selectedExercise, setSelectedExercise] = useState<UIWorkoutExercise | null>(null);
 
   useEffect(() => {
-    if (!user && !isLoading) {
-      router.push("/auth/login");
-    }
-  }, [user, isLoading, router]);
-
-  useEffect(() => {
     onExercisesChange?.(exercises);
   }, [exercises, onExercisesChange]);
 
