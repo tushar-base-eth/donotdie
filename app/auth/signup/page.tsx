@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/profile-context";
 import { Suspense } from "react";
 
 const signupSchema = z
@@ -31,7 +31,7 @@ const signupSchema = z
 type SignupSchema = z.infer<typeof signupSchema>;
 
 function SignupContent() {
-  const { state } = useAuth();
+  const { state } = useUserProfile();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationState, setConfirmationState] = useState<"none" | "sent">("none");

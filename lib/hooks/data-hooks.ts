@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase/browser";
 import type { Database } from "@/types/database";
 import type { DailyVolume, Exercise, UIExtendedWorkout, UIDailyVolume, NewWorkout, NewSet, Equipment, ExerciseEquipment, UserExerciseEquipment } from "@/types/workouts";
 import { fetchAllWorkouts } from "@/lib/workoutUtils";
-import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/profile-context";
 
 type TableName = keyof Database["public"]["Tables"];
 type FetcherKey = TableName | [TableName, any];
@@ -70,7 +70,7 @@ export function useDeleteWorkout() {
 }
 
 export function useAvailableExercises() {
-  const { state: { user } } = useAuth();
+  const { state: { user } } = useUserProfile();
 
   const { data: predefinedData, error: preError } = useSWR(
     "predefined-exercises",

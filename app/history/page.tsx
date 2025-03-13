@@ -5,7 +5,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
 import { WorkoutDetails } from "@/components/history/workout-details";
-import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/profile-context";
 import { motion } from "framer-motion";
 import { useDeleteWorkout } from "@/lib/hooks/data-hooks";
 import type { UIExtendedWorkout } from "@/types/workouts";
@@ -15,7 +15,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useFilteredWorkouts } from "@/lib/hooks/use-filtered-workouts";
 
 function HistoryPage() {
-  const { state: { user } } = useAuth();
+  const { state: { user } } = useUserProfile();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);

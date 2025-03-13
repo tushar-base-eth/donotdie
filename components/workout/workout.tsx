@@ -8,7 +8,7 @@ import { WorkoutExercises } from "@/components/workout/workout-exercises";
 import { ExerciseSelector } from "@/components/workout/exercise-selector";
 import { ExerciseEditor } from "@/components/workout/exercise-editor";
 import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
-import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/profile-context";
 import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout, NewWorkout, UIWorkoutExercise, Set } from "@/types/workouts";
 import { useRouter } from "next/navigation";
@@ -20,7 +20,7 @@ interface WorkoutProps {
 }
 
 function WorkoutPage({ onExercisesChange }: WorkoutProps) {
-  const { state: authState } = useAuth();
+  const { state: authState } = useUserProfile();
   const { user } = authState;
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [isPending, startTransition] = useTransition();

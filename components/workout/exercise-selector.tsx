@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import { useAvailableExercises } from "@/lib/hooks/data-hooks";
 import type { Exercise, Filter } from "@/types/workouts";
-import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/profile-context";
 import { CategoryList } from "./category-list";
 import { ExerciseList } from "./exercise-list";
 import { MuscleGroupList } from "./muscle-group-list";
@@ -31,7 +31,7 @@ export function ExerciseSelector({
   onExerciseToggle,
   onAddExercises,
 }: ExerciseSelectorProps) {
-  const { state: authState } = useAuth();
+  const { state: authState } = useUserProfile();
   const { user } = authState;
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);

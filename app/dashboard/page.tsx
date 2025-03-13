@@ -4,14 +4,14 @@ import { useDashboardData } from "@/lib/hooks/use-dashboard-data";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
-import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/profile-context";
 import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-  const { state: { user } } = useAuth();
+  const { state: { user } } = useUserProfile();
   const { formatWeight } = useUnitPreference();
   const { volumeData, timeRange, setTimeRange, isLoading, error, mutate } = useDashboardData(user?.id || "");
 

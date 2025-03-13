@@ -1,7 +1,7 @@
-import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/profile-context";
 
 export function useUnitPreference() {
-  const { state } = useAuth();
+  const { state } = useUserProfile();
   const { user } = state;
   const isImperial = user?.unit_preference === "imperial";
 

@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "next-themes";
-import { useAuth } from "@/contexts/auth-context";
-import { useProfile } from "@/lib/hooks/use-profile";
+import { useUserProfile } from "@/contexts/profile-context"; // Updated import
 import { motion } from "framer-motion";
 import { ProfileSkeleton } from "@/components/loading/profile-skeleton";
 import { toast } from "@/components/ui/use-toast";
@@ -30,23 +29,21 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const { state: { user }, updateUser } = useAuth();
+  const { state: { profile }, updateProfile } = useUserProfile(); // Updated to useUserProfile
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
-  const [profile, setProfile] = useState<Profile | null>(null);
-
-  const { updateProfile } = useProfile(user?.id || "");
+  const [profileState, setProfileState] = useState<Profile | null>(null); // Renamed to avoid shadowing
 
   useEffect(() => {
-    if (user) {
-      setProfile(user);
-      setTheme(user.theme_preference);
+    if (profile) {
+      setProfileState(profile);
+      setTheme(profile.theme_preference);
     } else {
-      setProfile(null); // Middleware handles redirect
+      setProfileState(null); // Middleware handles redirect
     }
-  }, [user, setTheme]);
+  }, [profile, setTheme]);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -62,21 +59,21 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    if (profile) {
+    if (profileState) {
       form.reset({
-        name: profile.name || "",
-        gender: profile.gender,
-        date_of_birth: profile.date_of_birth ? new Date(profile.date_of_birth) : null,
-        unit_preference: profile.unit_preference || "metric",
-        weight_kg: profile.weight_kg,
-        height_cm: profile.height_cm,
-        body_fat_percentage: profile.body_fat_percentage,
+        name: profileState.name || "",
+        gender: profileState.gender,
+        date_of_birth: profileState.date_of_birth ? new Date(profileState.date_of_birth) : null,
+        unit_preference: profileState.unit_preference || "metric",
+        weight_kg: profileState.weight_kg,
+        height_cm: profileState.height_cm,
+        body_fat_percentage: profileState.body_fat_percentage,
       });
     }
-  }, [profile, form]);
+  }, [profileState, form]);
 
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
-    if (!user) return;
+    if (!profile) return;
 
     setIsSaving(true);
     try {
@@ -91,10 +88,8 @@ export default function Settings() {
         height_cm: data.height_cm,
         body_fat_percentage: data.body_fat_percentage,
       };
-      await updateProfile(updates);
-      const updatedProfile = { ...profile!, ...updates };
-      setProfile(updatedProfile);
-      updateUser(updates);
+      await updateProfile(updates); // Now uses context's updateProfile
+      setProfileState((prev) => ({ ...prev!, ...updates }));
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -135,7 +130,7 @@ export default function Settings() {
     }
   };
 
-  if (!user) {
+  if (!profile) {
     return null; // Middleware redirects
   }
 
@@ -151,10 +146,8 @@ export default function Settings() {
               const newTheme: "light" | "dark" = theme === "dark" ? "light" : "dark";
               setTheme(newTheme);
               try {
-                await updateProfile({ theme_preference: newTheme });
-                const updatedProfile = { ...profile!, theme_preference: newTheme };
-                setProfile(updatedProfile);
-                updateUser({ theme_preference: newTheme });
+                await updateProfile({ theme_preference: newTheme }); // Now uses context's updateProfile
+                setProfileState((prev) => ({ ...prev!, theme_preference: newTheme }));
               } catch (error) {
                 console.error("Error updating theme:", error);
                 toast({ title: "Error", description: "Failed to update theme." });
