@@ -29,7 +29,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const { saveWorkout } = useSaveWorkout();
 
   const [exercises, setExercises] = useState<UIWorkoutExercise[]>([]);
-  const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]); // Persisted state
+  const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<UIWorkoutExercise | null>(null);
 
   useEffect(() => {
@@ -42,7 +42,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     const duration_seconds = set.duration_seconds ?? 0;
     const distance_meters = set.distance_meters ?? 0;
 
-    // Count applicable metrics that are non-zero
     let validMetrics = 0;
     let requiredMetrics = 0;
 
@@ -51,13 +50,12 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     if (uses_duration) { requiredMetrics++; if (duration_seconds > 0) validMetrics++; }
     if (uses_distance) { requiredMetrics++; if (distance_meters > 0) validMetrics++; }
 
-    // If multiple metrics are applicable, all must be non-zero; if single metric, one is enough
     return requiredMetrics === 0 || (requiredMetrics > 1 ? validMetrics === requiredMetrics : validMetrics > 0);
   };
 
   const isWorkoutValid = 
     exercises
-      .filter(ex => ex.sets.length > 0) // Ignore exercises with no sets
+      .filter(ex => ex.sets.length > 0)
       .some(ex => 
         ex.sets.some(set => 
           isSetValid(set, ex.exercise.uses_reps!, ex.exercise.uses_weight!, ex.exercise.uses_duration!, ex.exercise.uses_distance!)
@@ -101,7 +99,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
         };
       });
       setExercises([...exercises, ...newExercises]);
-      setSelectedExercises([]); // Clear only on add
+      setSelectedExercises([]);
       setShowExerciseModal(false);
     });
   };
@@ -122,8 +120,8 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const handleRemoveExercise = (index: number) => {
     startTransition(() => {
       const newExercises = exercises
-      .filter((_, i) => i !== index)
-      .map((ex, i) => ({ ...ex, order: i + 1 }));
+        .filter((_, i) => i !== index)
+        .map((ex, i) => ({ ...ex, order: i + 1 }));
       setExercises(newExercises);
     });
   };
@@ -133,7 +131,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
 
     startTransition(async () => {
       try {
-        // Filter exercises and sets for saving
         const filteredExercises = exercises
           .map(ex => ({
             ...ex,
@@ -150,13 +147,19 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             predefined_exercise_id: ex.predefined_exercise_id!,
             order: ex.order,
             effort_level: ex.effort_level,
-            sets: ex.sets.map((set) => ({
-              set_number: set.set_number,
-              reps: set.reps,
-              weight_kg: set.weight_kg,
-              duration_seconds: set.duration_seconds,
-              distance_meters: set.distance_meters,
-            })),
+            sets: ex.sets.map((set) => {
+              let weight_kg = set.weight_kg;
+              if (user?.unit_preference === "imperial" && weight_kg !== null) {
+                weight_kg = weight_kg / 2.20462; // Convert lb to kg
+              }
+              return {
+                set_number: set.set_number,
+                reps: set.reps,
+                weight_kg,
+                duration_seconds: set.duration_seconds,
+                distance_meters: set.distance_meters,
+              };
+            }),
           })),
         };
         await saveWorkout(newWorkout);

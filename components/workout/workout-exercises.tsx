@@ -17,7 +17,7 @@ export function WorkoutExercises({
   onExerciseSelect,
   onExerciseRemove,
 }: WorkoutExercisesProps) {
-  const { formatWeight } = useUnitPreference();
+  const { isImperial, unitLabel } = useUnitPreference(); // Only need unit info, no conversion
 
   return (
     <ScrollArea className="h-[calc(100vh-13rem)] px-4">
@@ -30,7 +30,7 @@ export function WorkoutExercises({
           const summary = [];
           if (exercise.exercise.uses_weight && exercise.sets.some((s) => s.weight_kg)) {
             const totalVolume = exercise.sets.reduce((acc, set) => acc + ((set.reps || 0) * (set.weight_kg || 0)), 0);
-            summary.push(formatWeight(totalVolume));
+            summary.push(`${totalVolume} ${unitLabel}`); // Display raw value with unit label
           }
           if (exercise.exercise.uses_duration && exercise.sets.some((s) => s.duration_seconds)) {
             const totalDuration = exercise.sets.reduce((acc, set) => acc + (set.duration_seconds || 0), 0);

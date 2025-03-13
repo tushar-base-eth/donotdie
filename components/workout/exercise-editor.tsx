@@ -23,7 +23,7 @@ export function ExerciseEditor({
   onUpdateSets,
   exerciseIndex,
 }: ExerciseEditorProps) {
-  const { parseInputToKg, convertFromKg, unitLabel } = useUnitPreference();
+  const { isImperial, unitLabel } = useUnitPreference(); // Only need unit info, no conversion
   const repsInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [exercise, setExercise] = useState(initialExercise);
 
@@ -52,10 +52,9 @@ export function ExerciseEditor({
   };
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
-    const weight = handleInput(e.target.value);
-    const weightInKg = parseInputToKg(weight.toString());
+    const weight = handleInput(e.target.value); // Take input as-is
     const newSets = [...exercise.sets];
-    newSets[setIndex] = { ...newSets[setIndex], weight_kg: weightInKg };
+    newSets[setIndex] = { ...newSets[setIndex], weight_kg: weight }; // Store as user input (kg or lb)
     setExercise({ ...exercise, sets: newSets });
     onUpdateSets(exerciseIndex, newSets);
   };
@@ -70,9 +69,8 @@ export function ExerciseEditor({
 
   const handleDistanceChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
     const distance = handleInput(e.target.value);
-    const distance_meters = distance;
     const newSets = [...exercise.sets];
-    newSets[setIndex] = { ...newSets[setIndex], distance_meters };
+    newSets[setIndex] = { ...newSets[setIndex], distance_meters: distance };
     setExercise({ ...exercise, sets: newSets });
     onUpdateSets(exerciseIndex, newSets);
   };
@@ -172,7 +170,7 @@ export function ExerciseEditor({
                                     id={`weight-${setIndex}`}
                                     type="text"
                                     inputMode="decimal"
-                                    value={convertFromKg(set.weight_kg || 0) || ""}
+                                    value={set.weight_kg || ""} // Display as-is (kg or lb depending on user input)
                                     onChange={(e) => handleWeightChange(e, setIndex)}
                                     className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
                                     aria-label={`Weight for set ${setIndex + 1}`}
