@@ -72,19 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchSession();
   };
 
-  useEffect(() => {
-    const handleAuthCheck = async () => {
-      if (state.status === "authenticated") {
-        const res = await fetch("/api/auth/session");
-        if (!res.ok) {
-          await refreshSession();
-        }
-      }
-    };
-    const interval = setInterval(handleAuthCheck, 15 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [state.status]);
-
   return (
     <AuthContext.Provider value={{ state, refreshProfile, updateUser }}>
       {children}
