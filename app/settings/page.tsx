@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider } from "react-hook-form";
-import { LogOut, AlertCircle, Sun, Moon, User, Ruler } from "lucide-react";
+import { LogOut, Sun, Moon, User, Ruler } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
@@ -18,6 +17,7 @@ import { toast } from "@/components/ui/use-toast";
 import * as z from "zod";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { MeasurementsSettings } from "@/components/settings/MeasurementsSettings";
+import type { Profile } from "@/types/workouts";
 
 const settingsSchema = z.object({
   name: z.string().min(1).max(50),
@@ -30,13 +30,39 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const { state } = useAuth(); // Removed logout from destructuring
-  const { user } = state;
-  const { updateProfile } = useProfile(user?.id || "");
+  const { state } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+
+  const { updateProfile } = useProfile(state.user?.id || "");
+
+  // Fetch profile data directly via API
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/profile");
+        if (res.ok) {
+          const { profile: fetchedProfile } = await res.json();
+          setProfile(fetchedProfile);
+          setTheme(fetchedProfile.theme_preference);
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setProfile(null);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+    if (state.status === "authenticated") {
+      fetchProfile();
+    }
+  }, [state.status, setTheme]);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -52,22 +78,21 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (profile) {
       form.reset({
-        name: user.name || "",
-        gender: user.gender,
-        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null,
-        unit_preference: user.unit_preference || "metric",
-        weight_kg: user.weight_kg,
-        height_cm: user.height_cm,
-        body_fat_percentage: user.body_fat_percentage,
+        name: profile.name || "",
+        gender: profile.gender,
+        date_of_birth: profile.date_of_birth ? new Date(profile.date_of_birth) : null,
+        unit_preference: profile.unit_preference || "metric",
+        weight_kg: profile.weight_kg,
+        height_cm: profile.height_cm,
+        body_fat_percentage: profile.body_fat_percentage,
       });
-      setTheme(user.theme_preference);
     }
-  }, [user, form, setTheme]);
+  }, [profile, form]);
 
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
-    if (!user) return;
+    if (!state.user) return;
 
     setIsSaving(true);
     try {
@@ -83,6 +108,12 @@ export default function Settings() {
         body_fat_percentage: data.body_fat_percentage,
       };
       await updateProfile(updates);
+      // Refresh profile data after update
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const { profile: updatedProfile } = await res.json();
+        setProfile(updatedProfile);
+      }
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -123,12 +154,17 @@ export default function Settings() {
     }
   };
 
-  if (state.status === "loading" || !user) {
+  if (state.status === "loading" || isProfileLoading) {
     return (
       <div className="min-h-screen bg-background pb-16">
         <ProfileSkeleton />
       </div>
     );
+  }
+
+  if (state.status === "unauthenticated" || !profile) {
+    router.push("/auth/login");
+    return null;
   }
 
   return (
@@ -139,10 +175,20 @@ export default function Settings() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
+            onClick={async () => {
               const newTheme = theme === "dark" ? "light" : "dark";
               setTheme(newTheme);
-              updateProfile({ theme_preference: newTheme });
+              try {
+                await updateProfile({ theme_preference: newTheme });
+                const res = await fetch("/api/profile");
+                if (res.ok) {
+                  const { profile: updatedProfile } = await res.json();
+                  setProfile(updatedProfile);
+                }
+              } catch (error) {
+                console.error("Error updating theme:", error);
+                toast({ title: "Error", description: "Failed to update theme." });
+              }
             }}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             className="rounded-full hover:bg-secondary"

@@ -13,7 +13,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 function LoginContent() {
-  const { state } = useAuth();
+  const { state, refreshProfile } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +29,10 @@ function LoginContent() {
       setToastOpen(true);
       router.replace("/auth/login");
     }
-  }, [searchParams, router]);
+    if (state.status === "authenticated") {
+      router.replace("/home");
+    }
+  }, [state.status, searchParams, router]);
 
   const onSubmit = async (data: { email: string; password: string }) => {
     setIsLoading(true);
@@ -44,6 +47,7 @@ function LoginContent() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Login failed');
       }
+      await refreshProfile(); // Refresh session after login
       router.replace('/home');
     } catch (error: any) {
       if (error.message.includes("Email not confirmed")) {
@@ -160,7 +164,6 @@ function LoginContent() {
           onClick={() => {
             setIsLoading(true);
             setMessage(null);
-            // Directly navigate to the API route, letting the server handle the redirect
             window.location.href = '/api/auth/google';
           }}
           isLoading={isLoading}
