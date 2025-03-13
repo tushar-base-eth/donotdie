@@ -11,8 +11,15 @@ export async function middleware(request: NextRequest) {
   // Get the user from the session (via cookies)
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  // Check if the requested path matches a protected route
+  // Get the current pathname
   const pathname = request.nextUrl.pathname;
+
+  // Check if user is authenticated and trying to access root path
+  if (pathname === '/' && user && !error) {
+    return NextResponse.redirect(new URL('/home', request.url));
+  }
+
+  // Check if the requested path matches a protected route
   const isProtectedRoute = protectedRoutes.some(route => 
     pathname === route || pathname.startsWith(`${route}/`)
   );
@@ -26,7 +33,7 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Configure the matcher to apply middleware to specific routes
+// Configure the matcher to apply middleware to specific routes including root
 export const config = {
-  matcher: ['/home/:path*', '/history/:path*', '/dashboard/:path*', '/settings/:path*'],
+  matcher: ['/', '/home/:path*', '/history/:path*', '/dashboard/:path*', '/settings/:path*'],
 };

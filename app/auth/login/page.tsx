@@ -13,7 +13,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 function LoginContent() {
-  const { state, refreshProfile } = useAuth();
+  const { state } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,10 +29,7 @@ function LoginContent() {
       setToastOpen(true);
       router.replace("/auth/login");
     }
-    if (state.status === "authenticated") {
-      router.replace("/home");
-    }
-  }, [state.status, searchParams, router]);
+  }, [searchParams, router]);
 
   const onSubmit = async (data: { email: string; password: string }) => {
     setIsLoading(true);
@@ -47,8 +44,7 @@ function LoginContent() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Login failed');
       }
-      await refreshProfile(); // Refresh session after login
-      router.replace('/home');
+      window.location.href = '/home'; // Force reload to trigger middleware
     } catch (error: any) {
       if (error.message.includes("Email not confirmed")) {
         setConfirmationState("resend");
@@ -84,14 +80,6 @@ function LoginContent() {
       setIsLoading(false);
     }
   };
-
-  if (state.status === "loading") {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
 
   if (confirmationState === "resend") {
     return (

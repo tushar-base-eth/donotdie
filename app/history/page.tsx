@@ -15,8 +15,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useFilteredWorkouts } from "@/lib/hooks/use-filtered-workouts";
 
 function HistoryPage() {
-  const { state, refreshProfile } = useAuth();
-  const { user } = state;
+  const { state: { user } } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
@@ -30,7 +29,6 @@ function HistoryPage() {
     setPendingDeletions((prev) => [...prev, workoutId]);
     try {
       await deleteWorkout(workoutId);
-      await refreshProfile();
       setPendingDeletions((prev) => prev.filter((id) => id !== workoutId));
     } catch (err) {
       toast({

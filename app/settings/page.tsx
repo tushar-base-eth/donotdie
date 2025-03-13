@@ -30,23 +30,23 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const { state, updateUser } = useAuth();
+  const { state: { user }, updateUser } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const { updateProfile } = useProfile(state.user?.id || "");
+  const { updateProfile } = useProfile(user?.id || "");
 
   useEffect(() => {
-    if (state.status === "authenticated" && state.user) {
-      setProfile(state.user);
-      setTheme(state.user.theme_preference);
+    if (user) {
+      setProfile(user);
+      setTheme(user.theme_preference);
     } else {
-      setProfile(null); // No need for router.push; middleware handles it
+      setProfile(null); // Middleware handles redirect
     }
-  }, [state.status, state.user, setTheme]);
+  }, [user, setTheme]);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -76,7 +76,7 @@ export default function Settings() {
   }, [profile, form]);
 
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
-    if (!state.user) return;
+    if (!user) return;
 
     setIsSaving(true);
     try {
@@ -135,12 +135,8 @@ export default function Settings() {
     }
   };
 
-  if (state.status === "loading") {
-    return (
-      <div className="min-h-screen bg-background pb-16">
-        <ProfileSkeleton />
-      </div>
-    );
+  if (!user) {
+    return null; // Middleware redirects
   }
 
   return (

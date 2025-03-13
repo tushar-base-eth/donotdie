@@ -8,52 +8,37 @@ interface UserProfile extends Profile {
 }
 
 interface AuthState {
-  status: "loading" | "authenticated" | "unauthenticated";
   user: UserProfile | null;
 }
 
 interface AuthContextType {
   state: AuthState;
-  refreshProfile: () => Promise<void>;
-  updateUser: (updates: Partial<UserProfile>) => void; // New method to update user state
+  updateUser: (updates: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ status: "loading", user: null });
+  const [state, setState] = useState<AuthState>({ user: null });
 
   const fetchSession = async () => {
     try {
       const res = await fetch("/api/auth/session");
       if (res.ok) {
         const { user } = await res.json();
-        setState({ status: "authenticated", user });
+        setState({ user });
       } else {
-        setState({ status: "unauthenticated", user: null });
+        setState({ user: null });
       }
     } catch (error) {
       console.error("Error fetching session:", error);
-      setState({ status: "unauthenticated", user: null });
+      setState({ user: null });
     }
   };
 
-  const refreshSession = async () => {
-    try {
-      const res = await fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (res.ok) {
-        await fetchSession();
-      } else {
-        setState({ status: "unauthenticated", user: null });
-      }
-    } catch (error) {
-      console.error("Error refreshing session:", error);
-      setState({ status: "unauthenticated", user: null });
-    }
-  };
+  useEffect(() => {
+    fetchSession();
+  }, []);
 
   const updateUser = (updates: Partial<UserProfile>) => {
     if (state.user) {
@@ -64,16 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    fetchSession();
-  }, []);
-
-  const refreshProfile = async () => {
-    await fetchSession();
-  };
-
   return (
-    <AuthContext.Provider value={{ state, refreshProfile, updateUser }}>
+    <AuthContext.Provider value={{ state, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

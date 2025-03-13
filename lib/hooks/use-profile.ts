@@ -1,17 +1,10 @@
 "use client";
 
-import useSWR from "swr";
+import { useAuth } from "@/contexts/auth-context";
 import type { UpdateProfile } from "@/types/workouts";
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch profile");
-  const { profile } = await res.json();
-  return profile;
-};
-
 export function useProfile(userId: string) {
-  const { data, error, mutate } = useSWR(userId ? "/api/profile" : null, fetcher);
+  const { state: { user }, updateUser } = useAuth();
 
   const updateProfile = async (updates: Partial<UpdateProfile>) => {
     if (!userId) throw new Error("No user ID provided");
@@ -27,15 +20,15 @@ export function useProfile(userId: string) {
       throw new Error(errorData.error || "Failed to update profile");
     }
 
-    // Optimistically update the SWR cache without refetching
-    mutate({ ...data, ...updates }, false);
+    // Update the context with the new profile data
+    updateUser(updates);
   };
 
   return {
-    profile: data,
-    isLoading: !error && !data,
-    error,
+    profile: user,
+    isLoading: false, // No fetching, so always false
+    error: null, // No fetching, so no error
     updateProfile,
-    mutate,
+    mutate: () => {}, // No-op since no SWR
   };
 }

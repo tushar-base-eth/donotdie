@@ -15,20 +15,7 @@ const features = [
 ];
 
 export default function LandingPage() {
-  const { state } = useAuth();
   const router = useRouter();
-
-  // Redirect authenticated users to the home page
-  useEffect(() => {
-    if (state.status === "authenticated") {
-      router.replace("/home");
-    }
-  }, [state.status, router]);
-
-  // Prevent rendering during loading or for authenticated users
-  if (state.status === "authenticated" || state.status === "loading") {
-    return null;
-  }
 
   return (
     <main className="flex flex-col items-center min-h-screen bg-background space-y-4 p-8">

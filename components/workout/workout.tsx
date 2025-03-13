@@ -22,8 +22,6 @@ interface WorkoutProps {
 function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   const { state: authState } = useAuth();
   const { user } = authState;
-  const isLoading = authState.status === "loading";
-  const router = useRouter();
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { saveWorkout } = useSaveWorkout();
@@ -127,7 +125,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   const handleSaveWorkout = async () => {
-    if (!isWorkoutValid || !user || isLoading) return;
+    if (!isWorkoutValid || !user ) return;
 
     startTransition(async () => {
       try {
@@ -183,14 +181,6 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
       }
     });
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-4">
-        <ExerciseSkeleton />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pb-20">

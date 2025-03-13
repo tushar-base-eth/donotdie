@@ -1,6 +1,7 @@
 "use client";
 
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data";
+import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { useAuth } from "@/contexts/auth-context";
@@ -10,9 +11,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-  const { state } = useAuth();
-  const { user } = state;
-  const { profile, volumeData, timeRange, setTimeRange, isLoading, error, mutate, formatWeight } = useDashboardData(user?.id || "");
+  const { state: { user } } = useAuth();
+  const { formatWeight } = useUnitPreference();
+  const { volumeData, timeRange, setTimeRange, isLoading, error, mutate } = useDashboardData(user?.id || "");
 
   if (error) {
     return (
@@ -20,11 +21,7 @@ export default function DashboardPage() {
         <Card className="border glass shadow-md rounded-2xl">
           <CardContent className="p-6">
             Failed to load data.{" "}
-            <Button
-              variant="ghost"
-              onClick={mutate}
-              className="text-blue-500"
-            >
+            <Button variant="ghost" onClick={() => mutate()} className="text-blue-500">
               Retry
             </Button>
           </CardContent>
@@ -43,16 +40,8 @@ export default function DashboardPage() {
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="p-4 container max-w-5xl mx-auto">
-        <Card className="border glass shadow-md rounded-2xl">
-          <CardContent className="p-6">
-            <p className="text-center text-muted-foreground">No profile data available.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!user) {
+    return null; // Middleware redirects
   }
 
   return (
@@ -66,8 +55,8 @@ export default function DashboardPage() {
           <Card className="border glass shadow-md rounded-2xl overflow-hidden">
             <CardContent className="p-6">
               <MetricsCards
-                totalWorkouts={profile.total_workouts ?? 0}
-                totalVolume={profile.total_volume ?? 0}
+                totalWorkouts={user.total_workouts ?? 0}
+                totalVolume={user.total_volume ?? 0}
                 formatWeight={formatWeight}
               />
             </CardContent>
