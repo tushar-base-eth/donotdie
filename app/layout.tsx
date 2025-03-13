@@ -1,7 +1,7 @@
 import type React from "react";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/contexts/profile-context";
+import { ProfileProvider } from "@/contexts/profile-context";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/navigation/bottom-nav";
@@ -30,14 +30,14 @@ export default function RootLayout({
           enableSystem={true}
           disableTransitionOnChange
         >
-          <AuthProvider>
+          <ProfileProvider>
               <ErrorBoundary>
                 <div className="h-[calc(100vh-64px)] overflow-auto">{children}</div>
                 <BottomNav />
               </ErrorBoundary>
               <Toaster />
               <Analytics />
-          </AuthProvider>
+          </ProfileProvider>
         </ThemeProvider>
       </body>
     </html>

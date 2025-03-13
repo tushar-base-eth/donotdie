@@ -11,9 +11,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-  const { state: { user } } = useUserProfile();
+  const { state: { profile } } = useUserProfile();
   const { formatWeight } = useUnitPreference();
-  const { volumeData, timeRange, setTimeRange, isLoading, error, mutate } = useDashboardData(user?.id || "");
+  const { volumeData, timeRange, setTimeRange, isLoading, error, mutate } = useDashboardData(profile?.id || "");
 
   if (error) {
     return (
@@ -40,7 +40,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user) {
+  if (!profile) {
     return null; // Middleware redirects
   }
 
@@ -55,8 +55,8 @@ export default function DashboardPage() {
           <Card className="border glass shadow-md rounded-2xl overflow-hidden">
             <CardContent className="p-6">
               <MetricsCards
-                totalWorkouts={user.total_workouts ?? 0}
-                totalVolume={user.total_volume ?? 0}
+                totalWorkouts={profile.total_workouts ?? 0}
+                totalVolume={profile.total_volume ?? 0}
                 formatWeight={formatWeight}
               />
             </CardContent>

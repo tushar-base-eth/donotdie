@@ -70,7 +70,7 @@ export function useDeleteWorkout() {
 }
 
 export function useAvailableExercises() {
-  const { state: { user } } = useUserProfile();
+  const { state: { profile } } = useUserProfile();
 
   const { data: predefinedData, error: preError } = useSWR(
     "predefined-exercises",
@@ -86,12 +86,12 @@ export function useAvailableExercises() {
   );
 
   const { data: userData, error: userError, mutate: mutateUser } = useSWR(
-    user ? `user-exercises-${user.id}` : null,
+    profile ? `user-exercises-${profile.id}` : null,
     async () => {
       const { data, error } = await supabase
         .from("user_exercises")
         .select("id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance")
-        .eq("user_id", user!.id);
+        .eq("user_id", profile!.id);
       if (error) throw error;
       return data;
     },
@@ -119,7 +119,7 @@ export function useAvailableExercises() {
   );
 
   const { data: userExerciseEquipmentData, error: ueeError } = useSWR(
-    user ? `user_exercise_equipment-${user.id}` : null,
+    profile ? `user_exercise_equipment-${profile.id}` : null,
     async () => {
       const { data, error } = await supabase.from("user_exercise_equipment").select("*");
       if (error) throw error;
@@ -164,7 +164,7 @@ export function useAvailableExercises() {
   const exerciseEquipment: ExerciseEquipment[] = exerciseEquipmentData || [];
   const userExerciseEquipment: UserExerciseEquipment[] = userExerciseEquipmentData || [];
 
-  const isLoading = !predefinedData || !equipmentData || !exerciseEquipmentData || (user && (!userData || !userExerciseEquipmentData));
+  const isLoading = !predefinedData || !equipmentData || !exerciseEquipmentData || (profile && (!userData || !userExerciseEquipmentData));
   const isError = preError || userError || equipError || eeError || ueeError;
 
   return {

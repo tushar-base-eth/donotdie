@@ -31,8 +31,6 @@ export function ExerciseSelector({
   onExerciseToggle,
   onAddExercises,
 }: ExerciseSelectorProps) {
-  const { state: authState } = useUserProfile();
-  const { user } = authState;
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedTab, setSelectedTab] = useState<"all" | "categories">("all");

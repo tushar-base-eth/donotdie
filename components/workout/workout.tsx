@@ -11,7 +11,6 @@ import { ExerciseSkeleton } from "@/components/loading/exercise-skeleton";
 import { useUserProfile } from "@/contexts/profile-context";
 import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout, NewWorkout, UIWorkoutExercise, Set } from "@/types/workouts";
-import { useRouter } from "next/navigation";
 import { useSaveWorkout } from "@/lib/hooks/data-hooks";
 import { toast } from "@/components/ui/use-toast";
 
@@ -20,8 +19,7 @@ interface WorkoutProps {
 }
 
 function WorkoutPage({ onExercisesChange }: WorkoutProps) {
-  const { state: authState } = useUserProfile();
-  const { user } = authState;
+  const { state: { profile } } = useUserProfile();
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { saveWorkout } = useSaveWorkout();
@@ -125,7 +123,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   const handleSaveWorkout = async () => {
-    if (!isWorkoutValid || !user ) return;
+    if (!isWorkoutValid || !profile ) return;
 
     startTransition(async () => {
       try {
@@ -139,7 +137,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
           .filter(ex => ex.sets.length > 0);
 
         const newWorkout: NewWorkout = {
-          user_id: user.id,
+          user_id: profile.id,
           exercises: filteredExercises.map((ex) => ({
             exercise_type: "predefined",
             predefined_exercise_id: ex.predefined_exercise_id!,
@@ -147,7 +145,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             effort_level: ex.effort_level,
             sets: ex.sets.map((set) => {
               let weight_kg = set.weight_kg;
-              if (user?.unit_preference === "imperial" && weight_kg !== null) {
+              if (profile?.unit_preference === "imperial" && weight_kg !== null) {
                 weight_kg = weight_kg / 2.20462; // Convert lb to kg
               }
               return {

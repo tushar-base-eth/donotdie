@@ -1,9 +1,8 @@
 import { useUserProfile } from "@/contexts/profile-context";
 
 export function useUnitPreference() {
-  const { state } = useUserProfile();
-  const { user } = state;
-  const isImperial = user?.unit_preference === "imperial";
+  const { state: { profile } } = useUserProfile();
+  const isImperial = profile?.unit_preference === "imperial";
 
   const convertUnit = (type: "weight" | "height", value: number, toImperial: boolean) => {
     if (type === "weight") {

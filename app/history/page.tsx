@@ -15,12 +15,12 @@ import { toast } from "@/components/ui/use-toast";
 import { useFilteredWorkouts } from "@/lib/hooks/use-filtered-workouts";
 
 function HistoryPage() {
-  const { state: { user } } = useUserProfile();
+  const { state: { profile } } = useUserProfile();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
   const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
 
-  const { displayedWorkouts, isLoading, isError, mutate } = useFilteredWorkouts(user?.id || "", selectedDate, pendingDeletions);
+  const { displayedWorkouts, isLoading, isError, mutate } = useFilteredWorkouts(profile?.id || "", selectedDate, pendingDeletions);
   const { deleteWorkout } = useDeleteWorkout();
 
   const workoutDates: Set<string> = new Set<string>(displayedWorkouts.map((w: UIExtendedWorkout) => w.date));
