@@ -3,11 +3,12 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   const supabase = await createClient();
+  const { origin } = new URL(request.url); // Extract the origin (e.g., http://localhost:3000 or https://zero-now.vercel.app)
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`,
+      redirectTo: `${origin}/api/auth/callback`, // Dynamically set redirectTo based on the current environment
     },
   });
 

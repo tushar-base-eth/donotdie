@@ -37,6 +37,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshSession = async () => {
+    try {
+      const res = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        await fetchSession(); // Update state after refresh
+      } else {
+        setState({ status: "unauthenticated", user: null });
+      }
+    } catch (error) {
+      console.error("Error refreshing session:", error);
+      setState({ status: "unauthenticated", user: null });
+    }
+  };
+
   useEffect(() => {
     fetchSession();
   }, []);
@@ -44,6 +61,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async () => {
     await fetchSession();
   };
+
+  // Optional: Refresh session periodically or on 401
+  useEffect(() => {
+    const handleAuthCheck = async () => {
+      if (state.status === "authenticated") {
+        const res = await fetch("/api/auth/session");
+        if (!res.ok) {
+          await refreshSession();
+        }
+      }
+    };
+    const interval = setInterval(handleAuthCheck, 15 * 60 * 1000); // Check every 15 minutes
+    return () => clearInterval(interval);
+  }, [state.status]);
 
   return (
     <AuthContext.Provider value={{ state, refreshProfile }}>
