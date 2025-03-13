@@ -30,7 +30,7 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const { state } = useAuth();
+  const { state, refreshProfile } = useAuth(); // Add refreshProfile to destructuring
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
@@ -108,12 +108,14 @@ export default function Settings() {
         body_fat_percentage: data.body_fat_percentage,
       };
       await updateProfile(updates);
-      // Refresh profile data after update
+      // Refresh local profile state
       const res = await fetch("/api/profile");
       if (res.ok) {
         const { profile: updatedProfile } = await res.json();
         setProfile(updatedProfile);
       }
+      // Update global user state
+      await refreshProfile(); // This ensures state.user is updated with the new profile data
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -185,6 +187,7 @@ export default function Settings() {
                   const { profile: updatedProfile } = await res.json();
                   setProfile(updatedProfile);
                 }
+                await refreshProfile(); // Update global state after theme change
               } catch (error) {
                 console.error("Error updating theme:", error);
                 toast({ title: "Error", description: "Failed to update theme." });
