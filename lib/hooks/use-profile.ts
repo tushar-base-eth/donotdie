@@ -17,7 +17,7 @@ export function useProfile(userId: string) {
     if (!userId) throw new Error("No user ID provided");
 
     const res = await fetch("/api/profile", {
-      method: "PATCH", // Use PATCH for updates
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
@@ -27,7 +27,8 @@ export function useProfile(userId: string) {
       throw new Error(errorData.error || "Failed to update profile");
     }
 
-    await mutate(); // Revalidate SWR cache
+    // Optimistically update the SWR cache without refetching
+    mutate({ ...data, ...updates }, false);
   };
 
   return {

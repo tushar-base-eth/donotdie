@@ -15,6 +15,7 @@ interface AuthState {
 interface AuthContextType {
   state: AuthState;
   refreshProfile: () => Promise<void>;
+  updateUser: (updates: Partial<UserProfile>) => void; // New method to update user state
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -44,13 +45,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
       });
       if (res.ok) {
-        await fetchSession(); // Update state after refresh
+        await fetchSession();
       } else {
         setState({ status: "unauthenticated", user: null });
       }
     } catch (error) {
       console.error("Error refreshing session:", error);
       setState({ status: "unauthenticated", user: null });
+    }
+  };
+
+  const updateUser = (updates: Partial<UserProfile>) => {
+    if (state.user) {
+      setState((prev) => ({
+        ...prev,
+        user: { ...prev.user!, ...updates },
+      }));
     }
   };
 
@@ -62,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchSession();
   };
 
-  // Optional: Refresh session periodically or on 401
   useEffect(() => {
     const handleAuthCheck = async () => {
       if (state.status === "authenticated") {
@@ -72,12 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     };
-    const interval = setInterval(handleAuthCheck, 15 * 60 * 1000); // Check every 15 minutes
+    const interval = setInterval(handleAuthCheck, 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, [state.status]);
 
   return (
-    <AuthContext.Provider value={{ state, refreshProfile }}>
+    <AuthContext.Provider value={{ state, refreshProfile, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

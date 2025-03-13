@@ -30,39 +30,23 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const { state, refreshProfile } = useAuth(); // Add refreshProfile to destructuring
+  const { state, updateUser } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   const { updateProfile } = useProfile(state.user?.id || "");
 
-  // Fetch profile data directly via API
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch("/api/profile");
-        if (res.ok) {
-          const { profile: fetchedProfile } = await res.json();
-          setProfile(fetchedProfile);
-          setTheme(fetchedProfile.theme_preference);
-        } else {
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        setProfile(null);
-      } finally {
-        setIsProfileLoading(false);
-      }
-    };
-    if (state.status === "authenticated") {
-      fetchProfile();
+    if (state.status === "authenticated" && state.user) {
+      setProfile(state.user);
+      setTheme(state.user.theme_preference);
+    } else {
+      setProfile(null); // No need for router.push; middleware handles it
     }
-  }, [state.status, setTheme]);
+  }, [state.status, state.user, setTheme]);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -108,14 +92,9 @@ export default function Settings() {
         body_fat_percentage: data.body_fat_percentage,
       };
       await updateProfile(updates);
-      // Refresh local profile state
-      const res = await fetch("/api/profile");
-      if (res.ok) {
-        const { profile: updatedProfile } = await res.json();
-        setProfile(updatedProfile);
-      }
-      // Update global user state
-      await refreshProfile(); // This ensures state.user is updated with the new profile data
+      const updatedProfile = { ...profile!, ...updates };
+      setProfile(updatedProfile);
+      updateUser(updates);
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -156,17 +135,12 @@ export default function Settings() {
     }
   };
 
-  if (state.status === "loading" || isProfileLoading) {
+  if (state.status === "loading") {
     return (
       <div className="min-h-screen bg-background pb-16">
         <ProfileSkeleton />
       </div>
     );
-  }
-
-  if (state.status === "unauthenticated" || !profile) {
-    router.push("/auth/login");
-    return null;
   }
 
   return (
@@ -178,16 +152,13 @@ export default function Settings() {
             variant="ghost"
             size="icon"
             onClick={async () => {
-              const newTheme = theme === "dark" ? "light" : "dark";
+              const newTheme: "light" | "dark" = theme === "dark" ? "light" : "dark";
               setTheme(newTheme);
               try {
                 await updateProfile({ theme_preference: newTheme });
-                const res = await fetch("/api/profile");
-                if (res.ok) {
-                  const { profile: updatedProfile } = await res.json();
-                  setProfile(updatedProfile);
-                }
-                await refreshProfile(); // Update global state after theme change
+                const updatedProfile = { ...profile!, theme_preference: newTheme };
+                setProfile(updatedProfile);
+                updateUser({ theme_preference: newTheme });
               } catch (error) {
                 console.error("Error updating theme:", error);
                 toast({ title: "Error", description: "Failed to update theme." });
