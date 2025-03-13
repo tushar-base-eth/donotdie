@@ -31,7 +31,7 @@ const signupSchema = z
 type SignupSchema = z.infer<typeof signupSchema>;
 
 function SignupContent() {
-  const { state, signup } = useAuth();
+  const { state } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationState, setConfirmationState] = useState<"none" | "sent">("none");
@@ -54,7 +54,20 @@ function SignupContent() {
   const onSubmit = async (data: SignupSchema) => {
     setIsLoading(true);
     try {
-      await signup(data.email, data.password, data.name, data.unitPreference);
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          name: data.name,
+          unitPreference: data.unitPreference,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Signup failed');
+      }
       setConfirmationState("sent");
     } catch (error: any) {
       console.error("Signup error:", error.message);

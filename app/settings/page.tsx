@@ -3,15 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, FormProvider } from "react-hook-form"; // Add FormProvider
-import {
-  LogOut,
-  AlertCircle,
-  Sun,
-  Moon,
-  User,
-  Ruler,
-} from "lucide-react";
+import { useForm, FormProvider } from "react-hook-form";
+import { LogOut, AlertCircle, Sun, Moon, User, Ruler } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -37,7 +30,7 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const { state, logout } = useAuth();
+  const { state } = useAuth(); // Removed logout from destructuring
   const { user } = state;
   const { updateProfile } = useProfile(user?.id || "");
   const router = useRouter();
@@ -111,6 +104,27 @@ export default function Settings() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Logout failed");
+      }
+      router.push("/auth/login");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to log out. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   if (state.status === "loading" || !user) {
     return (
       <div className="min-h-screen bg-background pb-16">
@@ -118,11 +132,6 @@ export default function Settings() {
       </div>
     );
   }
-
-  const handleLogout = () => {
-    logout();
-    router.push("/auth/login");
-  };
 
   return (
     <div className={`min-h-screen bg-background pb-16 ${theme === "dark" ? "dark" : ""}`}>

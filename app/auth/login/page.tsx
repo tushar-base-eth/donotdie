@@ -4,17 +4,16 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button"; // Added missing import
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
-import { supabase } from '@/lib/supabase/browser';
 import * as Toast from "@radix-ui/react-toast";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 function LoginContent() {
-  const { state, login, signInWithGoogle } = useAuth();
+  const { state } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +39,16 @@ function LoginContent() {
     setIsLoading(true);
     setMessage(null);
     try {
-      await login(data.email, data.password);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');
+      }
+      router.replace('/home');
     } catch (error: any) {
       if (error.message.includes("Email not confirmed")) {
         setConfirmationState("resend");
@@ -58,12 +66,15 @@ function LoginContent() {
     setIsLoading(true);
     setMessage(null);
     try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: resendEmail,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      const response = await fetch('/api/auth/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resendEmail }),
       });
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to resend confirmation');
+      }
       setMessage({ text: "Confirmation email resent. Please check your inbox.", isError: false });
       setToastOpen(true);
     } catch (error: any) {
@@ -150,17 +161,11 @@ function LoginContent() {
         </div>
 
         <GoogleSignInButton
-          onClick={async () => {
+          onClick={() => {
             setIsLoading(true);
             setMessage(null);
-            try {
-              await signInWithGoogle();
-            } catch (error: any) {
-              setMessage({ text: error.message || "Failed to sign in with Google", isError: true });
-              setToastOpen(true);
-            } finally {
-              setIsLoading(false);
-            }
+            // Directly navigate to the API route, letting the server handle the redirect
+            window.location.href = '/api/auth/google';
           }}
           isLoading={isLoading}
         />
