@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
-import { ConditionalBottomNav } from "@/components/navigation/conditional-bottom-nav";
+import { BottomNav } from "@/components/navigation/bottom-nav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
@@ -33,7 +33,7 @@ export default function RootLayout({
           <AuthProvider>
               <ErrorBoundary>
                 <div className="h-[calc(100vh-64px)] overflow-auto">{children}</div>
-                <ConditionalBottomNav />
+                <BottomNav />
               </ErrorBoundary>
               <Toaster />
               <Analytics />
