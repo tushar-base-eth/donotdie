@@ -13,9 +13,9 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Redirect authenticated users from root to /home
-  // if (pathname === '/' && user && !error) {
-  //   return NextResponse.redirect(new URL('/home', request.url));
-  // }
+  if (pathname === '/' && user && !error) {
+    return NextResponse.redirect(new URL('/home', request.url));
+  }
 
   // Check if the route is protected
   const isProtectedRoute = protectedRoutes.some(route =>
@@ -32,6 +32,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // matcher: ['/', '/home/:path*', '/history/:path*', '/dashboard/:path*', '/settings/:path*'],
-  matcher: ['/home/:path*', '/history/:path*', '/dashboard/:path*', '/settings/:path*'],
+  matcher: ['/', '/home/:path*', '/history/:path*', '/dashboard/:path*', '/settings/:path*'],
+  // matcher: ['/home/:path*', '/history/:path*', '/dashboard/:path*', '/settings/:path*'],
 };

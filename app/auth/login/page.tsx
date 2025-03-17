@@ -45,7 +45,8 @@ function LoginContent() {
         throw new Error(errorData.error || 'Login failed');
       }
       // await fetchProfile(); // This function sets the profile in the context
-      window.location.href = '/home'; // Force reload to trigger middleware
+      // window.location.href = '/home'; // Force reload to trigger middleware
+      router.push('/home');
     } catch (error: any) {
       if (error.message.includes("Email not confirmed")) {
         setConfirmationState("resend");
