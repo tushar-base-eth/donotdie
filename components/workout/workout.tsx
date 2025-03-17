@@ -13,6 +13,7 @@ import { generateUUID } from "@/lib/utils";
 import type { Exercise, UIExtendedWorkout, NewWorkout, UIWorkoutExercise, Set } from "@/types/workouts";
 import { useSaveWorkout } from "@/lib/hooks/data-hooks";
 import { toast } from "@/components/ui/use-toast";
+import { Card } from "@/components/ui/card";
 
 interface WorkoutProps {
   onExercisesChange?: (exercises: UIExtendedWorkout["exercises"]) => void;
@@ -49,11 +50,11 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     return requiredMetrics === 0 || (requiredMetrics > 1 ? validMetrics === requiredMetrics : validMetrics > 0);
   };
 
-  const isWorkoutValid = 
+  const isWorkoutValid =
     exercises
       .filter(ex => ex.sets.length > 0)
-      .some(ex => 
-        ex.sets.some(set => 
+      .some(ex =>
+        ex.sets.some(set =>
           isSetValid(set, ex.exercise.uses_reps!, ex.exercise.uses_weight!, ex.exercise.uses_duration!, ex.exercise.uses_distance!)
         )
       );
@@ -123,14 +124,14 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   const handleSaveWorkout = async () => {
-    if (!isWorkoutValid || !profile ) return;
+    if (!isWorkoutValid || !profile) return;
 
     startTransition(async () => {
       try {
         const filteredExercises = exercises
           .map(ex => ({
             ...ex,
-            sets: ex.sets.filter(set => 
+            sets: ex.sets.filter(set =>
               isSetValid(set, ex.exercise.uses_reps!, ex.exercise.uses_weight!, ex.exercise.uses_duration!, ex.exercise.uses_distance!)
             )
           }))
@@ -181,62 +182,66 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="p-4 space-y-6">
-        {isPending ? (
-          <ExerciseSkeleton />
-        ) : (
-          <WorkoutExercises
-            exercises={exercises}
-            onExerciseSelect={setSelectedExercise}
-            onExerciseRemove={handleRemoveExercise}
-          />
-        )}
-        <div className="fixed bottom-24 right-4 flex flex-col gap-4 z-50">
-          <AnimatePresence>
-            {isWorkoutValid && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              >
-                <Button
-                  size="icon"
-                  onClick={handleSaveWorkout}
-                  className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 touch-target ios-active"
-                >
-                  <Save className="h-8 w-8" />
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              size="icon"
-              onClick={() => setShowExerciseModal(true)}
-              className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 touch-target ios-active"
-            >
-              <Plus className="h-8 w-8" />
-            </Button>
-          </motion.div>
+    <div className="min-h-screen bg-background pb-20 p-8">
+      <Card className="glass shadow-lg rounded-xl p-6">
+        <div className="space-y-8">
+          {isPending ? (
+            <ExerciseSkeleton />
+          ) : (
+            <WorkoutExercises
+              exercises={exercises}
+              onExerciseSelect={setSelectedExercise}
+              onExerciseRemove={handleRemoveExercise}
+            />
+          )}
         </div>
-        <ExerciseSelector
-          open={showExerciseModal}
-          onOpenChange={setShowExerciseModal}
-          selectedExercises={selectedExercises}
-          onExerciseToggle={handleExerciseToggle}
-          onAddExercises={handleAddExercises}
-        />
-        {selectedExercise && (
-          <ExerciseEditor
-            exercise={selectedExercise}
-            onClose={() => setSelectedExercise(null)}
-            onUpdateSets={handleUpdateSets}
-            exerciseIndex={exercises.findIndex((ex) => ex.instance_id === selectedExercise.instance_id)}
-          />
-        )}
+      </Card>
+      <div className="fixed bottom-24 right-6 flex flex-col gap-4 z-50">
+        <AnimatePresence>
+          {isWorkoutValid && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.5 }}
+            >
+              <Button
+                size="icon"
+                onClick={handleSaveWorkout}
+                className="h-14 w-14 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 touch-target ios-active"
+                aria-label="Save workout"
+              >
+                <Save className="h-6 w-6" />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.2 }}>
+          <Button
+            size="icon"
+            onClick={() => setShowExerciseModal(true)}
+            className="h-14 w-14 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 touch-target ios-active"
+            aria-label="Add new exercise"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </motion.div>
       </div>
+      <ExerciseSelector
+        open={showExerciseModal}
+        onOpenChange={setShowExerciseModal}
+        selectedExercises={selectedExercises}
+        onExerciseToggle={handleExerciseToggle}
+        onAddExercises={handleAddExercises}
+      />
+      {selectedExercise && (
+        <ExerciseEditor
+          exercise={selectedExercise}
+          onClose={() => setSelectedExercise(null)}
+          onUpdateSets={handleUpdateSets}
+          exerciseIndex={exercises.findIndex((ex) => ex.instance_id === selectedExercise.instance_id)}
+        />
+      )}
     </div>
   );
 }

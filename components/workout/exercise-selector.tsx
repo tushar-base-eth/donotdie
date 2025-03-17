@@ -48,16 +48,24 @@ export function ExerciseSelector({
   }, [exercises]);
 
   if (isLoading) {
-    return <div className="p-4">Loading exercises...</div>;
+    return (
+      <div className="p-6 text-center text-muted-foreground text-sm font-medium">
+        Loading exercises...
+      </div>
+    );
   }
 
   if (isError) {
     return (
-      <div className="p-4">
-        Failed to load exercises.{" "}
-        <button onClick={() => mutate()} className="text-blue-500 underline">
+      <div className="p-6 text-center">
+        <p className="text-foreground font-medium mb-2">Failed to load exercises</p>
+        <Button
+          variant="ghost"
+          onClick={() => mutate()}
+          className="text-primary hover:bg-primary/10 rounded-lg px-4 py-2 transition-all duration-300"
+        >
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
@@ -106,7 +114,6 @@ export function ExerciseSelector({
     return "Exercises";
   };
 
-  // Handler to reset navStack when "Categories" tab is clicked
   const handleCategoriesClick = () => {
     if (selectedTab !== "categories" || navStack.length > 0) {
       setSelectedTab("categories");
@@ -118,17 +125,22 @@ export function ExerciseSelector({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[80vh] px-0 z-[101] rounded-t-3xl flex flex-col"
+        className="h-[80vh] px-0 z-[101] rounded-t-xl bg-background/85 glass shadow-lg flex flex-col"
         aria-describedby="exercise-selector-description"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="px-6 pb-6 flex items-center border-b shrink-0">
+        <div className="px-6 py-4 flex items-center border-b border-border/50 shrink-0 bg-background/90 backdrop-blur-lg">
           {navStack.length > 0 && (
-            <Button variant="ghost" onClick={() => setNavStack(navStack.slice(0, -1))} className="mr-2">
-              <ChevronLeft />
+            <Button
+              variant="ghost"
+              onClick={() => setNavStack(navStack.slice(0, -1))}
+              className="mr-2 rounded-full h-8 w-8 text-primary hover:bg-primary/10 transition-all duration-300"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="h-5 w-5" />
             </Button>
           )}
-          <SheetTitle className="text-xl">{getTitle()}</SheetTitle>
+          <SheetTitle className="text-xl font-semibold text-foreground">{getTitle()}</SheetTitle>
           <span id="exercise-selector-description" className="sr-only">
             Select exercises to add to your workout. You can search or filter by category.
           </span>
@@ -140,7 +152,7 @@ export function ExerciseSelector({
             placeholder="Search exercises..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-xl bg-accent/10 border-0"
+            className="rounded-lg bg-background shadow-md border-input focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
             autoFocus={false}
           />
           <Tabs
@@ -154,14 +166,17 @@ export function ExerciseSelector({
             }}
             className="w-full"
           >
-            <TabsList className="w-full p-0.5 h-10 bg-accent/10 rounded-xl">
-              <TabsTrigger value="all" className="flex-1 rounded-lg">
+            <TabsList className="w-full p-1 h-10 bg-muted/50 rounded-lg grid grid-cols-2 gap-2">
+              <TabsTrigger
+                value="all"
+                className="rounded-md py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
+              >
                 All
               </TabsTrigger>
               <TabsTrigger
                 value="categories"
-                className="flex-1 rounded-lg"
-                onClick={handleCategoriesClick} // Added custom click handler
+                className="rounded-md py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
+                onClick={handleCategoriesClick}
               >
                 Categories
               </TabsTrigger>
@@ -183,22 +198,42 @@ export function ExerciseSelector({
               />
             )}
             {selectedTab === "categories" && navStack.length === 0 && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+              <motion.div
+                initial={{ x: 100 }}
+                animate={{ x: 0 }}
+                exit={{ x: 100 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
                 <CategoryList onCategorySelect={(category) => setNavStack([category])} />
               </motion.div>
             )}
             {selectedTab === "categories" && navStack.length === 1 && navStack[0] === "by_muscles" && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+              <motion.div
+                initial={{ x: 100 }}
+                animate={{ x: 0 }}
+                exit={{ x: 100 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
                 <MuscleGroupList muscleGroups={muscleGroups} onSelect={(muscle) => setNavStack([...navStack, muscle])} />
               </motion.div>
             )}
             {selectedTab === "categories" && navStack.length === 1 && navStack[0] === "by_equipment" && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+              <motion.div
+                initial={{ x: 100 }}
+                animate={{ x: 0 }}
+                exit={{ x: 100 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
                 <EquipmentList equipment={equipment} onSelect={(eqId) => setNavStack([...navStack, eqId])} />
               </motion.div>
             )}
             {selectedTab === "categories" && (navStack.length > 1 || (navStack.length === 1 && navStack[0] !== "by_muscles" && navStack[0] !== "by_equipment")) && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+              <motion.div
+                initial={{ x: 100 }}
+                animate={{ x: 0 }}
+                exit={{ x: 100 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
                 <ExerciseList
                   filter={getFilterFromNavStack(navStack)}
                   searchQuery={searchQuery}
@@ -213,11 +248,11 @@ export function ExerciseSelector({
           </ScrollArea>
         </div>
 
-        <div className="p-4 bg-background/80 backdrop-blur-sm border-t shrink-0">
+        <div className="p-6 bg-background/90 backdrop-blur-sm border-t border-border/50 shrink-0">
           <Button
             onClick={handleAdd}
             disabled={selectedExercises.length === 0}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12"
+            className="w-full rounded-lg px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-md"
           >
             {buttonText}
           </Button>

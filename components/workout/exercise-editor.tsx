@@ -23,7 +23,7 @@ export function ExerciseEditor({
   onUpdateSets,
   exerciseIndex,
 }: ExerciseEditorProps) {
-  const { isImperial, unitLabel } = useUnitPreference(); // Only need unit info, no conversion
+  const { isImperial, unitLabel } = useUnitPreference();
   const repsInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [exercise, setExercise] = useState(initialExercise);
 
@@ -52,9 +52,9 @@ export function ExerciseEditor({
   };
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
-    const weight = handleInput(e.target.value); // Take input as-is
+    const weight = handleInput(e.target.value);
     const newSets = [...exercise.sets];
-    newSets[setIndex] = { ...newSets[setIndex], weight_kg: weight }; // Store as user input (kg or lb)
+    newSets[setIndex] = { ...newSets[setIndex], weight_kg: weight };
     setExercise({ ...exercise, sets: newSets });
     onUpdateSets(exerciseIndex, newSets);
   };
@@ -86,13 +86,13 @@ export function ExerciseEditor({
     <Sheet open={true} onOpenChange={onClose}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg p-0 rounded-t-3xl z-[101]"
+        className="w-full sm:max-w-lg p-0 rounded-t-xl z-[101] bg-background/85"
         aria-describedby="exercise-editor-description"
       >
         <div className="flex flex-col h-full">
-          <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
+          <div className="px-6 py-4 border-b sticky top-0 bg-background/90 backdrop-blur-lg z-10 glass shadow-lg rounded-t-xl">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-xl">{exercise.exercise.name}</SheetTitle>
+              <SheetTitle className="text-xl font-semibold text-foreground">{exercise.exercise.name}</SheetTitle>
               <span id="exercise-editor-description" className="sr-only">
                 Edit sets for {exercise.exercise.name}.
               </span>
@@ -100,7 +100,7 @@ export function ExerciseEditor({
                 size="icon"
                 variant="ghost"
                 onClick={onClose}
-                className="rounded-full h-8 w-8 text-primary"
+                className="rounded-full h-8 w-8 text-primary hover:bg-primary/10 transition-all duration-300"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -108,7 +108,7 @@ export function ExerciseEditor({
           </div>
 
           <ScrollArea className="flex-1 p-6">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <AnimatePresence initial={false}>
                 {exercise.sets.map((set: Set, setIndex: number) => (
                   <motion.div
@@ -136,14 +136,14 @@ export function ExerciseEditor({
                         <Trash className="h-4 w-4 text-destructive" />
                       </div>
 
-                      <motion.div className="relative bg-background rounded-xl glass">
+                      <motion.div className="relative bg-background rounded-xl glass shadow-lg">
                         <div className="px-4 py-3">
-                          <div className="flex gap-3 mb-1">
+                          <div className="flex gap-3 mb-2">
                             <div className="w-8 text-left" />
-                            {showReps && <div className="w-[140px] text-left">Reps</div>}
-                            {showWeight && <div className="w-[140px] text-left">Weight ({unitLabel})</div>}
-                            {showDuration && <div className="w-[140px] text-left">Duration (s)</div>}
-                            {showDistance && <div className="w-[140px] text-left">Distance (m)</div>}
+                            {showReps && <div className="w-[140px] text-left text-sm text-muted-foreground">Reps</div>}
+                            {showWeight && <div className="w-[140px] text-left text-sm text-muted-foreground">Weight ({unitLabel})</div>}
+                            {showDuration && <div className="w-[140px] text-left text-sm text-muted-foreground">Duration (s)</div>}
+                            {showDistance && <div className="w-[140px] text-left text-sm text-muted-foreground">Distance (m)</div>}
                           </div>
                           <div className="flex flex-col gap-3">
                             <div className="flex gap-3">
@@ -158,7 +158,8 @@ export function ExerciseEditor({
                                     inputMode="numeric"
                                     value={set.reps || ""}
                                     onChange={(e) => handleRepsChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
+                                    className="rounded-lg bg-background text-foreground shadow-md w-[140px] sm:w-[160px] focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                                    placeholder="0"
                                     aria-label={`Reps for set ${setIndex + 1}`}
                                     ref={(el) => {
                                       repsInputRefs.current[setIndex] = el;
@@ -170,9 +171,10 @@ export function ExerciseEditor({
                                     id={`weight-${setIndex}`}
                                     type="text"
                                     inputMode="decimal"
-                                    value={set.weight_kg || ""} // Display as-is (kg or lb depending on user input)
+                                    value={set.weight_kg || ""}
                                     onChange={(e) => handleWeightChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
+                                    className="rounded-lg bg-background text-foreground shadow-md w-[140px] sm:w-[160px] focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                                    placeholder="0"
                                     aria-label={`Weight for set ${setIndex + 1}`}
                                   />
                                 )}
@@ -183,7 +185,8 @@ export function ExerciseEditor({
                                     inputMode="numeric"
                                     value={set.duration_seconds || ""}
                                     onChange={(e) => handleDurationChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
+                                    className="rounded-lg bg-background text-foreground shadow-md w-[140px] sm:w-[160px] focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                                    placeholder="0"
                                     aria-label={`Duration for set ${setIndex + 1}`}
                                   />
                                 )}
@@ -194,7 +197,8 @@ export function ExerciseEditor({
                                     inputMode="decimal"
                                     value={set.distance_meters || ""}
                                     onChange={(e) => handleDistanceChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
+                                    className="rounded-lg bg-background text-foreground shadow-md w-[140px] sm:w-[160px] focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                                    placeholder="0"
                                     aria-label={`Distance for set ${setIndex + 1}`}
                                   />
                                 )}
@@ -210,7 +214,7 @@ export function ExerciseEditor({
             </div>
           </ScrollArea>
 
-          <div className="p-4 bg-background/80 backdrop-blur-sm border-t">
+          <div className="p-6 bg-background/90 backdrop-blur-sm border-t border-border/50">
             <Button
               onClick={() => {
                 const setNumber = exercise.sets.length + 1;
@@ -228,7 +232,7 @@ export function ExerciseEditor({
                 setExercise({ ...exercise, sets: newSets });
                 onUpdateSets(exerciseIndex, newSets);
               }}
-              className="w-full rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full rounded-lg px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
             >
               Add Set
             </Button>

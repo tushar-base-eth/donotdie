@@ -67,7 +67,7 @@ function SignupContent() {
       setConfirmationState("sent");
     } catch (error: any) {
       console.error("Signup error:", error.message);
-      // Optionally add toast notification for error
+      form.setError("email", { message: error.message || "Signup failed. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -75,21 +75,20 @@ function SignupContent() {
 
   if (confirmationState === "sent") {
     return (
-      <div className="container max-w-lg p-8 text-center space-y-6">
-        <Card className="glass">
-          <CardContent className="pt-6">
+      <div className="container max-w-lg p-8 text-center space-y-8">
+        <Card className="glass shadow-lg rounded-xl">
+          <CardContent className="pt-8 space-y-6">
             <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold">Check Your Email</h2>
-              <p className="text-muted-foreground">
-                We've sent a confirmation link to{" "}
-                <span className="font-medium text-foreground">{form.getValues("email")}</span>. The link will expire in 24
-                hours.
+            <div className="space-y-3">
+              <h2 className="text-2xl font-semibold text-foreground">Check Your Email</h2>
+              <p className="text-muted-foreground text-sm">
+                We’ve sent a confirmation link to{" "}
+                <span className="font-medium text-foreground">{form.getValues("email")}</span>. The link will expire in 24 hours.
               </p>
             </div>
             <Button
               onClick={() => router.push("/auth/login")}
-              className="w-full mt-4"
+              className="w-full rounded-lg px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
             >
               Return to Login
             </Button>
@@ -100,30 +99,31 @@ function SignupContent() {
   }
 
   return (
-    <div className="container max-w-lg p-4">
+    <div className="container max-w-lg p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
       >
-        <Card className="mt-8 glass">
+        <Card className="mt-8 glass shadow-lg rounded-xl">
           <CardHeader className="pb-4">
-            <CardTitle>Create Account</CardTitle>
+            <CardTitle className="text-2xl font-semibold text-foreground">Create Account</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-foreground/80">Email</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="email@example.com"
+                          placeholder="Enter your email"
                           type="email"
                           autoComplete="email"
+                          className="rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
                           {...field}
                         />
                       </FormControl>
@@ -136,9 +136,15 @@ function SignupContent() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-foreground/80">Password</FormLabel>
                       <FormControl>
-                        <Input type="password" autoComplete="new-password" {...field} />
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="Enter your password"
+                          className="rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -149,9 +155,15 @@ function SignupContent() {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel className="text-foreground/80">Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" autoComplete="new-password" {...field} />
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="Confirm your password"
+                          className="rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -162,9 +174,14 @@ function SignupContent() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel className="text-foreground/80">Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" autoComplete="name" {...field} />
+                        <Input
+                          placeholder="Enter your full name"
+                          autoComplete="name"
+                          className="rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -175,14 +192,14 @@ function SignupContent() {
                   name="unitPreference"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Measurement System</FormLabel>
+                      <FormLabel className="text-foreground/80">Measurement System</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select system" />
+                          <SelectTrigger className="rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300">
+                            <SelectValue placeholder="Select measurement system" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="rounded-lg">
                           <SelectItem value="metric">Metric (kg, cm)</SelectItem>
                           <SelectItem value="imperial">Imperial (lb, in)</SelectItem>
                         </SelectContent>
@@ -191,12 +208,16 @@ function SignupContent() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full rounded-lg px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Processing..." : "Create Account"}
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full rounded-lg px-4 py-2 border border-input hover:bg-secondary transition-all duration-300"
                   onClick={() => router.push("/auth/login")}
                   disabled={isLoading}
                   type="button"
@@ -216,7 +237,7 @@ export default function Signup() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center min-h-screen">
+        <div className="flex justify-center items-center min-h-screen bg-background">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       }

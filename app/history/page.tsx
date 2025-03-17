@@ -9,10 +9,11 @@ import { motion } from "framer-motion";
 import { useDeleteWorkout } from "@/lib/hooks/data-hooks";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useFilteredWorkouts } from "@/lib/hooks/use-filtered-workouts";
 import { HistoryProvider, useHistoryContext } from "@/contexts/history-context";
+import { Card, CardContent } from "@/components/ui/card";
 
 function HistoryPageInner() {
   const { state: { profile } } = useUserProfile();
@@ -46,36 +47,46 @@ function HistoryPageInner() {
 
   if (isError) {
     return (
-      <div className="p-4">
-        Failed to load workouts.{" "}
-        <button onClick={() => mutate()} className="text-blue-500 underline">
-          Retry
-        </button>
+      <div className="p-8">
+        <Card className="glass shadow-lg rounded-xl">
+          <CardContent className="p-6 flex items-center gap-4">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <div className="space-y-2">
+              <p className="text-foreground font-medium">Failed to load your workout history</p>
+              <button
+                onClick={() => mutate()}
+                className="text-primary hover:bg-primary/10 rounded-lg px-4 py-2 transition-all duration-300"
+              >
+                Retry
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (isLoading && displayedWorkouts.length === 0) {
     return (
-      <div className="flex justify-center items-center min-h-screen p-4">
+      <div className="flex justify-center items-center min-h-screen p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-auto p-4 space-y-6">
+    <div className="h-full overflow-auto p-8 space-y-8">
       <InfiniteScroll
         dataLength={displayedWorkouts.length}
-        next={() => {}} // No pagination implemented
+        next={() => { }} // No pagination implemented
         hasMore={false} // Disable infinite scroll for now
-        loader={<p className="text-center">Loading...</p>}
+        loader={<p className="text-center text-muted-foreground py-4">Loading...</p>}
         endMessage={
           !selectedDate && (
             <div className="flex items-center justify-center p-4">
-              <Badge variant="outline" className="flex items-center space-x-1">
+              <Badge variant="outline" className="flex items-center gap-2 rounded-lg px-3 py-2 border-border/50">
                 <CheckCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
-                <span>You’ve seen all your workouts!</span>
+                <span className="text-sm font-medium text-foreground">You’ve seen all your workouts!</span>
               </Badge>
             </div>
           )
@@ -84,14 +95,14 @@ function HistoryPageInner() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
         >
           <Calendar workoutDates={workoutDates} />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          transition={{ duration: 0.5, ease: "easeInOut", delay: 0.2 }}
         >
           <WorkoutList workouts={displayedWorkouts} onWorkoutDelete={handleDeleteWorkout} />
         </motion.div>

@@ -17,10 +17,10 @@ export function WorkoutExercises({
   onExerciseSelect,
   onExerciseRemove,
 }: WorkoutExercisesProps) {
-  const { isImperial, unitLabel } = useUnitPreference(); // Only need unit info, no conversion
+  const { isImperial, unitLabel } = useUnitPreference();
 
   return (
-    <ScrollArea className="h-[calc(100vh-13rem)] px-4">
+    <ScrollArea className="h-[calc(100vh-13rem)] px-6">
       <AnimatePresence initial={false}>
         {exercises.map((exercise, index) => {
           const dragX = useMotionValue(0);
@@ -30,7 +30,7 @@ export function WorkoutExercises({
           const summary = [];
           if (exercise.exercise.uses_weight && exercise.sets.some((s) => s.weight_kg)) {
             const totalVolume = exercise.sets.reduce((acc, set) => acc + ((set.reps || 0) * (set.weight_kg || 0)), 0);
-            summary.push(`${totalVolume} ${unitLabel}`); // Display raw value with unit label
+            summary.push(`${totalVolume} ${unitLabel}`);
           }
           if (exercise.exercise.uses_duration && exercise.sets.some((s) => s.duration_seconds)) {
             const totalDuration = exercise.sets.reduce((acc, set) => acc + (set.duration_seconds || 0), 0);
@@ -51,9 +51,9 @@ export function WorkoutExercises({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
               layout
-              className="mb-4 relative"
+              className="mb-6 relative"
             >
               <motion.div
                 drag="x"
@@ -71,7 +71,7 @@ export function WorkoutExercises({
                 style={{ x: dragX }}
               >
                 <motion.div
-                  className="absolute inset-y-0 right-0 w-24 flex items-center justify-end pr-4 pointer-events-none rounded-r-lg"
+                  className="absolute inset-y-0 right-0 w-24 flex items-center justify-end pr-4 pointer-events-none rounded-r-xl"
                   style={{
                     opacity,
                     x: xTransform,
@@ -83,15 +83,16 @@ export function WorkoutExercises({
                 </motion.div>
 
                 <Card
-                  className="relative z-10 border-0 glass glass-hover transition-all duration-200 rounded-3xl"
+                  className="relative z-10 border-0 glass shadow-lg rounded-xl hover:bg-accent/10 transition-all duration-300"
                   onClick={() => onExerciseSelect(exercise)}
+                  role="button"
+                  aria-label={`Select ${exercise.exercise.name}`}
                 >
-                  <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold tracking-tight">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-foreground tracking-tight">
                       {exercise.exercise.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {/* {exercise.exercise.category} • {exercise.sets.length} sets • {summary.join(", ")} */}
+                    <p className="text-sm text-muted-foreground mt-1">
                       {exercise.sets.length} sets • {summary.join(", ")}
                     </p>
                   </CardContent>

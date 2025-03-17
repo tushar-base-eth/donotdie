@@ -18,12 +18,14 @@ export function BottomNav() {
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-background border-t border-border shadow-lg rounded-t-3xl"
+      className="fixed bottom-0 left-0 right-0 z-[100] bg-background/85 border-t border-border/50 shadow-lg rounded-t-xl glass h-16 safe-area-bottom"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25, duration: 0.5 }}
+      role="navigation"
+      aria-label="Main navigation"
     >
-      <div className="grid h-16 max-w-lg grid-cols-4 mx-auto">
+      <div className="grid h-full max-w-lg grid-cols-4 mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -34,14 +36,21 @@ export function BottomNav() {
               href={item.href}
               scroll={false}
               className={cn(
-                "flex flex-col items-center justify-center p-2 transition-colors duration-200",
+                "flex flex-col items-center justify-center p-3 min-h-[48px] transition-all duration-300",
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-primary bg-primary/10 rounded-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/20"
               )}
+              aria-label={item.label}
             >
-              <Icon className="h-6 w-6 mb-1" />
-              <span className="text-xs">{item.label}</span>
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Icon className="h-6 w-6 mb-1" />
+              </motion.div>
+              <span className="text-xs font-medium">{item.label}</span>
             </Link>
           );
         })}

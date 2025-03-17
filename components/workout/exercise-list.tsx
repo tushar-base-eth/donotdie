@@ -45,24 +45,35 @@ export function ExerciseList({ filter, searchQuery, selectedExercises, onExercis
 
   return (
     <ScrollArea className="h-full px-6 py-4">
-      {filteredExercises.length === 0 && <div className="p-4 text-muted-foreground">No exercises found</div>}
+      {filteredExercises.length === 0 && (
+        <div className="p-4 text-center text-muted-foreground text-sm font-medium">
+          No exercises found
+        </div>
+      )}
       {filteredExercises.map((exercise) => {
         const selected = selectedExercises.some((se) => se.id === exercise.id);
         return (
-          <motion.div key={exercise.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+          <motion.div
+            key={exercise.id}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+          >
             <div
-              className="flex items-center gap-4 p-4 rounded-3xl border cursor-pointer hover:bg-accent/5 transition-colors"
+              className="flex items-center gap-4 p-4 rounded-xl border border-border/50 cursor-pointer hover:bg-accent/10 transition-all duration-300"
               onClick={() => onExerciseToggle(exercise)}
+              role="button"
+              aria-label={`Toggle ${exercise.name}`}
             >
               <div className="flex-1">
-                <div>{exercise.name}</div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-foreground font-medium">{exercise.name}</div>
+                <div className="text-sm text-muted-foreground mt-1">
                   {exercise.primary_muscle_group}
                   {exercise.secondary_muscle_group && `, ${exercise.secondary_muscle_group}`}
                 </div>
               </div>
               <div
-                className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors
+                className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors duration-300
                   ${selected ? "bg-primary border-primary text-primary-foreground" : "border-input"}`}
               >
                 {selected && "✓"}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserProfile } from "@/contexts/profile-context";
@@ -84,24 +84,28 @@ function LoginContent() {
   if (confirmationState === "resend") {
     return (
       <div className="container max-w-lg p-8 text-center space-y-6">
-        <Card className="glass">
-          <CardContent className="pt-6">
+        <Card className="glass shadow-lg rounded-xl">
+          <CardContent className="pt-8 space-y-6">
             <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto" />
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold">Confirmation Required</h2>
-              <p className="text-muted-foreground">
+            <div className="space-y-3">
+              <h2 className="text-2xl font-semibold text-foreground">Email Confirmation Required</h2>
+              <p className="text-muted-foreground text-sm">
                 Please confirm your email address{" "}
                 <span className="font-medium text-foreground">{resendEmail}</span>
               </p>
             </div>
-            <div className="space-y-3 mt-4">
-              <Button onClick={resendConfirmation} className="w-full" disabled={isLoading}>
+            <div className="space-y-4">
+              <Button
+                onClick={resendConfirmation}
+                className="w-full rounded-lg px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
+                disabled={isLoading}
+              >
                 {isLoading ? "Sending..." : "Resend Confirmation"}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setConfirmationState("none")}
-                className="w-full"
+                className="w-full rounded-lg px-4 py-2 border border-input hover:bg-secondary transition-all duration-300"
               >
                 Back to Login
               </Button>
@@ -114,21 +118,21 @@ function LoginContent() {
 
   return (
     <Toast.Provider swipeDirection="right">
-      <div className="container max-w-lg p-4">
+      <div className="container max-w-lg p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
         >
-          <Card className="mt-8 glass">
+          <Card className="mt-8 glass shadow-lg rounded-xl">
             <CardHeader className="pb-4">
-              <CardTitle>Welcome Back</CardTitle>
+              <CardTitle className="text-2xl font-semibold text-foreground">Welcome Back</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <LoginForm onSubmit={onSubmit} isLoading={isLoading} />
               <Button
                 variant="outline"
-                className="w-full mt-4"
+                className="w-full rounded-lg px-4 py-2 border border-input hover:bg-secondary transition-all duration-300"
                 onClick={() => router.push("/auth/signup")}
                 disabled={isLoading}
                 type="button"
@@ -139,12 +143,12 @@ function LoginContent() {
           </Card>
         </motion.div>
 
-        <div className="relative my-4">
+        <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-muted"></div>
+            <div className="w-full border-t border-muted/50"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-background px-2 text-muted-foreground">Or</span>
+            <span className="bg-background px-3 text-muted-foreground font-medium">Or</span>
           </div>
         </div>
 
@@ -160,18 +164,28 @@ function LoginContent() {
 
       {message && (
         <Toast.Root
-          className="glass rounded-md p-4 shadow-lg flex items-center gap-3 z-50 fixed bottom-4 right-4 max-w-xs"
+          className="glass shadow-lg rounded-lg p-4 flex items-center gap-3 z-50 fixed bottom-6 right-6 max-w-sm border border-border/40"
           open={toastOpen}
           onOpenChange={setToastOpen}
           duration={3000}
         >
+          {message.isError ? (
+            <AlertCircle className="h-5 w-5 text-destructive" />
+          ) : (
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+          )}
           <Toast.Description
             className={`${message.isError ? "text-destructive" : "text-green-500"} text-sm font-medium`}
           >
             {message.text}
           </Toast.Description>
           <Toast.Close asChild>
-            <button className="text-muted-foreground hover:text-foreground transition-colors">×</button>
+            <button
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200 p-1"
+              aria-label="Close toast"
+            >
+              ×
+            </button>
           </Toast.Close>
         </Toast.Root>
       )}
@@ -184,7 +198,7 @@ export default function Login() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center min-h-screen">
+        <div className="flex justify-center items-center min-h-screen bg-background">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       }

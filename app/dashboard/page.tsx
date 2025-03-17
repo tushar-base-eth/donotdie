@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { MetricsSkeleton } from "@/components/loading/metrics-skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const { state: { profile } } = useUserProfile();
@@ -17,13 +18,20 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="p-4 container max-w-5xl mx-auto">
-        <Card className="border glass shadow-md rounded-2xl">
-          <CardContent className="p-6">
-            Failed to load data.{" "}
-            <Button variant="ghost" onClick={() => mutate()} className="text-blue-500">
-              Retry
-            </Button>
+      <div className="p-8 container max-w-5xl mx-auto">
+        <Card className="glass shadow-lg rounded-xl">
+          <CardContent className="p-6 flex items-center gap-4">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <div className="space-y-2">
+              <p className="text-foreground font-medium">Failed to load your dashboard data</p>
+              <Button
+                variant="ghost"
+                onClick={() => mutate()}
+                className="text-primary hover:bg-primary/10 rounded-lg px-4 py-2 transition-all duration-300"
+              >
+                Retry
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -33,7 +41,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pb-16">
-        <div className="container max-w-5xl mx-auto p-4 space-y-6">
+        <div className="container max-w-5xl mx-auto p-8 space-y-8">
           <MetricsSkeleton />
         </div>
       </div>
@@ -46,13 +54,13 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      <div className="container max-w-5xl mx-auto p-4 space-y-6">
+      <div className="container max-w-5xl mx-auto p-8 space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
         >
-          <Card className="border glass shadow-md rounded-2xl overflow-hidden">
+          <Card className="glass shadow-lg rounded-xl overflow-hidden">
             <CardContent className="p-6">
               <MetricsCards
                 totalWorkouts={profile.total_workouts ?? 0}
@@ -66,9 +74,9 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          transition={{ duration: 0.5, ease: "easeInOut", delay: 0.2 }}
         >
-          <Card className="border glass shadow-md rounded-2xl overflow-hidden">
+          <Card className="glass shadow-lg rounded-xl overflow-hidden">
             <CardContent className="p-6">
               <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
             </CardContent>
