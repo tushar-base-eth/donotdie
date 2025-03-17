@@ -91,7 +91,8 @@ export function WorkoutExercises({
                       {exercise.exercise.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {exercise.exercise.category} • {exercise.sets.length} sets • {summary.join(", ")}
+                      {/* {exercise.exercise.category} • {exercise.sets.length} sets • {summary.join(", ")} */}
+                      {exercise.sets.length} sets • {summary.join(", ")}
                     </p>
                   </CardContent>
                 </Card>
