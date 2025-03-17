@@ -25,12 +25,13 @@ export function ProfileSettings() {
         )}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="flex flex-wrap gap-6">
+        {/* Gender Field */}
         <FormField
           name="gender"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-foreground/80">Gender</FormLabel>
+            <FormItem className="flex-1">
+              <FormLabel className="flex items-center text-foreground/80">Gender</FormLabel>
               <Select
                 onValueChange={(value) =>
                   field.onChange(value === "null" ? null : value as "male" | "female" | "other")
@@ -55,10 +56,11 @@ export function ProfileSettings() {
           )}
         />
 
+        {/* Date of Birth Field */}
         <FormField
           name="date_of_birth"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel className="flex items-center text-foreground/80">
                 <Calendar className="h-4 w-4 mr-1 inline" />
                 Date of Birth
