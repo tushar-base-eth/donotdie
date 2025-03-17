@@ -6,20 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { UIExtendedWorkout } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 import { format, parse } from "date-fns";
+import { useHistoryContext } from "@/contexts/history-context";
 
 interface WorkoutListProps {
   workouts: UIExtendedWorkout[];
-  onWorkoutSelect: (workout: UIExtendedWorkout) => void;
   onWorkoutDelete: (workoutId: string) => void;
-  selectedDate: Date | null;
 }
 
-export function WorkoutList({
-  workouts,
-  onWorkoutSelect,
-  onWorkoutDelete,
-  selectedDate,
-}: WorkoutListProps) {
+export function WorkoutList({ workouts, onWorkoutDelete }: WorkoutListProps) {
+  const { setSelectedWorkout } = useHistoryContext();
   const { formatWeight } = useUnitPreference();
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
@@ -31,26 +26,15 @@ export function WorkoutList({
   if (workouts.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
-        {selectedDate ? (
-          <div>
-            <div className="mb-4">
-              <div className="rounded-full bg-muted p-4 inline-block">
-                <span role="img" aria-label="Sad face" className="text-4xl">🥱</span>
-              </div>
+        <div>
+          <div className="mb-4">
+            <div className="rounded-full bg-muted p-4 inline-block animate-bounce">
+              <span role="img" aria-label="Dumbbell" className="text-4xl">🏋️</span>
             </div>
-            <p className="text-lg font-medium">You were LAZY on this day!</p>
           </div>
-        ) : (
-          <div>
-            <div className="mb-4">
-              <div className="rounded-full bg-muted p-4 inline-block animate-bounce">
-                <span role="img" aria-label="Dumbbell" className="text-4xl">🏋️</span>
-              </div>
-            </div>
-            <p className="text-lg font-medium">Welcome! WTF!?</p>
-            <p className="text-sm">You better start your first workout!</p>
-          </div>
-        )}
+          <p className="text-lg font-medium">Welcome! WTF!?</p>
+          <p className="text-sm">You better start your first workout!</p>
+        </div>
       </div>
     );
   }
@@ -98,8 +82,8 @@ export function WorkoutList({
 
                 <Card
                   className="overflow-hidden cursor-pointer hover:bg-accent/5 transition-colors rounded-3xl"
-                  onClick={() => onWorkoutSelect(workout)}
-                  style={{ minHeight: "80px" }} // Reduced height since content is in one row
+                  onClick={() => setSelectedWorkout(workout)}
+                  style={{ minHeight: "80px" }}
                 >
                   <CardContent className="p-4 flex justify-between items-center h-full">
                     <div>

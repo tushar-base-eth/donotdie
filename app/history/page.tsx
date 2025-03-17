@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Calendar } from "@/components/history/calendar";
 import { WorkoutList } from "@/components/history/workout-list";
@@ -13,31 +12,35 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useFilteredWorkouts } from "@/lib/hooks/use-filtered-workouts";
+import { HistoryProvider, useHistoryContext } from "@/contexts/history-context";
 
-function HistoryPage() {
+function HistoryPageInner() {
   const { state: { profile } } = useUserProfile();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedWorkout, setSelectedWorkout] = useState<UIExtendedWorkout | null>(null);
-  const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
-
-  const { displayedWorkouts, isLoading, isError, mutate } = useFilteredWorkouts(profile?.id || "", selectedDate, pendingDeletions);
+  const { selectedDate, pendingDeletions, addPendingDeletion, removePendingDeletion } = useHistoryContext();
+  const { displayedWorkouts, isLoading, isError, mutate } = useFilteredWorkouts(
+    profile?.id || "",
+    selectedDate,
+    pendingDeletions
+  );
   const { deleteWorkout } = useDeleteWorkout();
 
-  const workoutDates: Set<string> = new Set<string>(displayedWorkouts.map((w: UIExtendedWorkout) => w.date));
+  const workoutDates: Set<string> = new Set<string>(
+    displayedWorkouts.map((w: UIExtendedWorkout) => w.date)
+  );
 
   const handleDeleteWorkout = async (workoutId: string) => {
-    setPendingDeletions((prev) => [...prev, workoutId]);
+    addPendingDeletion(workoutId);
     try {
       await deleteWorkout(workoutId);
-      setPendingDeletions((prev) => prev.filter((id) => id !== workoutId));
+      removePendingDeletion(workoutId);
+      mutate();
     } catch (err) {
       toast({
         title: "Error",
         description: "Failed to delete workout. Please try again.",
         variant: "destructive",
       });
-      setPendingDeletions((prev) => prev.filter((id) => id !== workoutId));
-      mutate();
+      removePendingDeletion(workoutId);
     }
   };
 
@@ -83,26 +86,25 @@ function HistoryPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Calendar currentDate={selectedDate} workoutDates={workoutDates} onDateChange={setSelectedDate} />
+          <Calendar workoutDates={workoutDates} />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <WorkoutList
-            workouts={displayedWorkouts}
-            onWorkoutSelect={setSelectedWorkout}
-            onWorkoutDelete={handleDeleteWorkout}
-            selectedDate={selectedDate}
-          />
+          <WorkoutList workouts={displayedWorkouts} onWorkoutDelete={handleDeleteWorkout} />
         </motion.div>
       </InfiniteScroll>
-      <WorkoutDetails workout={selectedWorkout} onClose={() => setSelectedWorkout(null)} />
+      <WorkoutDetails />
     </div>
   );
 }
 
-export default function History() {
-  return <HistoryPage />;
+export default function HistoryPage() {
+  return (
+    <HistoryProvider>
+      <HistoryPageInner />
+    </HistoryProvider>
+  );
 }

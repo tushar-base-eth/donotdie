@@ -3,22 +3,18 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import type { UIExtendedWorkout } from "@/types/workouts";
 import { useUnitPreference } from "@/lib/hooks/use-unit-preference";
 import { motion } from "framer-motion";
+import { useHistoryContext } from "@/contexts/history-context";
 
-interface WorkoutDetailsProps {
-  workout: UIExtendedWorkout | null;
-  onClose: () => void;
-}
-
-export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
+export function WorkoutDetails() {
+  const { selectedWorkout, setSelectedWorkout } = useHistoryContext();
   const { formatWeight } = useUnitPreference();
 
-  if (!workout) return null;
+  if (!selectedWorkout) return null;
 
   return (
-    <Sheet open={!!workout} onOpenChange={onClose}>
+    <Sheet open={!!selectedWorkout} onOpenChange={() => setSelectedWorkout(null)}>
       <SheetContent
         className="w-full sm:max-w-lg p-0 bg-background z-50 rounded-t-3xl"
         style={{ maxHeight: "calc(100vh - 60px)", overflowY: "auto" }}
@@ -29,7 +25,7 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
             <Button
               size="icon"
               variant="ghost"
-              onClick={onClose}
+              onClick={() => setSelectedWorkout(null)}
               className="rounded-full h-8 w-8"
             >
               <X className="h-4 w-4" />
@@ -42,7 +38,7 @@ export function WorkoutDetails({ workout, onClose }: WorkoutDetailsProps) {
           transition={{ duration: 0.3 }}
           className="p-4 space-y-6"
         >
-          {workout.exercises.map((exercise, index) => {
+          {selectedWorkout.exercises.map((exercise, index) => {
             const { uses_reps, uses_weight, uses_duration, uses_distance } = exercise.exercise;
             return (
               <div key={index} className="space-y-4">

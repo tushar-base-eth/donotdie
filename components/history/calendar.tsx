@@ -4,15 +4,11 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useHistoryContext } from "@/contexts/history-context";
 
-interface CalendarProps {
-  currentDate: Date | null;
-  workoutDates: Set<string>;
-  onDateChange: (date: Date | null) => void;
-}
-
-export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarProps) {
-  const [monthDate, setMonthDate] = useState(currentDate || new Date());
+export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
+  const { selectedDate, setSelectedDate } = useHistoryContext();
+  const [monthDate, setMonthDate] = useState(selectedDate || new Date());
   const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).getDay();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -20,17 +16,17 @@ export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarPr
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    if (!currentDate) {
+    if (!selectedDate) {
       setMonthDate(new Date());
     } else {
-      setMonthDate(currentDate);
+      setMonthDate(selectedDate);
     }
-  }, [currentDate]);
+  }, [selectedDate]);
 
   const handleMonthChange = (increment: number) => {
     const newDate = new Date(monthDate.setMonth(monthDate.getMonth() + increment));
     setMonthDate(new Date(newDate));
-    onDateChange(null); // Clear selection when changing months
+    setSelectedDate(null); // Clear selection when changing months
   };
 
   const isFutureDate = (date: string): boolean => {
@@ -72,7 +68,7 @@ export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarPr
           {days.map((day) => {
             const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const hasWorkout = workoutDates.has(date);
-            const isSelected = currentDate && currentDate.toISOString().split("T")[0] === date;
+            const isSelected = selectedDate && selectedDate.toISOString().split("T")[0] === date;
             const isToday = date === today;
 
             return (
@@ -84,11 +80,10 @@ export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarPr
                 `}
                 onClick={() => {
                   if (!isFutureDate(date)) {
-                    onDateChange(isSelected ? null : new Date(date));
+                    setSelectedDate(isSelected ? null : new Date(date));
                   }
                 }}
               >
-                {/* Solid circle highlight for selected date */}
                 {isSelected && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-8 h-8 rounded-full bg-[#4B7BFF] dark:bg-red-500" />
@@ -97,7 +92,6 @@ export function Calendar({ currentDate, workoutDates, onDateChange }: CalendarPr
                 <span className={`text-sm relative z-10 ${hasWorkout && !isSelected ? "font-medium text-[#4B7BFF] dark:text-red-500" : ""}`}>
                   {day}
                 </span>
-                {/* Small dot for workout dates */}
                 {hasWorkout && !isSelected && (
                   <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#4B7BFF] dark:bg-red-500" />
                 )}
