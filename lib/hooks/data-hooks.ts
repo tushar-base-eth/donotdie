@@ -46,7 +46,6 @@ export function useVolumeData(userId: string, timeRange: string) {
       .order("date", { ascending: true });
 
     if (error) throw new Error(error.message);
-    // Safely cast data to UIDailyVolume[] via unknown
     return (data as unknown) as UIDailyVolume[];
   };
 
@@ -92,7 +91,7 @@ export function useAvailableExercises() {
   const { data: predefinedData, error: preError } = useSWR<Exercise[]>(
     "/api/exercises",
     apiFetcher,
-    { dedupingInterval: 7200000 }
+    { dedupingInterval: 24 * 60 * 60 * 1000 } // 24 hours
   );
 
   const { data: userData, error: userError, mutate: mutateUser } = useSWR(
@@ -105,13 +104,13 @@ export function useAvailableExercises() {
       if (error) throw error;
       return data;
     },
-    { dedupingInterval: 7200000 }
+    { dedupingInterval: 24 * 60 * 60 * 1000 } // 24 hours
   );
 
   const { data: equipmentData, error: equipError } = useSWR<Equipment[]>(
     "/api/equipment",
     apiFetcher,
-    { dedupingInterval: 7200000 }
+    { dedupingInterval: 24 * 60 * 60 * 1000 } // 24 hours
   );
 
   const { data: exerciseEquipmentData, error: eeError } = useSWR(
@@ -121,7 +120,7 @@ export function useAvailableExercises() {
       if (error) throw error;
       return data;
     },
-    { dedupingInterval: 7200000 }
+    { dedupingInterval: 24 * 60 * 60 * 1000 } // 24 hours
   );
 
   const { data: userExerciseEquipmentData, error: ueeError } = useSWR(
@@ -131,7 +130,7 @@ export function useAvailableExercises() {
       if (error) throw error;
       return data;
     },
-    { dedupingInterval: 7200000 }
+    { dedupingInterval: 24 * 60 * 60 * 1000 } // 24 hours
   );
 
   const exercises: Exercise[] = useMemo(() => {
