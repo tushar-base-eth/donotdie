@@ -29,23 +29,34 @@ export function useVolumeData(userId: string, timeRange: string) {
   startDate.setDate(startDate.getDate() - daysToFetch);
 
   const key: FetcherKey | null = userId
-    ? (["daily_volume" as TableName, { select: "date, volume", match: { user_id: userId } }] as FetcherKey)
+    ? (["daily_volume", { user_id: userId, timeRange }] as FetcherKey)
     : null;
+
+  const volumeFetcher = async (key: FetcherKey): Promise<UIDailyVolume[]> => {
+    const [table, options] = key;
+    const days = options.timeRange === "7days" ? 7 : options.timeRange === "8weeks" ? 56 : 365;
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    
+    const { data, error } = await supabase
+      .from(table)
+      .select("date, volume")
+      .eq("user_id", options.user_id)
+      .gte("date", start.toISOString().split("T")[0])
+      .order("date", { ascending: true });
+
+    if (error) throw new Error(error.message);
+    // Safely cast data to UIDailyVolume[] via unknown
+    return (data as unknown) as UIDailyVolume[];
+  };
 
   const { data, error, mutate } = useSWR<UIDailyVolume[]>(
     key,
-    (k: FetcherKey) => fetcher<UIDailyVolume>(k),
+    volumeFetcher,
     { revalidateOnFocus: false }
   );
 
-  const volumeData: UIDailyVolume[] = useMemo(() => {
-    if (!data) return [];
-    return data
-      .filter((row) => row.date && new Date(row.date) >= startDate)
-      .map((row) => ({ date: row.date, volume: row.volume }));
-  }, [data, startDate]);
-
-  return { volumeData, isLoading: !error && !data, isError: !!error, mutate };
+  return { volumeData: data || [], isLoading: !error && !data, isError: !!error, mutate };
 }
 
 export function useWorkouts(userId: string) {
