@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
+import useSWR from "swr";
 import type { Profile } from "@/types/workouts";
 
 interface UserProfile extends Profile {
@@ -18,30 +19,20 @@ interface ProfileContextType {
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
 
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error("Failed to fetch profile");
+  }
+  return res.json();
+};
+
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ProfileState>({ profile: null });
-
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch("/api/auth/session");
-      if (res.ok) {
-        const { user } = await res.json();
-        setState({ profile: user });
-      } else {
-        setState({ profile: null });
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      setState({ profile: null });
-    }
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const { data, error, mutate } = useSWR("/api/profile", fetcher);
+  const profile = data?.profile || null;
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!state.profile) return;
+    if (!profile) return;
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -51,14 +42,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const errorData = await res.json();
       throw new Error(errorData.error || "Failed to update profile");
     }
-    setState((prev) => ({
-      ...prev,
-      profile: { ...prev.profile!, ...updates },
-    }));
+    const updatedProfile = await res.json();
+    mutate({ profile: updatedProfile.profile }, false); // Update cache with server response
   };
 
   return (
-    <ProfileContext.Provider value={{ state, updateProfile }}>
+    <ProfileContext.Provider value={{ state: { profile }, updateProfile }}>
       {children}
     </ProfileContext.Provider>
   );
