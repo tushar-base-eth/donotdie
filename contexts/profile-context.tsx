@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
-import useSWR from "swr";
+import { createContext, useContext, ReactNode, useState } from "react";
 import type { Profile } from "@/types/workouts";
 
 interface UserProfile extends Profile {
@@ -15,6 +14,7 @@ interface ProfileState {
 interface ProfileContextType {
   state: ProfileState;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  fetchProfile: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -28,11 +28,19 @@ const fetcher = async (url: string) => {
 };
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const { data, error, mutate } = useSWR("/api/profile", fetcher);
-  const profile = data?.profile || null;
+  const [state, setState] = useState<ProfileState>({ profile: null });
+
+  const fetchProfile = async () => {
+    try {
+      const data = await fetcher("/api/profile");
+      setState({ profile: data.profile });
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!profile) return;
+    if (!state.profile) return;
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -43,11 +51,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       throw new Error(errorData.error || "Failed to update profile");
     }
     const updatedProfile = await res.json();
-    mutate({ profile: updatedProfile.profile }, false); // Update cache with server response
+    setState({ profile: updatedProfile.profile });
   };
 
   return (
-    <ProfileContext.Provider value={{ state: { profile }, updateProfile }}>
+    <ProfileContext.Provider value={{ state, updateProfile, fetchProfile }}>
       {children}
     </ProfileContext.Provider>
   );

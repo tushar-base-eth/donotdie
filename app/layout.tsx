@@ -2,6 +2,7 @@ import type React from "react";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ProfileProvider } from "@/contexts/profile-context";
+import { ProfileInitializer } from "./ProfileInitializer"; // Import the new component
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/navigation/bottom-nav";
@@ -31,12 +32,14 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ProfileProvider>
+            <ProfileInitializer>
               <ErrorBoundary>
                 <div className="h-[calc(100vh-64px)] overflow-auto">{children}</div>
                 <BottomNav />
               </ErrorBoundary>
               <Toaster />
               <Analytics />
+            </ProfileInitializer>
           </ProfileProvider>
         </ThemeProvider>
       </body>
