@@ -37,7 +37,7 @@ export function useVolumeData(userId: string, timeRange: string) {
     const days = options.timeRange === "7days" ? 7 : options.timeRange === "8weeks" ? 56 : 365;
     const start = new Date();
     start.setDate(start.getDate() - days);
-    
+
     const { data, error } = await supabase
       .from(table)
       .select("date, volume")
@@ -83,16 +83,15 @@ export function useDeleteWorkout() {
 export function useAvailableExercises() {
   const { state: { profile } } = useUserProfile();
 
-  const { data: predefinedData, error: preError } = useSWR(
-    "predefined-exercises",
-    async () => {
-      const { data, error } = await supabase
-        .from("exercises")
-        .select("id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance, is_deleted")
-        .eq("is_deleted", false);
-      if (error) throw error;
-      return data;
-    },
+  const apiFetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+    return res.json();
+  };
+
+  const { data: predefinedData, error: preError } = useSWR<Exercise[]>(
+    "/api/exercises",
+    apiFetcher,
     { dedupingInterval: 7200000 }
   );
 
@@ -109,13 +108,9 @@ export function useAvailableExercises() {
     { dedupingInterval: 7200000 }
   );
 
-  const { data: equipmentData, error: equipError } = useSWR(
-    "equipment",
-    async () => {
-      const { data, error } = await supabase.from("equipment").select("*");
-      if (error) throw error;
-      return data;
-    },
+  const { data: equipmentData, error: equipError } = useSWR<Equipment[]>(
+    "/api/equipment",
+    apiFetcher,
     { dedupingInterval: 7200000 }
   );
 
@@ -140,7 +135,7 @@ export function useAvailableExercises() {
   );
 
   const exercises: Exercise[] = useMemo(() => {
-    const predefined = (predefinedData || []).map((ex) => ({
+    const predefined = (predefinedData || []).map((ex: Exercise) => ({
       id: ex.id,
       name: ex.name,
       category: ex.category,
@@ -150,7 +145,7 @@ export function useAvailableExercises() {
       uses_weight: ex.uses_weight ?? false,
       uses_duration: ex.uses_duration ?? false,
       uses_distance: ex.uses_distance ?? false,
-      is_deleted: ex.is_deleted ?? false,
+      is_deleted: false,
       source: "predefined" as const,
     }));
 
