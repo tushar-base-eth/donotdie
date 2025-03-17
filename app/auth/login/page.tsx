@@ -13,7 +13,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 function LoginContent() {
-  const { state } = useUserProfile();
+  // const { fetchProfile } = useUserProfile(); // Add fetchProfile to hook
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +44,7 @@ function LoginContent() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Login failed');
       }
+      // await fetchProfile(); // This function sets the profile in the context
       window.location.href = '/home'; // Force reload to trigger middleware
     } catch (error: any) {
       if (error.message.includes("Email not confirmed")) {

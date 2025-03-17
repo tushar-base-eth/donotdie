@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useUserProfile } from "@/contexts/profile-context";
 import { Dumbbell, Heart, BarChart } from "lucide-react";
 
 // Feature data for the landing page

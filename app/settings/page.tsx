@@ -29,7 +29,7 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const { state: { profile }, updateProfile } = useUserProfile();
+  const { state: { profile }, updateProfile, clearProfile } = useUserProfile();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
@@ -117,6 +117,13 @@ export default function Settings() {
         const errorData = await response.json();
         throw new Error(errorData.error || "Logout failed");
       }
+      clearProfile();
+      toast({
+        title: "Success",
+        description: "You have been logged out.",
+        variant: "default",
+        duration: 2000,
+      });
       router.push("/auth/login");
     } catch (error: any) {
       toast({

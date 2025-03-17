@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, ReactNode, useState } from "react";
+import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import type { Profile } from "@/types/workouts";
 
 interface UserProfile extends Profile {
@@ -15,6 +16,7 @@ interface ProfileContextType {
   state: ProfileState;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   fetchProfile: () => Promise<void>;
+  clearProfile: () => void; // New function
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -29,6 +31,7 @@ const fetcher = async (url: string) => {
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ProfileState>({ profile: null });
+  const pathname = usePathname();
 
   const fetchProfile = async () => {
     try {
@@ -36,8 +39,19 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setState({ profile: data.profile });
     } catch (error) {
       console.error("Error fetching profile:", error);
+      setState({ profile: null });
     }
   };
+
+  const clearProfile = () => {
+    setState({ profile: null }); // Reset profile state
+  };
+
+  useEffect(() => {
+    if (!state.profile && pathname !== "/") {
+      fetchProfile();
+    }
+  }, []);
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!state.profile) return;
@@ -55,7 +69,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProfileContext.Provider value={{ state, updateProfile, fetchProfile }}>
+    <ProfileContext.Provider value={{ state, updateProfile, fetchProfile, clearProfile }}>
       {children}
     </ProfileContext.Provider>
   );

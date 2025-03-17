@@ -1,5 +1,6 @@
 "use client";
 
+import { useUserProfile } from "@/contexts/profile-context";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LineChart, Settings, History } from "lucide-react";
@@ -7,7 +8,13 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 export function BottomNav() {
-  const pathname = usePathname();
+  const { state } = useUserProfile(); // First hook
+  const pathname = usePathname();     // Second hook, called unconditionally
+
+  // If no profile exists (user not signed in), do not render the nav bar
+  if (!state.profile) {
+    return null;
+  }
 
   const navItems = [
     { href: "/home", icon: Home, label: "Home" },
