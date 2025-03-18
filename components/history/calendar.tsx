@@ -75,11 +75,11 @@ export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
               <div
                 key={day}
                 className={`
-                  aspect-square p-2 relative cursor-pointer flex items-center justify-center
+                  aspect-square p-2 relative ${hasWorkout ? "cursor-pointer" : "cursor-default"} flex items-center justify-center
                   ${isToday && !isSelected ? "bg-muted" : ""}
                 `}
                 onClick={() => {
-                  if (!isFutureDate(date)) {
+                  if (!isFutureDate(date) && hasWorkout) {
                     setSelectedDate(isSelected ? null : new Date(date));
                   }
                 }}
