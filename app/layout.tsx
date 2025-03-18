@@ -36,7 +36,6 @@ export default function RootLayout({
               <BottomNav />
             </ErrorBoundary>
             <Toaster />
-            <Analytics />
           </ProfileProvider>
         </ThemeProvider>
       </body>

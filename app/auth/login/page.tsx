@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +19,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  // Handle magic link sign-in with Supabase
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
@@ -30,8 +28,17 @@ export default function LoginPage() {
     setIsLoading(true);
     setLoginError("");
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      if (error) throw error;
+      const response = await fetch("/api/auth/magiclink", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send magic link");
+      }
       toast({
         title: "Magic Link Sent!",
         description: "Check your email for the login link.",
@@ -44,22 +51,8 @@ export default function LoginPage() {
     }
   };
 
-  // Handle Google sign-in with Supabase
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setLoginError("");
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/api/auth/callback` },
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      console.error("Google sign-in error:", error);
-      setLoginError(error.message || "Failed to sign in with Google. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGoogleSignIn = () => {
+    window.location.href = "/api/auth/google";
   };
 
   return (
@@ -155,9 +148,8 @@ export default function LoginPage() {
                       variant="outline"
                       className="w-full glass-hover ios-active"
                       onClick={handleGoogleSignIn}
-                      disabled={isLoading}
                     >
-                      {isLoading ? "Signing in..." : "Sign in with Google"}
+                      Sign in with Google
                     </Button>
                   </div>
                 </CardContent>

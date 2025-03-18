@@ -48,8 +48,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (!state.profile && pathname !== "/") {
-      fetchProfile();
+    if (pathname !== "/auth/login" && pathname !== "/") {
+      if (!state.profile)
+        fetchProfile();
     }
   }, []);
 
