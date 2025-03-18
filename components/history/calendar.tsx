@@ -8,7 +8,7 @@ import { useHistoryContext } from "@/contexts/history-context";
 
 export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
   const { selectedDate, setSelectedDate } = useHistoryContext();
-  const [monthDate, setMonthDate] = useState(new Date()); // Initialize once, no reset
+  const [monthDate, setMonthDate] = useState(new Date());
   const daysInMonth = new Date(
     monthDate.getFullYear(),
     monthDate.getMonth() + 1,
@@ -29,8 +29,6 @@ export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
   const handleMonthChange = (increment: number) => {
     const newDate = new Date(monthDate);
     newDate.setMonth(newDate.getMonth() + increment);
-
-    // Check if selectedDate is in the new month; clear it if not
     if (selectedDate) {
       const selectedMonth = new Date(
         selectedDate.getFullYear(),
@@ -42,10 +40,9 @@ export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
         selectedMonth.getFullYear() !== newMonth.getFullYear() ||
         selectedMonth.getMonth() !== newMonth.getMonth()
       ) {
-        setSelectedDate(null); // Clear selection if not in new month
+        setSelectedDate(null);
       }
     }
-
     setMonthDate(newDate);
   };
 
@@ -127,11 +124,14 @@ export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
                   }
                 }}
               >
+                {/* Selection Highlight */}
                 {isSelected && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-highlight" />
+                    <div className="w-8 h-8 rounded-full bg-highlight opacity-50" />
                   </div>
                 )}
+
+                {/* Date Text */}
                 <span
                   className={`text-sm relative z-10 ${
                     hasWorkout && !isSelected
@@ -141,6 +141,8 @@ export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
                 >
                   {day}
                 </span>
+
+                {/* Workout Marking Dot */}
                 {hasWorkout && !isSelected && (
                   <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-highlight" />
                 )}

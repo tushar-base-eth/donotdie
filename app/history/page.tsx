@@ -12,20 +12,32 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useFilteredWorkouts } from "@/lib/hooks/use-filtered-workouts";
+import { useWorkouts } from "@/lib/hooks/data-hooks"; // Add this import
 import { HistoryProvider, useHistoryContext } from "@/contexts/history-context";
 
 function HistoryPageInner() {
-  const { state: { profile } } = useUserProfile();
-  const { selectedDate, pendingDeletions, addPendingDeletion, removePendingDeletion } = useHistoryContext();
+  const {
+    state: { profile },
+  } = useUserProfile();
+  const {
+    selectedDate,
+    pendingDeletions,
+    addPendingDeletion,
+    removePendingDeletion,
+  } = useHistoryContext();
+
+  // Use both hooks
   const { displayedWorkouts, isLoading, isError, mutate } = useFilteredWorkouts(
     profile?.id || "",
     selectedDate,
     pendingDeletions
   );
+  const { workouts: allWorkouts } = useWorkouts(profile?.id || "");
   const { deleteWorkout } = useDeleteWorkout();
 
+  // All workout dates for the calendar
   const workoutDates: Set<string> = new Set<string>(
-    displayedWorkouts.map((w: UIExtendedWorkout) => w.date)
+    allWorkouts.map((w: UIExtendedWorkout) => w.date)
   );
 
   const handleDeleteWorkout = async (workoutId: string) => {
@@ -74,7 +86,10 @@ function HistoryPageInner() {
           !selectedDate && (
             <div className="flex items-center justify-center p-4">
               <Badge variant="outline" className="flex items-center space-x-1">
-                <CheckCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
+                <CheckCircle
+                  className="h-4 w-4 text-green-500"
+                  aria-hidden="true"
+                />
                 <span>You’ve seen all your workouts!</span>
               </Badge>
             </div>
@@ -93,7 +108,10 @@ function HistoryPageInner() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <WorkoutList workouts={displayedWorkouts} onWorkoutDelete={handleDeleteWorkout} />
+          <WorkoutList
+            workouts={displayedWorkouts}
+            onWorkoutDelete={handleDeleteWorkout}
+          />
         </motion.div>
       </InfiniteScroll>
       <WorkoutDetails />
