@@ -5,7 +5,9 @@ export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("exercises")
-    .select("id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance")
+    .select(
+      "id, name, category, primary_muscle_group, secondary_muscle_group, uses_reps, uses_weight, uses_duration, uses_distance"
+    )
     .eq("is_deleted", false);
 
   if (error) {
@@ -14,7 +16,7 @@ export async function GET() {
 
   return NextResponse.json(data, {
     headers: {
-        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=59",
+      "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=59",
     },
   });
 }
