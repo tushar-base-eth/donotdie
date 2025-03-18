@@ -29,8 +29,24 @@ export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
   const handleMonthChange = (increment: number) => {
     const newDate = new Date(monthDate);
     newDate.setMonth(newDate.getMonth() + increment);
+
+    // Check if selectedDate is in the new month; clear it if not
+    if (selectedDate) {
+      const selectedMonth = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        1
+      );
+      const newMonth = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
+      if (
+        selectedMonth.getFullYear() !== newMonth.getFullYear() ||
+        selectedMonth.getMonth() !== newMonth.getMonth()
+      ) {
+        setSelectedDate(null); // Clear selection if not in new month
+      }
+    }
+
     setMonthDate(newDate);
-    // Removed setSelectedDate(null) to keep selection stable
   };
 
   const isFutureDate = (date: string): boolean => {
