@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail } from "lucide-react";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,36 +31,49 @@ export default function LoginPage() {
     try {
       const response = await fetch("/api/auth/magiclink", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
       const data = await response.json();
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(data.error || "Failed to send magic link");
-      }
       toast({
         title: "Magic Link Sent!",
         description: "Check your email for the login link.",
       });
     } catch (error: any) {
       console.error("Magic link error:", error);
-      setLoginError(error.message || "Failed to send magic link. Please try again.");
+      setLoginError(
+        error.message || "Failed to send magic link. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    window.location.href = "/api/auth/google";
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback`,
+        },
+      });
+      if (error) throw error;
+      // Redirect to Google's OAuth page in the same tab
+      window.location.href = data.url;
+    } catch (error: any) {
+      console.error("Google OAuth error:", error);
+      setLoginError(error.message || "Failed to sign in with Google.");
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <main className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-sm space-y-6">
-          {/* Header */}
           <div className="space-y-2 text-center">
             <div className="inline-block rounded-full bg-primary/10 p-2">
               <svg
@@ -94,7 +108,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Login error message */}
           {loginError && (
             <Alert variant="destructive">
               <AlertTitle>Authentication Error</AlertTitle>
@@ -102,14 +115,12 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          {/* Authentication Methods */}
           <Tabs defaultValue="google" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-muted text-muted-foreground">
               <TabsTrigger value="google">Google</TabsTrigger>
               <TabsTrigger value="magic">Magic Link</TabsTrigger>
             </TabsList>
 
-            {/* Google Sign-In Tab */}
             <TabsContent value="google">
               <Card className="border border-border">
                 <CardContent className="pt-4 pb-6">
@@ -135,15 +146,15 @@ export default function LoginPage() {
                     <Button
                       className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={handleGoogleSignIn}
+                      disabled={isLoading}
                     >
-                      Sign in with Google
+                      {isLoading ? "Signing in..." : "Sign in with Google"}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Magic Link Tab */}
             <TabsContent value="magic">
               <Card className="border border-border">
                 <CardContent className="pt-4">
