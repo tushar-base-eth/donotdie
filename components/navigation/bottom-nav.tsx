@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 
 export function BottomNav() {
   const { state } = useUserProfile(); // First hook
-  const pathname = usePathname();     // Second hook, called unconditionally
+  const pathname = usePathname(); // Second hook, called unconditionally
 
   // If no profile exists (user not signed in), do not render the nav bar
   if (!state.profile) {
@@ -25,7 +25,7 @@ export function BottomNav() {
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-background border-t border-border shadow-lg rounded-t-3xl"
+      className="fixed bottom-0 left-0 right-0 z-[100] bg-background border-t border-border shadow-lg rounded-t-3xl bottom-nav"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}

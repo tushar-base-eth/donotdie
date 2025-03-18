@@ -20,7 +20,10 @@ export default function RootLayout({
           name="description"
           content="Things changes when you start from zero"
         />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta
