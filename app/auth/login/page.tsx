@@ -56,12 +56,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
+    <div className="flex min-h-screen w-full flex-col bg-background dark:bg-background-dark">
       {/* Animated background pattern */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-background" />
+        <div className="absolute inset-0 bg-background dark:bg-background-dark" />
         <div
-          className="absolute -top-[40%] left-[20%] h-[80%] w-[60%] rounded-full bg-primary/5 blur-3xl dark:bg-primary/10"
+          className="absolute -top-[40%] left-[20%] h-[80%] w-[60%] rounded-full bg-primary/5 blur-3xl dark:bg-primary-dark/10"
           style={{ animation: "float 8s ease-in-out infinite" }}
         />
         <div
@@ -75,7 +75,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm space-y-6">
           {/* Header */}
           <div className="space-y-2 text-center">
-            <div className="inline-block rounded-full bg-primary/10 p-2 dark:bg-primary/20">
+            <div className="inline-block rounded-full bg-primary/10 p-2 dark:bg-primary-dark/20">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -100,10 +100,12 @@ export default function LoginPage() {
                 <path d="m19.1 4.9-1.4 1.4" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl text-foreground dark:text-foreground-dark">
               Welcome to <span className="gradient-text">ZeroNow</span>
             </h1>
-            <p className="text-sm text-muted-foreground">Things changes when you start from zero</p>
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+              Things change when you start from zero
+            </p>
           </div>
 
           {/* Login error message */}
@@ -116,17 +118,17 @@ export default function LoginPage() {
 
           {/* Authentication Methods */}
           <Tabs defaultValue="google" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="google">Google</TabsTrigger>
-              <TabsTrigger value="magic">Magic Link</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-muted dark:bg-card-dark text-muted-foreground dark:text-foreground-dark">
+              <TabsTrigger value="google" className="dark:text-foreground-dark">Google</TabsTrigger>
+              <TabsTrigger value="magic" className="dark:text-foreground-dark">Magic Link</TabsTrigger>
             </TabsList>
 
             {/* Google Sign-In Tab */}
             <TabsContent value="google">
-              <Card className="glass card-highlight">
+              <Card className="bg-glass dark:bg-glass-dark shadow-card-highlight dark:shadow-card-highlight-dark border border-border dark:border-border">
                 <CardContent className="pt-4 pb-6">
                   <div className="flex flex-col items-center justify-center gap-4 py-6">
-                    <div className="rounded-full bg-background p-4 shadow-sm">
+                    <div className="rounded-full bg-background dark:bg-card-dark p-4 shadow-sm">
                       <svg
                         className="h-8 w-8"
                         aria-hidden="true"
@@ -143,10 +145,11 @@ export default function LoginPage() {
                         />
                       </svg>
                     </div>
-                    <p className="text-center text-sm text-muted-foreground">Continue with your Google account</p>
+                    <p className="text-center text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                      Continue with your Google account
+                    </p>
                     <Button
-                      variant="outline"
-                      className="w-full glass-hover ios-active"
+                      className="w-full bg-primary dark:bg-primary-dark text-primary-foreground hover:bg-primary/90 dark:hover:bg-primary-dark/90"
                       onClick={handleGoogleSignIn}
                     >
                       Sign in with Google
@@ -158,12 +161,14 @@ export default function LoginPage() {
 
             {/* Magic Link Tab */}
             <TabsContent value="magic">
-              <Card className="glass card-highlight">
+              <Card className="bg-glass dark:bg-glass-dark shadow-card-highlight dark:shadow-card-highlight-dark border border-border dark:border-border">
                 <CardContent className="pt-4">
                   <form onSubmit={handleMagicLink}>
                     <div className="grid gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email" className="text-foreground dark:text-foreground-dark">
+                          Email
+                        </Label>
                         <Input
                           id="email"
                           type="email"
@@ -173,7 +178,7 @@ export default function LoginPage() {
                           autoComplete="email"
                         />
                       </div>
-                      <Button type="submit" disabled={isLoading || !email}>
+                      <Button type="submit" disabled={isLoading || !email} className="w-full bg-primary dark:bg-primary-dark text-primary-foreground hover:bg-primary/90 dark:hover:bg-primary-dark/90">
                         {isLoading ? "Sending..." : "Send Magic Link"}
                       </Button>
                     </div>
