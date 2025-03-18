@@ -10,7 +10,6 @@ import { motion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import { useAvailableExercises } from "@/lib/hooks/data-hooks";
 import type { Exercise, Filter } from "@/types/workouts";
-import { useUserProfile } from "@/contexts/profile-context";
 import { CategoryList } from "./category-list";
 import { ExerciseList } from "./exercise-list";
 import { MuscleGroupList } from "./muscle-group-list";
@@ -36,17 +35,27 @@ export function ExerciseSelector({
   const [selectedTab, setSelectedTab] = useState<"all" | "categories">("all");
   const [navStack, setNavStack] = useState<string[]>([]);
 
-  const { exercises, equipment, exerciseEquipment, userExerciseEquipment, isLoading, isError, mutate } = useAvailableExercises();
+  // Fetch exercises only when the selector is opened
+  const {
+    exercises,
+    equipment,
+    exerciseEquipment,
+    userExerciseEquipment,
+    isLoading,
+    isError,
+    mutate,
+  } = useAvailableExercises();
 
   const muscleGroups = useMemo(() => {
     const groups = new Set<string>();
-    exercises.forEach(ex => {
+    exercises.forEach((ex) => {
       if (ex.primary_muscle_group) groups.add(ex.primary_muscle_group);
       if (ex.secondary_muscle_group) groups.add(ex.secondary_muscle_group);
     });
     return Array.from(groups).sort();
   }, [exercises]);
 
+  // Handle error state
   if (isError) {
     return (
       <div className="p-4">
@@ -63,9 +72,12 @@ export function ExerciseSelector({
     onOpenChange(false);
   };
 
-  const buttonText = selectedExercises.length === 0
-    ? "Add Exercise"
-    : `Add ${selectedExercises.length} Exercise${selectedExercises.length > 1 ? "s" : ""}`;
+  const buttonText =
+    selectedExercises.length === 0
+      ? "Add Exercise"
+      : `Add ${selectedExercises.length} Exercise${
+          selectedExercises.length > 1 ? "s" : ""
+        }`;
 
   const getFilterFromNavStack = (navStack: string[]): Filter => {
     if (navStack.length === 1) {
@@ -90,19 +102,19 @@ export function ExerciseSelector({
     if (navStack.length === 1) {
       if (navStack[0] === "by_muscles") return "Select Muscle Group";
       if (navStack[0] === "by_equipment") return "Select Equipment";
-      return navStack[0].replace('_', ' ');
+      return navStack[0].replace("_", " ");
     }
     if (navStack.length === 2) {
       if (navStack[0] === "by_muscles") return `${navStack[1]}`;
       if (navStack[0] === "by_equipment") {
-        const equipmentName = equipment.find(eq => eq.id === navStack[1])?.name || "Equipment";
+        const equipmentName =
+          equipment.find((eq) => eq.id === navStack[1])?.name || "Equipment";
         return `${equipmentName}`;
       }
     }
     return "Exercises";
   };
 
-  // Handler to reset navStack when "Categories" tab is clicked
   const handleCategoriesClick = () => {
     if (selectedTab !== "categories" || navStack.length > 0) {
       setSelectedTab("categories");
@@ -120,13 +132,18 @@ export function ExerciseSelector({
       >
         <div className="px-6 pb-6 flex items-center border-b shrink-0">
           {navStack.length > 0 && (
-            <Button variant="ghost" onClick={() => setNavStack(navStack.slice(0, -1))} className="mr-2">
+            <Button
+              variant="ghost"
+              onClick={() => setNavStack(navStack.slice(0, -1))}
+              className="mr-2"
+            >
               <ChevronLeft />
             </Button>
           )}
           <SheetTitle className="text-xl">{getTitle()}</SheetTitle>
           <span id="exercise-selector-description" className="sr-only">
-            Select exercises to add to your workout. You can search or filter by category.
+            Select exercises to add to your workout. You can search or filter by
+            category.
           </span>
         </div>
 
@@ -157,7 +174,7 @@ export function ExerciseSelector({
               <TabsTrigger
                 value="categories"
                 className="flex-1 rounded-lg"
-                onClick={handleCategoriesClick} // Added custom click handler
+                onClick={handleCategoriesClick}
               >
                 Categories
               </TabsTrigger>
@@ -166,37 +183,15 @@ export function ExerciseSelector({
         </div>
 
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            {selectedTab === "all" && (
-              <ExerciseList
-                filter={{ type: "all" }}
-                searchQuery={searchQuery}
-                selectedExercises={selectedExercises}
-                onExerciseToggle={onExerciseToggle}
-                exercises={exercises}
-                exerciseEquipment={exerciseEquipment}
-                userExerciseEquipment={userExerciseEquipment}
-              />
-            )}
-            {selectedTab === "categories" && navStack.length === 0 && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
-                <CategoryList onCategorySelect={(category) => setNavStack([category])} />
-              </motion.div>
-            )}
-            {selectedTab === "categories" && navStack.length === 1 && navStack[0] === "by_muscles" && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
-                <MuscleGroupList muscleGroups={muscleGroups} onSelect={(muscle) => setNavStack([...navStack, muscle])} />
-              </motion.div>
-            )}
-            {selectedTab === "categories" && navStack.length === 1 && navStack[0] === "by_equipment" && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
-                <EquipmentList equipment={equipment} onSelect={(eqId) => setNavStack([...navStack, eqId])} />
-              </motion.div>
-            )}
-            {selectedTab === "categories" && (navStack.length > 1 || (navStack.length === 1 && navStack[0] !== "by_muscles" && navStack[0] !== "by_equipment")) && (
-              <motion.div initial={{ x: 100 }} animate={{ x: 0 }} exit={{ x: 100 }}>
+          {isLoading ? (
+            <div className="p-4 text-center text-muted-foreground">
+              Loading exercises...
+            </div>
+          ) : (
+            <ScrollArea className="h-full">
+              {selectedTab === "all" && (
                 <ExerciseList
-                  filter={getFilterFromNavStack(navStack)}
+                  filter={{ type: "all" }}
                   searchQuery={searchQuery}
                   selectedExercises={selectedExercises}
                   onExerciseToggle={onExerciseToggle}
@@ -204,9 +199,69 @@ export function ExerciseSelector({
                   exerciseEquipment={exerciseEquipment}
                   userExerciseEquipment={userExerciseEquipment}
                 />
-              </motion.div>
-            )}
-          </ScrollArea>
+              )}
+              {selectedTab === "categories" && navStack.length === 0 && (
+                <motion.div
+                  initial={{ x: 100 }}
+                  animate={{ x: 0 }}
+                  exit={{ x: 100 }}
+                >
+                  <CategoryList
+                    onCategorySelect={(category) => setNavStack([category])}
+                  />
+                </motion.div>
+              )}
+              {selectedTab === "categories" &&
+                navStack.length === 1 &&
+                navStack[0] === "by_muscles" && (
+                  <motion.div
+                    initial={{ x: 100 }}
+                    animate={{ x: 0 }}
+                    exit={{ x: 100 }}
+                  >
+                    <MuscleGroupList
+                      muscleGroups={muscleGroups}
+                      onSelect={(muscle) => setNavStack([...navStack, muscle])}
+                    />
+                  </motion.div>
+                )}
+              {selectedTab === "categories" &&
+                navStack.length === 1 &&
+                navStack[0] === "by_equipment" && (
+                  <motion.div
+                    initial={{ x: 100 }}
+                    animate={{ x: 0 }}
+                    exit={{ x: 100 }}
+                  >
+                    <EquipmentList
+                      equipment={equipment}
+                      onSelect={(eqId) => setNavStack([...navStack, eqId])}
+                    />
+                  </motion.div>
+                )}
+              {selectedTab === "categories" &&
+                (navStack.length > 1 ||
+                  (navStack.length === 1 &&
+                    navStack[0] !== "by_muscles" &&
+                    navStack[0] !== "by_equipment")) && (
+                  <motion.div
+                    initial={{ x: 100 }}
+                    animate={{ x: 0 }}
+                    exit={{ x: 100 }}
+                  >
+                    <ExerciseList
+                      filter={getFilterFromNavStack(navStack)}
+                      searchQuery={searchQuery}
+                      selectedExercises={selectedExercises}
+                      onExerciseToggle={onExerciseToggle}
+                      exercises={exercises}
+                      exerciseEquipment={exerciseEquipment}
+                      userExerciseEquipment={userExerciseEquipment}
+                    />
+                  </motion.div>
+                )}
+            </ScrollArea>
+          )}
         </div>
 
         <div className="p-4 bg-background/80 backdrop-blur-sm border-t shrink-0">
