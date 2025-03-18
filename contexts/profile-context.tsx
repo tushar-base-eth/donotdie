@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useEffect,
+} from "react";
 import { usePathname } from "next/navigation";
 import type { Profile } from "@/types/workouts";
 
@@ -48,11 +54,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (pathname !== "/auth/login" && pathname !== "/") {
-      if (!state.profile)
-        fetchProfile();
+    if (pathname === "/home" && !state.profile) {
+      fetchProfile();
     }
-  }, []);
+  }, [pathname, state.profile]);
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!state.profile) return;
@@ -70,7 +75,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProfileContext.Provider value={{ state, updateProfile, fetchProfile, clearProfile }}>
+    <ProfileContext.Provider
+      value={{ state, updateProfile, fetchProfile, clearProfile }}
+    >
       {children}
     </ProfileContext.Provider>
   );
@@ -78,6 +85,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
 export const useUserProfile = () => {
   const context = useContext(ProfileContext);
-  if (!context) throw new Error("useUserProfile must be used within a ProfileProvider");
+  if (!context)
+    throw new Error("useUserProfile must be used within a ProfileProvider");
   return context;
 };
