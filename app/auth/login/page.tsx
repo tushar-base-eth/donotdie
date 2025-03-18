@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Fingerprint, Mail, Scan } from "lucide-react";
+import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,133 +12,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase/browser";
-import {
-  isWebAuthnSupported,
-  isPlatformAuthenticatorAvailable,
-  isIOSSafari,
-  createRegistrationOptions,
-  createAuthenticationOptions,
-  arrayBufferToBase64,
-} from "@/lib/webauthn";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
-  const [supportsBiometric, setSupportsBiometric] = useState(false);
-  const [isFaceIDSupported, setIsFaceIDSupported] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [credentialId, setCredentialId] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
-
-  // Check for biometric support and stored credential on mount
-  useEffect(() => {
-    const checkBiometricSupport = async () => {
-      if (isWebAuthnSupported()) {
-        try {
-          const isPlatformAvailable = await isPlatformAuthenticatorAvailable();
-          setSupportsBiometric(isPlatformAvailable);
-          if (isPlatformAvailable && isIOSSafari()) {
-            setIsFaceIDSupported(true);
-          }
-          const storedCredentialId = localStorage.getItem("biometricCredentialId");
-          if (storedCredentialId) {
-            setIsRegistered(true);
-            setCredentialId(storedCredentialId);
-          }
-        } catch {
-          setSupportsBiometric(false);
-          setIsFaceIDSupported(false);
-        }
-      }
-    };
-    checkBiometricSupport();
-  }, []);
-
-  // Register a new biometric credential
-  const registerBiometric = async () => {
-    if (!isWebAuthnSupported()) {
-      setLoginError("Biometric authentication is not supported in this browser.");
-      return;
-    }
-    setIsLoading(true);
-    setLoginError("");
-    try {
-      const options = createRegistrationOptions(email || "user@example.com");
-      if (isIOSSafari()) {
-        options.authenticatorSelection = {
-          authenticatorAttachment: "platform",
-          userVerification: "required",
-          requireResidentKey: false,
-        };
-      }
-      const credential = (await navigator.credentials.create({
-        publicKey: options,
-      })) as PublicKeyCredential;
-      if (!credential) {
-        throw new Error("Failed to create credential.");
-      }
-      const credentialIdBase64 = arrayBufferToBase64(credential.rawId as ArrayBuffer);
-      localStorage.setItem("biometricCredentialId", credentialIdBase64);
-      setCredentialId(credentialIdBase64);
-      setIsRegistered(true);
-      toast({
-        title: "Biometric Setup Complete!",
-        description: "You can now sign in with Face ID or fingerprint.",
-      });
-      await authenticateWithBiometric();
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      setLoginError(error.message || "Failed to set up biometrics. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Authenticate with an existing biometric credential
-  const authenticateWithBiometric = async () => {
-    if (!isWebAuthnSupported()) {
-      setLoginError("Biometric authentication is not supported in this browser.");
-      return;
-    }
-    setIsLoading(true);
-    setLoginError("");
-    try {
-      const options = createAuthenticationOptions();
-      if (credentialId) {
-        options.allowCredentials = [
-          {
-            id: new Uint8Array(Array.from(atob(credentialId), (c) => c.charCodeAt(0))),
-            type: "public-key",
-            transports: ["internal"],
-          },
-        ];
-      }
-      const credential = (await navigator.credentials.get({
-        publicKey: options,
-      })) as PublicKeyCredential;
-      if (!credential) {
-        throw new Error("Authentication failed.");
-      }
-      // No Supabase call needed; redirect directly after successful biometric auth
-      router.push("/home");
-    } catch (error: any) {
-      console.error("Authentication error:", error);
-      setLoginError(error.message || "Biometric authentication failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle biometric button click
-  const handleBiometric = async () => {
-    if (isRegistered) {
-      await authenticateWithBiometric();
-    } else {
-      await registerBiometric();
-    }
-  };
 
   // Handle magic link sign-in with Supabase
   const handleMagicLink = async (e: React.FormEvent) => {
@@ -228,9 +108,9 @@ export default function LoginPage() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl">
-              Welcome to <span className="gradient-text">Zero</span>
+              Welcome to <span className="gradient-text">ZeroNow</span>
             </h1>
-            <p className="text-sm text-muted-foreground">Sign in to track your fitness journey</p>
+            <p className="text-sm text-muted-foreground">Things changes when you start from zero</p>
           </div>
 
           {/* Login error message */}
@@ -245,11 +125,7 @@ export default function LoginPage() {
           <Tabs defaultValue="google" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="google">Google</TabsTrigger>
-              {supportsBiometric ? (
-                <TabsTrigger value="biometric">{isFaceIDSupported ? "Face ID" : "Biometric"}</TabsTrigger>
-              ) : (
-                <TabsTrigger value="magic">Magic Link</TabsTrigger>
-              )}
+              <TabsTrigger value="magic">Magic Link</TabsTrigger>
             </TabsList>
 
             {/* Google Sign-In Tab */}
@@ -288,83 +164,32 @@ export default function LoginPage() {
               </Card>
             </TabsContent>
 
-            {/* Biometric Tab */}
-            {supportsBiometric && (
-              <TabsContent value="biometric">
-                <Card className="glass card-highlight">
-                  <CardContent className="pt-4 pb-6">
-                    <div className="flex flex-col items-center justify-center gap-4 py-6">
-                      <div className="rounded-full bg-primary/10 p-6 dark:bg-primary/20 animate-pulse">
-                        {isFaceIDSupported ? (
-                          <Scan className="h-12 w-12 text-primary" aria-hidden="true" />
-                        ) : (
-                          <Fingerprint className="h-12 w-12 text-primary" aria-hidden="true" />
-                        )}
+            {/* Magic Link Tab */}
+            <TabsContent value="magic">
+              <Card className="glass card-highlight">
+                <CardContent className="pt-4">
+                  <form onSubmit={handleMagicLink}>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          autoComplete="email"
+                        />
                       </div>
-                      <p className="text-center text-sm text-muted-foreground">
-                        {isFaceIDSupported
-                          ? isRegistered
-                            ? "Use Face ID to sign in securely"
-                            : "Set up Face ID for secure sign in"
-                          : isRegistered
-                            ? "Use your biometrics to sign in securely"
-                            : "Set up biometric authentication"}
-                      </p>
-                      <Button
-                        onClick={handleBiometric}
-                        disabled={isLoading}
-                        className="w-full btn-glow ios-active"
-                      >
-                        {isLoading
-                          ? isRegistered
-                            ? "Authenticating..."
-                            : "Setting up..."
-                          : isRegistered
-                            ? "Authenticate Now"
-                            : "Set Up Now"}
+                      <Button type="submit" disabled={isLoading || !email}>
+                        {isLoading ? "Sending..." : "Send Magic Link"}
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-
-            {/* Magic Link Tab */}
-            {!supportsBiometric && (
-              <TabsContent value="magic">
-                <Card className="glass card-highlight">
-                  <CardContent className="pt-4">
-                    <form onSubmit={handleMagicLink}>
-                      <div className="grid gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            autoComplete="email"
-                          />
-                        </div>
-                        <Button type="submit" disabled={isLoading || !email}>
-                          {isLoading ? "Sending..." : "Send Magic Link"}
-                        </Button>
-                      </div>
-                    </form>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
-
-          {/* Sign-up Link */}
-          <div className="text-center text-sm">
-            <span className="text-muted-foreground">New to Zero? </span>
-            <Link href="/auth/signup" className="font-medium text-primary hover:underline">
-              Create an account
-            </Link>
-          </div>
         </div>
       </main>
     </div>
