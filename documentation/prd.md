@@ -1,8 +1,8 @@
-# DoNotDie Product Requirements Document [PRD]
+# ZeroNow Product Requirements Document [PRD]
 
 ## Overview
 
-- **Product Name**: DoNotDie
+- **Product Name**: ZeroNow
 - **Objective**: Deliver a simple, intuitive fitness tracking web app with a native iOS-like experience, targeting casual gym-goers and beginners.
 - **Unique Selling Proposition (USP)**: "The simplest workout tracker with Fitbod-inspired design and flexibility."
 - **Target Audience**: Casual gym-goers and fitness novices seeking an easy, affordable fitness tracking solution.
@@ -40,7 +40,7 @@
 
 ### Overview
 
-Describes the user journey in DoNotDie, ensuring a seamless iOS-like experience with smooth navigation and gestures.
+Describes the user journey in ZeroNow, ensuring a seamless iOS-like experience with smooth navigation and gestures.
 
 ### Flow Steps
 
