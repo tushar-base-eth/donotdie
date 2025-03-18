@@ -2,7 +2,6 @@ import type React from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ProfileProvider } from "@/contexts/profile-context";
 import { Toaster } from "@/components/ui/toaster";
-import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
