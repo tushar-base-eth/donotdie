@@ -23,22 +23,6 @@ export function WorkoutList({ workouts, onWorkoutDelete }: WorkoutListProps) {
     onWorkoutDelete(workoutId);
   };
 
-  if (workouts.length === 0) {
-    return (
-      <div className="text-center text-muted-foreground py-8">
-        <div>
-          <div className="mb-4">
-            <div className="rounded-full bg-muted p-4 inline-block animate-bounce">
-              <span role="img" aria-label="Dumbbell" className="text-4xl">🏋️</span>
-            </div>
-          </div>
-          <p className="text-lg font-medium">Welcome! WTF!?</p>
-          <p className="text-sm">You better start your first workout!</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Past Workouts</h2>
@@ -77,7 +61,9 @@ export function WorkoutList({ workouts, onWorkoutDelete }: WorkoutListProps) {
                   animate={{ opacity: 0 }}
                   whileDrag={{ opacity: 1, transition: { duration: 0.2 } }}
                 >
-                  <span className="text-destructive-foreground font-medium">Delete</span>
+                  <span className="text-destructive-foreground font-medium">
+                    Delete
+                  </span>
                 </motion.div>
 
                 <Card
@@ -89,7 +75,10 @@ export function WorkoutList({ workouts, onWorkoutDelete }: WorkoutListProps) {
                     <div>
                       <div className="font-medium">
                         {workout.date
-                          ? format(parse(workout.date, "yyyy-MM-dd", new Date()), "eeee, MMMM d")
+                          ? format(
+                              parse(workout.date, "yyyy-MM-dd", new Date()),
+                              "eeee, MMMM d"
+                            )
                           : "Invalid Date"}
                       </div>
                       <div className="text-sm text-muted-foreground">
@@ -100,19 +89,25 @@ export function WorkoutList({ workouts, onWorkoutDelete }: WorkoutListProps) {
                       {workout.totalVolume !== null && (
                         <div className="text-sm">
                           <span className="text-muted-foreground">Vol: </span>
-                          <span className="font-medium">{formatWeight(workout.totalVolume)}</span>
+                          <span className="font-medium">
+                            {formatWeight(workout.totalVolume)}
+                          </span>
                         </div>
                       )}
                       {workout.totalDistance !== null && (
                         <div className="text-sm">
                           <span className="text-muted-foreground">Dist: </span>
-                          <span className="font-medium">{workout.totalDistance.toFixed(1)} m</span>
+                          <span className="font-medium">
+                            {workout.totalDistance.toFixed(1)} m
+                          </span>
                         </div>
                       )}
                       {workout.totalDuration !== null && (
                         <div className="text-sm">
                           <span className="text-muted-foreground">Dur: </span>
-                          <span className="font-medium">{workout.totalDuration} s</span>
+                          <span className="font-medium">
+                            {workout.totalDuration} s
+                          </span>
                         </div>
                       )}
                     </div>
