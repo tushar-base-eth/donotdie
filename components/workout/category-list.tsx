@@ -17,16 +17,16 @@ export function CategoryList({ onCategorySelect }: CategoryListProps) {
     { name: "Added by Me", icon: <User />, value: "added_by_me" },
   ];
   return (
-    <ScrollArea className="h-full p-6">
+    <ScrollArea className="h-full p-6 bg-background">
       {categories.map((cat) => (
         <div
           key={cat.name}
-          className="flex items-center p-4 rounded-3xl hover:bg-accent/5 cursor-pointer"
+          className="flex items-center p-4 rounded-lg hover:bg-muted cursor-pointer text-foreground"
           onClick={() => onCategorySelect(cat.value)}
         >
           {cat.icon}
           <span className="flex-1 ml-4">{cat.name}</span>
-          <ChevronRight />
+          <ChevronRight className="text-muted-foreground" />
         </div>
       ))}
     </ScrollArea>

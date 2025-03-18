@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dumbbell, Heart, BarChart } from "lucide-react";
 
-// Feature data for the landing page
 const features = [
   { icon: Dumbbell, title: "Gym", description: "Log your exercises and sets with ease." },
   { icon: Heart, title: "Cardio", description: "Keep track of your heart rate, sleep, and nutrition." },
@@ -17,12 +16,11 @@ export default function LandingPage() {
 
   return (
     <main className="flex flex-col items-center min-h-screen bg-background space-y-4 p-8">
-      {/* Header and Call-to-Action Section */}
       <div className="flex flex-col items-center text-center">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
           className="mb-4"
         >
           <h1 className="text-3xl font-bold">Zero 😺</h1>
@@ -30,7 +28,6 @@ export default function LandingPage() {
         </motion.div>
       </div>
 
-      {/* Features Section */}
       <div className="w-full max-w-4xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature, index) => (
@@ -38,8 +35,8 @@ export default function LandingPage() {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-4 rounded-3xl bg-card shadow-md"
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className="p-4 rounded-[var(--radius)] bg-card glass shadow-md card-highlight"
             >
               <feature.icon className="h-10 w-10 text-primary mb-2" />
               <h3 className="text-lg font-semibold mb-1">{feature.title}</h3>
@@ -49,13 +46,10 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Call-to-Action Section */}
       <div className="px-6 py-12 text-center w-full">
-        {/* <h2 className="text-3xl font-bold mb-4">Ready to start?</h2> */}
-        {/* <p className="text-xl text-muted-foreground mb-8">DoNotDie today and Reverse aging!</p> */}
         <Button
           size="lg"
-          className="bg-primary text-primary-foreground px-8 py-4 rounded-xl"
+          className="bg-primary text-primary-foreground px-8 py-4 rounded-[var(--radius)] btn-glow"
           onClick={() => router.push("/auth/login")}
         >
           Get Started

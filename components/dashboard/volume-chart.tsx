@@ -17,25 +17,31 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Volume</CardTitle>
+        <CardTitle className="text-primary">Volume</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={timeRange} onValueChange={(value) => onTimeRangeChange(value as "7days" | "8weeks" | "12months")}>
           <TabsList className="w-full bg-muted/50 p-1">
-            <TabsTrigger value="7days" className="flex-1">Days</TabsTrigger>
-            <TabsTrigger value="8weeks" className="flex-1">Weeks</TabsTrigger>
-            <TabsTrigger value="12months" className="flex-1">Months</TabsTrigger>
+            <TabsTrigger value="7days" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground">
+              Days
+            </TabsTrigger>
+            <TabsTrigger value="8weeks" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground">
+              Weeks
+            </TabsTrigger>
+            <TabsTrigger value="12months" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground">
+              Months
+            </TabsTrigger>
           </TabsList>
 
           <div className="mt-6 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
+              <BarChart
                 data={data}
                 margin={{ top: 20, right: 20, bottom: 60, left: 20 }}
               >
                 <XAxis
                   dataKey="date"
-                  stroke="#888888"
+                  stroke="hsl(var(--foreground))"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
@@ -52,7 +58,7 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
                   }}
                 />
                 <YAxis
-                  stroke="#888888"
+                  stroke="hsl(var(--foreground))"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
@@ -68,7 +74,7 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
                           <div className="grid grid-cols-2 gap-2">
                             <div className="flex flex-col">
                               <span className="text-[0.70rem] uppercase text-muted-foreground">Volume</span>
-                              <span className="font-bold text-muted-foreground">
+                              <span className="font-bold text-primary">
                                 {formatWeight(Number(payload[0].value) || 0)}
                               </span>
                               <span className="text-[0.70rem] text-muted-foreground">
@@ -84,9 +90,9 @@ export function VolumeChart({ data, timeRange, onTimeRangeChange }: VolumeChartP
                 />
                 <Bar
                   dataKey="volume"
-                  fill="currentColor"
+                  fill="hsl(var(--primary))"
                   radius={[4, 4, 0, 0]}
-                  className="fill-[#4B7BFF] dark:fill-red-500"
+                  className="fill-primary"
                 />
               </BarChart>
             </ResponsiveContainer>

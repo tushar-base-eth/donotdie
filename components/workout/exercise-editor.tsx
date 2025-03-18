@@ -23,7 +23,7 @@ export function ExerciseEditor({
   onUpdateSets,
   exerciseIndex,
 }: ExerciseEditorProps) {
-  const { isImperial, unitLabel } = useUnitPreference(); // Only need unit info, no conversion
+  const { isImperial, unitLabel } = useUnitPreference();
   const repsInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [exercise, setExercise] = useState(initialExercise);
 
@@ -52,9 +52,9 @@ export function ExerciseEditor({
   };
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>, setIndex: number) => {
-    const weight = handleInput(e.target.value); // Take input as-is
+    const weight = handleInput(e.target.value);
     const newSets = [...exercise.sets];
-    newSets[setIndex] = { ...newSets[setIndex], weight_kg: weight }; // Store as user input (kg or lb)
+    newSets[setIndex] = { ...newSets[setIndex], weight_kg: weight };
     setExercise({ ...exercise, sets: newSets });
     onUpdateSets(exerciseIndex, newSets);
   };
@@ -89,10 +89,10 @@ export function ExerciseEditor({
         className="w-full sm:max-w-lg p-0 rounded-t-3xl z-[101]"
         aria-describedby="exercise-editor-description"
       >
-        <div className="flex flex-col h-full">
-          <div className="px-6 py-4 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 glass">
+        <div className="flex flex-col h-full bg-background">
+          <div className="px-6 py-4 border-b bg-background z-10">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-xl">{exercise.exercise.name}</SheetTitle>
+              <SheetTitle className="text-xl text-foreground">{exercise.exercise.name}</SheetTitle>
               <span id="exercise-editor-description" className="sr-only">
                 Edit sets for {exercise.exercise.name}.
               </span>
@@ -130,79 +130,74 @@ export function ExerciseEditor({
                           onUpdateSets(exerciseIndex, newSets);
                         }
                       }}
-                      className="relative"
+                      className="relative bg-card"
                     >
-                      <div className="absolute right-0 top-0 bottom-0 w-[50px] bg-destructive/10 rounded-r-xl flex items-center justify-center">
-                        <Trash className="h-4 w-4 text-destructive" />
-                      </div>
 
-                      <motion.div className="relative bg-background rounded-xl glass">
-                        <div className="px-4 py-3">
-                          <div className="flex gap-3 mb-1">
-                            <div className="w-8 text-left" />
-                            {showReps && <div className="w-[140px] text-left">Reps</div>}
-                            {showWeight && <div className="w-[140px] text-left">Weight ({unitLabel})</div>}
-                            {showDuration && <div className="w-[140px] text-left">Duration (s)</div>}
-                            {showDistance && <div className="w-[140px] text-left">Distance (m)</div>}
-                          </div>
-                          <div className="flex flex-col gap-3">
-                            <div className="flex gap-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium flex-shrink-0">
-                                  {setIndex + 1}
-                                </div>
-                                {showReps && (
-                                  <Input
-                                    id={`reps-${setIndex}`}
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={set.reps || ""}
-                                    onChange={(e) => handleRepsChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
-                                    aria-label={`Reps for set ${setIndex + 1}`}
-                                    ref={(el) => {
-                                      repsInputRefs.current[setIndex] = el;
-                                    }}
-                                  />
-                                )}
-                                {showWeight && (
-                                  <Input
-                                    id={`weight-${setIndex}`}
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={set.weight_kg || ""} // Display as-is (kg or lb depending on user input)
-                                    onChange={(e) => handleWeightChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
-                                    aria-label={`Weight for set ${setIndex + 1}`}
-                                  />
-                                )}
-                                {showDuration && (
-                                  <Input
-                                    id={`duration-${setIndex}`}
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={set.duration_seconds || ""}
-                                    onChange={(e) => handleDurationChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
-                                    aria-label={`Duration for set ${setIndex + 1}`}
-                                  />
-                                )}
-                                {showDistance && (
-                                  <Input
-                                    id={`distance-${setIndex}`}
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={set.distance_meters || ""}
-                                    onChange={(e) => handleDistanceChange(e, setIndex)}
-                                    className="rounded-xl bg-background text-foreground shadow-sm w-[140px] sm:w-[160px]"
-                                    aria-label={`Distance for set ${setIndex + 1}`}
-                                  />
-                                )}
+                      <div className="px-4 py-3">
+                        <div className="flex gap-3 mb-1 text-foreground">
+                          <div className="w-8 text-left" />
+                          {showReps && <div className="w-[140px] text-left">Reps</div>}
+                          {showWeight && <div className="w-[140px] text-left">Weight ({unitLabel})</div>}
+                          {showDuration && <div className="w-[140px] text-left">Duration (s)</div>}
+                          {showDistance && <div className="w-[140px] text-left">Distance (m)</div>}
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          <div className="flex gap-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium flex-shrink-0">
+                                {setIndex + 1}
                               </div>
+                              {showReps && (
+                                <Input
+                                  id={`reps-${setIndex}`}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={set.reps || ""}
+                                  onChange={(e) => handleRepsChange(e, setIndex)}
+                                  className="rounded-lg bg-card text-foreground w-[140px] sm:w-[160px]"
+                                  aria-label={`Reps for set ${setIndex + 1}`}
+                                  ref={(el) => {
+                                    repsInputRefs.current[setIndex] = el;
+                                  }}
+                                />
+                              )}
+                              {showWeight && (
+                                <Input
+                                  id={`weight-${setIndex}`}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={set.weight_kg || ""}
+                                  onChange={(e) => handleWeightChange(e, setIndex)}
+                                  className="rounded-lg bg-card text-foreground w-[140px] sm:w-[160px]"
+                                  aria-label={`Weight for set ${setIndex + 1}`}
+                                />
+                              )}
+                              {showDuration && (
+                                <Input
+                                  id={`duration-${setIndex}`}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={set.duration_seconds || ""}
+                                  onChange={(e) => handleDurationChange(e, setIndex)}
+                                  className="rounded-lg bg-card text-foreground w-[140px] sm:w-[160px]"
+                                  aria-label={`Duration for set ${setIndex + 1}`}
+                                />
+                              )}
+                              {showDistance && (
+                                <Input
+                                  id={`distance-${setIndex}`}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={set.distance_meters || ""}
+                                  onChange={(e) => handleDistanceChange(e, setIndex)}
+                                  className="rounded-lg bg-card text-foreground w-[140px] sm:w-[160px]"
+                                  aria-label={`Distance for set ${setIndex + 1}`}
+                                />
+                              )}
                             </div>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     </motion.div>
                   </motion.div>
                 ))}
@@ -210,7 +205,7 @@ export function ExerciseEditor({
             </div>
           </ScrollArea>
 
-          <div className="p-4 bg-background/80 backdrop-blur-sm border-t">
+          <div className="p-4 border-t bg-card">
             <Button
               onClick={() => {
                 const setNumber = exercise.sets.length + 1;
@@ -228,7 +223,7 @@ export function ExerciseEditor({
                 setExercise({ ...exercise, sets: newSets });
                 onUpdateSets(exerciseIndex, newSets);
               }}
-              className="w-full rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full rounded-lg h-12 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Add Set
             </Button>

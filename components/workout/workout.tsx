@@ -49,11 +49,11 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
     return requiredMetrics === 0 || (requiredMetrics > 1 ? validMetrics === requiredMetrics : validMetrics > 0);
   };
 
-  const isWorkoutValid = 
+  const isWorkoutValid =
     exercises
       .filter(ex => ex.sets.length > 0)
-      .some(ex => 
-        ex.sets.some(set => 
+      .some(ex =>
+        ex.sets.some(set =>
           isSetValid(set, ex.exercise.uses_reps!, ex.exercise.uses_weight!, ex.exercise.uses_duration!, ex.exercise.uses_distance!)
         )
       );
@@ -123,14 +123,14 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
   };
 
   const handleSaveWorkout = async () => {
-    if (!isWorkoutValid || !profile ) return;
+    if (!isWorkoutValid || !profile) return;
 
     startTransition(async () => {
       try {
         const filteredExercises = exercises
           .map(ex => ({
             ...ex,
-            sets: ex.sets.filter(set => 
+            sets: ex.sets.filter(set =>
               isSetValid(set, ex.exercise.uses_reps!, ex.exercise.uses_weight!, ex.exercise.uses_duration!, ex.exercise.uses_distance!)
             )
           }))
@@ -146,7 +146,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             sets: ex.sets.map((set) => {
               let weight_kg = set.weight_kg;
               if (profile?.unit_preference === "imperial" && weight_kg !== null) {
-                weight_kg = weight_kg / 2.20462; // Convert lb to kg
+                weight_kg = weight_kg / 2.20462;
               }
               return {
                 set_number: set.set_number,
@@ -204,7 +204,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
                 <Button
                   size="icon"
                   onClick={handleSaveWorkout}
-                  className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 touch-target ios-active"
+                  className="h-16 w-16 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Save className="h-8 w-8" />
                 </Button>
@@ -215,7 +215,7 @@ function WorkoutPage({ onExercisesChange }: WorkoutProps) {
             <Button
               size="icon"
               onClick={() => setShowExerciseModal(true)}
-              className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 touch-target ios-active"
+              className="h-16 w-16 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="h-8 w-8" />
             </Button>

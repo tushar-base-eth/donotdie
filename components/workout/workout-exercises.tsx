@@ -17,10 +17,10 @@ export function WorkoutExercises({
   onExerciseSelect,
   onExerciseRemove,
 }: WorkoutExercisesProps) {
-  const { isImperial, unitLabel } = useUnitPreference(); // Only need unit info, no conversion
+  const { isImperial, unitLabel } = useUnitPreference();
 
   return (
-    <ScrollArea className="h-[calc(100vh-13rem)] px-4">
+    <ScrollArea className="h-[calc(100vh-13rem)] px-4 bg-background">
       <AnimatePresence initial={false}>
         {exercises.map((exercise, index) => {
           const dragX = useMotionValue(0);
@@ -30,7 +30,7 @@ export function WorkoutExercises({
           const summary = [];
           if (exercise.exercise.uses_weight && exercise.sets.some((s) => s.weight_kg)) {
             const totalVolume = exercise.sets.reduce((acc, set) => acc + ((set.reps || 0) * (set.weight_kg || 0)), 0);
-            summary.push(`${totalVolume} ${unitLabel}`); // Display raw value with unit label
+            summary.push(`${totalVolume} ${unitLabel}`);
           }
           if (exercise.exercise.uses_duration && exercise.sets.some((s) => s.duration_seconds)) {
             const totalDuration = exercise.sets.reduce((acc, set) => acc + (set.duration_seconds || 0), 0);
@@ -83,15 +83,14 @@ export function WorkoutExercises({
                 </motion.div>
 
                 <Card
-                  className="relative z-10 border-0 glass glass-hover transition-all duration-200 rounded-3xl"
+                  className="relative z-10 border rounded-lg"
                   onClick={() => onExerciseSelect(exercise)}
                 >
                   <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold tracking-tight">
+                    <h3 className="text-lg font-semibold tracking-tight text-foreground">
                       {exercise.exercise.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {/* {exercise.exercise.category} • {exercise.sets.length} sets • {summary.join(", ")} */}
                       {exercise.sets.length} sets • {summary.join(", ")}
                     </p>
                   </CardContent>

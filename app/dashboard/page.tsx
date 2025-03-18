@@ -18,10 +18,10 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="p-4 container max-w-5xl mx-auto">
-        <Card className="border glass shadow-md rounded-2xl">
+        <Card className="border glass shadow-md card-highlight rounded-[var(--radius)]">
           <CardContent className="p-6">
             Failed to load data.{" "}
-            <Button variant="ghost" onClick={() => mutate()} className="text-blue-500">
+            <Button variant="ghost" onClick={() => mutate()} className="text-blue-500 btn-glow rounded-[var(--radius)]">
               Retry
             </Button>
           </CardContent>
@@ -52,7 +52,7 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="border glass shadow-md rounded-2xl overflow-hidden">
+          <Card className="border glass shadow-md card-highlight rounded-[var(--radius)] overflow-hidden">
             <CardContent className="p-6">
               <MetricsCards
                 totalWorkouts={profile.total_workouts ?? 0}
@@ -68,7 +68,7 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Card className="border glass shadow-md rounded-2xl overflow-hidden">
+          <Card className="border glass shadow-md card-highlight rounded-[var(--radius)] overflow-hidden">
             <CardContent className="p-6">
               <VolumeChart data={volumeData} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
             </CardContent>
