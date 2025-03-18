@@ -17,8 +17,18 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>Zero - Simple way to not die</title>
-        <meta name="description" content="Things changes when you start from zero" />
+        <meta
+          name="description"
+          content="Things changes when you start from zero"
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
+        <link rel="apple-touch-icon" href="/placeholder-logo.png" />
       </head>
       <body className="min-h-screen bg-background antialiased vsc-initialized">
         <ThemeProvider
@@ -29,7 +39,9 @@ export default function RootLayout({
         >
           <ProfileProvider>
             <ErrorBoundary>
-              <div className="h-[calc(100vh-64px)] overflow-auto">{children}</div>
+              <div className="h-[calc(100vh-64px)] overflow-auto">
+                {children}
+              </div>
               <BottomNav />
             </ErrorBoundary>
             <Toaster />
