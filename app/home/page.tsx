@@ -4,15 +4,12 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell } from "lucide-react";
 import Workout from "@/components/workout/workout";
-import { useAvailableExercises } from "@/lib/hooks/data-hooks";
 
 export default function HomePage() {
-  const { exercises, isLoading } = useAvailableExercises();
   const [exercisesState, setExercisesState] = useState([]);
 
   // Log state for debugging
-  useEffect(() => {
-  }, [exercisesState]);
+  useEffect(() => {}, [exercisesState]);
 
   const handleExercisesChange = (updatedExercises: any) => {
     setExercisesState(updatedExercises || []);
@@ -21,7 +18,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background pb-16 relative">
       <AnimatePresence mode="wait">
-        {exercisesState.length === 0 && !isLoading && (
+        {exercisesState.length === 0 && (
           <motion.div
             key="placeholder"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -32,20 +29,32 @@ export default function HomePage() {
           >
             <motion.div
               animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
               className="relative"
             >
               <Dumbbell className="w-20 h-20 text-primary" />
               <motion.div
                 className="absolute inset-0"
                 animate={{ opacity: [0, 0.2, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                }}
               >
                 <Dumbbell className="w-20 h-20 text-primary blur-md" />
               </motion.div>
             </motion.div>
-            <h2 className="text-2xl font-semibold text-foreground">Don't Die!</h2>
-            <p className="text-lg text-muted-foreground max-w-sm">Smash that + button below</p>
+            <h2 className="text-2xl font-semibold text-foreground">
+              Don't Die!
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-sm">
+              Smash that + button below
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
