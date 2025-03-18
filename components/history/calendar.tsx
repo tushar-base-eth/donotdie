@@ -86,14 +86,14 @@ export function Calendar({ workoutDates }: { workoutDates: Set<string> }) {
               >
                 {isSelected && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-[#4B7BFF] dark:bg-red-500" />
+                    <div className="w-8 h-8 rounded-full bg-highlight" />
                   </div>
                 )}
-                <span className={`text-sm relative z-10 ${hasWorkout && !isSelected ? "font-medium text-[#4B7BFF] dark:text-red-500" : ""}`}>
+                <span className={`text-sm relative z-10 ${hasWorkout && !isSelected ? "font-medium text-highlight" : ""}`}>
                   {day}
                 </span>
                 {hasWorkout && !isSelected && (
-                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#4B7BFF] dark:bg-red-500" />
+                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-highlight" />
                 )}
               </div>
             );

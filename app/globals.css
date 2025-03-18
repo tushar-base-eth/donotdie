@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Light theme - clean and minimal */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -37,9 +38,11 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --highlight: 214 100% 50%; /* Added for light theme: #4B7BFF */
   }
 
   .dark {
+    /* Dark theme - futuristic with red accent */
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
@@ -72,6 +75,32 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --highlight: 0 100% 50%; /* Added for dark theme: red-500 equivalent */
+  }
+  
+  .colorful {
+    /* Colorful theme - vibrant and energetic */
+    --background: 240 20% 3%;
+    --foreground: 0 0% 95%;
+    --card: 240 25% 6%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 45% 4%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 320 90% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 35% 50%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 240 35% 10%;
+    --muted-foreground: 240 10% 70%;
+    --accent: 180 90% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 40% 12%;
+    --input: 240 40% 10%;
+    --ring: 320 90% 60%;
+    --highlight: 180 100% 50%;
+    /* Added for colorful theme: cyan */
   }
 }
 
