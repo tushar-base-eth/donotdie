@@ -44,7 +44,7 @@ export function ExerciseSelector({
     isLoading,
     isError,
     mutate,
-  } = useAvailableExercises();
+  } = useAvailableExercises(open);
 
   const muscleGroups = useMemo(() => {
     const groups = new Set<string>();
