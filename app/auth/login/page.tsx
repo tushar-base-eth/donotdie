@@ -56,26 +56,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background dark:bg-background-dark">
-      {/* Animated background pattern */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-background dark:bg-background-dark" />
-        <div
-          className="absolute -top-[40%] left-[20%] h-[80%] w-[60%] rounded-full bg-primary/5 blur-3xl dark:bg-primary-dark/10"
-          style={{ animation: "float 8s ease-in-out infinite" }}
-        />
-        <div
-          className="absolute -bottom-[30%] right-[10%] h-[60%] w-[50%] rounded-full bg-accent/5 blur-3xl dark:bg-accent/10"
-          style={{ animation: "float 10s ease-in-out infinite reverse" }}
-        />
-      </div>
-
-      {/* Main content */}
+    <div className="flex min-h-screen w-full flex-col bg-background">
       <main className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-sm space-y-6">
           {/* Header */}
           <div className="space-y-2 text-center">
-            <div className="inline-block rounded-full bg-primary/10 p-2 dark:bg-primary-dark/20">
+            <div className="inline-block rounded-full bg-primary/10 p-2">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -86,7 +72,7 @@ export default function LoginPage() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-6 w-6 text-primary dark:text-primary-foreground"
+                className="h-6 w-6 text-primary"
               >
                 <path d="M18.9 8.6A8 8 0 0 0 4.3 15" />
                 <path d="M5.1 15.4A8 8 0 0 0 19.7 9" />
@@ -100,10 +86,10 @@ export default function LoginPage() {
                 <path d="m19.1 4.9-1.4 1.4" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl text-foreground dark:text-foreground-dark">
-              Welcome to <span className="gradient-text">ZeroNow</span>
+            <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl text-foreground">
+              Welcome to <span className="text-primary">ZeroNow</span>
             </h1>
-            <p className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            <p className="text-sm text-muted-foreground">
               Things change when you start from zero
             </p>
           </div>
@@ -118,38 +104,36 @@ export default function LoginPage() {
 
           {/* Authentication Methods */}
           <Tabs defaultValue="google" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted dark:bg-card-dark text-muted-foreground dark:text-foreground-dark">
-              <TabsTrigger value="google" className="dark:text-foreground-dark">Google</TabsTrigger>
-              <TabsTrigger value="magic" className="dark:text-foreground-dark">Magic Link</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-muted text-muted-foreground">
+              <TabsTrigger value="google">Google</TabsTrigger>
+              <TabsTrigger value="magic">Magic Link</TabsTrigger>
             </TabsList>
 
             {/* Google Sign-In Tab */}
             <TabsContent value="google">
-              <Card className="bg-glass dark:bg-glass-dark shadow-card-highlight dark:shadow-card-highlight-dark border border-border dark:border-border">
+              <Card className="border border-border">
                 <CardContent className="pt-4 pb-6">
                   <div className="flex flex-col items-center justify-center gap-4 py-6">
-                    <div className="rounded-full bg-background dark:bg-card-dark p-4 shadow-sm">
-                      <svg
-                        className="h-8 w-8"
-                        aria-hidden="true"
-                        focusable="false"
-                        data-prefix="fab"
-                        data-icon="google"
-                        role="img"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 488 512"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-center text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                    <svg
+                      className="h-8 w-8"
+                      aria-hidden="true"
+                      focusable="false"
+                      data-prefix="fab"
+                      data-icon="google"
+                      role="img"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 488 512"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
+                      />
+                    </svg>
+                    <p className="text-center text-sm text-muted-foreground">
                       Continue with your Google account
                     </p>
                     <Button
-                      className="w-full bg-primary dark:bg-primary-dark text-primary-foreground hover:bg-primary/90 dark:hover:bg-primary-dark/90"
+                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={handleGoogleSignIn}
                     >
                       Sign in with Google
@@ -161,12 +145,12 @@ export default function LoginPage() {
 
             {/* Magic Link Tab */}
             <TabsContent value="magic">
-              <Card className="bg-glass dark:bg-glass-dark shadow-card-highlight dark:shadow-card-highlight-dark border border-border dark:border-border">
+              <Card className="border border-border">
                 <CardContent className="pt-4">
                   <form onSubmit={handleMagicLink}>
                     <div className="grid gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="email" className="text-foreground dark:text-foreground-dark">
+                        <Label htmlFor="email" className="text-foreground">
                           Email
                         </Label>
                         <Input
@@ -178,7 +162,11 @@ export default function LoginPage() {
                           autoComplete="email"
                         />
                       </div>
-                      <Button type="submit" disabled={isLoading || !email} className="w-full bg-primary dark:bg-primary-dark text-primary-foreground hover:bg-primary/90 dark:hover:bg-primary-dark/90">
+                      <Button
+                        type="submit"
+                        disabled={isLoading || !email}
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
                         {isLoading ? "Sending..." : "Send Magic Link"}
                       </Button>
                     </div>

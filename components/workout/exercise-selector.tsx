@@ -47,10 +47,6 @@ export function ExerciseSelector({
     return Array.from(groups).sort();
   }, [exercises]);
 
-  if (isLoading) {
-    return <div className="p-4">Loading exercises...</div>;
-  }
-
   if (isError) {
     return (
       <div className="p-4">

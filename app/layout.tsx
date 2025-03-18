@@ -1,5 +1,4 @@
 import type React from "react";
-import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ProfileProvider } from "@/contexts/profile-context";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,8 +7,6 @@ import { BottomNav } from "@/components/navigation/bottom-nav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
@@ -23,11 +20,11 @@ export default function RootLayout({
         <meta name="description" content="Things changes when you start from zero" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={cn("min-h-screen bg-background antialiased vsc-initialized", inter.className)}>
+      <body className="min-h-screen bg-background antialiased vsc-initialized">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem={true}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
           <ProfileProvider>
