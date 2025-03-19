@@ -12,6 +12,7 @@ export function BottomNav() {
   const pathname = usePathname(); // Second hook, called unconditionally
 
   // If no profile exists (user not signed in), do not render the nav bar
+  // console.log("BottomNav: state.profile", state.profile);
   if (!state.profile) {
     return null;
   }

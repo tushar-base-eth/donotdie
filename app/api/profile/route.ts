@@ -24,12 +24,15 @@ export async function GET(request: Request) {
   if (profileError || !profile) {
     return NextResponse.json({ profile: null }, { status: 404 });
   }
-
-  return NextResponse.json(profile, {
-    headers: {
-      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
-    },
-  });
+  return NextResponse.json(
+    { profile },
+    {
+      // Wrapped profile in { profile: ... }
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
+      },
+    }
+  );
 }
 
 export async function PATCH(request: Request) {
