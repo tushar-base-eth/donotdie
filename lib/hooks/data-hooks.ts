@@ -219,6 +219,7 @@ export function useWorkouts(userId: string) {
 
 export function useDeleteWorkout() {
   const { mutate } = useWorkouts("");
+  const { fetchProfile } = useUserProfile();
 
   const deleteWorkoutHandler = useCallback(
     async (workoutId: string) => {
@@ -228,8 +229,9 @@ export function useDeleteWorkout() {
         .eq("id", workoutId);
       if (error) throw error;
       await mutate();
+      await fetchProfile();
     },
-    [mutate]
+    [mutate, fetchProfile]
   );
 
   return { deleteWorkout: deleteWorkoutHandler };
@@ -237,6 +239,7 @@ export function useDeleteWorkout() {
 
 export function useSaveWorkout() {
   const { mutate } = useWorkouts("");
+  const { fetchProfile } = useUserProfile();
 
   const saveWorkoutHandler = useCallback(
     async (workout: NewWorkout) => {
@@ -293,8 +296,9 @@ export function useSaveWorkout() {
         if (setsError) throw setsError;
       }
       await mutate();
+      await fetchProfile();
     },
-    [mutate]
+    [mutate, fetchProfile]
   );
 
   return { saveWorkout: saveWorkoutHandler };
