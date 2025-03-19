@@ -4,7 +4,10 @@ import type { Profile, UpdateProfile } from "@/types/workouts";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (error || !user) {
     return NextResponse.json({ profile: null }, { status: 401 });
@@ -22,12 +25,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ profile: null }, { status: 404 });
   }
 
-  return NextResponse.json({ profile });
+  return NextResponse.json(profile, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
+    },
+  });
 }
 
 export async function PATCH(request: Request) {
   const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
   if (userError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
