@@ -42,14 +42,13 @@
   }
 
   .dark {
-    /* Dark theme - futuristic with red accent */
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 90% 60%; /* Red */
+    --primary: 0 75% 62.5%; /* Adjusted to red (#FF4040) */
     --primary-foreground: 0 0% 98%; /* White text for contrast */
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
@@ -75,7 +74,7 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    --highlight: 0 100% 50%; /* Added for dark theme: red-500 equivalent */
+    --highlight: 0 100% 50%; /* Red highlight remains appropriate */
   }
 
   .colorful {
