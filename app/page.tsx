@@ -158,9 +158,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mt-6">
-              Track your fitness, monitor your health, and visualize your
-              progress with ZeroNow - the all-in-one wellness companion that
-              keeps you alive and thriving.
+              Things changes when you start from zero.
             </p>
           </motion.div>
 
@@ -224,7 +222,7 @@ export default function LandingPage() {
           >
             <h2 className="text-3xl md:text-5xl font-bold">
               Everything you need to{" "}
-              <span className="text-primary">stay healthy</span>
+              <span className="text-primary">stay ALIVE</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               ZeroNow combines powerful tracking tools with intuitive analytics
@@ -393,55 +391,6 @@ export default function LandingPage() {
           </div>
         </motion.div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-6 border-t">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold">ZeroNow 😺</h3>
-              <p className="text-muted-foreground">Simple way to not die!</p>
-              <div className="flex space-x-4">
-                {["Twitter", "Instagram", "Facebook"].map((social, i) => (
-                  <Link
-                    key={i}
-                    href="#"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {social}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 pt-8 border-t flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} ZeroNow. All rights reserved.
-            </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                Terms of Service
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                Cookie Policy
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
