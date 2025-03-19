@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClientForMiddleware } from "./lib/supabase/middleware";
 
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
-const LIMIT = 10; // Max requests
-const WINDOW = 60 * 1000; // 60 seconds in milliseconds
+const LIMIT = 30; // Max requests
+const WINDOW = 120 * 1000; // 120 seconds in milliseconds
 
 const protectedRoutes = ["/home", "/history", "/dashboard", "/settings"];
 // Added: List of bot User-Agents to block
-const botUserAgents = ["Googlebot", "Bingbot", "bot", "crawler"];
+// const botUserAgents = ["Googlebot", "Bingbot", "bot", "crawler"];
 
 export async function middleware(request: NextRequest) {
   // Get the client's IP from the 'x-forwarded-for' header
@@ -17,13 +17,13 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Added: Block bots based on User-Agent
-  const userAgent = request.headers.get("user-agent")?.toLowerCase();
-  if (
-    userAgent &&
-    botUserAgents.some((bot) => userAgent.includes(bot.toLowerCase()))
-  ) {
-    return new NextResponse("Forbidden: Bots not allowed", { status: 403 });
-  }
+  // const userAgent = request.headers.get("user-agent")?.toLowerCase();
+  // if (
+  //   userAgent &&
+  //   botUserAgents.some((bot) => userAgent.includes(bot.toLowerCase()))
+  // ) {
+  //   return new NextResponse("Forbidden: Bots not allowed", { status: 403 });
+  // }
 
   // Apply rate limiting only to API routes
   if (pathname.startsWith("/api")) {
