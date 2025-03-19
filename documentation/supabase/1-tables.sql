@@ -94,9 +94,9 @@ CREATE TABLE public.workouts (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_workouts_user_id ON public.workouts(user_id);
+CREATE INDEX idx_workouts_user_id_created_at_desc ON public.workouts (user_id, created_at DESC);
 CREATE INDEX idx_workouts_workout_date ON public.workouts(workout_date);
-CREATE INDEX idx_workouts_created_at ON public.workouts(created_at);
+
 
 -- Table: exercises (renamed from available_exercises)
 -- Purpose: Stores predefined exercises available to all users with categories and metric flags.
