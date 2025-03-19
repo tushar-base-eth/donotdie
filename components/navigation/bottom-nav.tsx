@@ -39,6 +39,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               scroll={false}
               className={cn(
                 "flex flex-col items-center justify-center p-2 transition-colors duration-200",
