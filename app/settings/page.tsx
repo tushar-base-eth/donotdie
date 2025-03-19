@@ -6,13 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider } from "react-hook-form";
 import { LogOut, Sun, Moon, User, Ruler } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "next-themes";
 import { useUserProfile } from "@/contexts/profile-context";
@@ -35,18 +29,16 @@ const settingsSchema = z.object({
 });
 
 export default function Settings() {
-  const {
-    state: { profile },
-    updateProfile,
-    clearProfile,
-  } = useUserProfile();
+  const { state: { profile }, updateProfile, clearProfile } = useUserProfile();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [profileState, setProfileState] = useState<Profile | null>(null);
 
   useEffect(() => {
     if (profile) {
+      setProfileState(profile);
       setTheme(profile.theme_preference);
     }
   }, [profile, setTheme]);
@@ -65,20 +57,18 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    if (profile) {
+    if (profileState) {
       form.reset({
-        name: profile.name || "",
-        gender: profile.gender,
-        date_of_birth: profile.date_of_birth
-          ? new Date(profile.date_of_birth)
-          : null,
-        unit_preference: profile.unit_preference || "metric",
-        weight_kg: profile.weight_kg,
-        height_cm: profile.height_cm,
-        body_fat_percentage: profile.body_fat_percentage,
+        name: profileState.name || "",
+        gender: profileState.gender,
+        date_of_birth: profileState.date_of_birth ? new Date(profileState.date_of_birth) : null,
+        unit_preference: profileState.unit_preference || "metric",
+        weight_kg: profileState.weight_kg,
+        height_cm: profileState.height_cm,
+        body_fat_percentage: profileState.body_fat_percentage,
       });
     }
-  }, [profile, form]);
+  }, [profileState, form]);
 
   const onSubmit = async (data: z.infer<typeof settingsSchema>) => {
     if (!profile) return;
@@ -97,6 +87,7 @@ export default function Settings() {
         body_fat_percentage: data.body_fat_percentage,
       };
       await updateProfile(updates);
+      setProfileState((prev) => ({ ...prev!, ...updates }));
       toast({
         title: "Success",
         description: "Profile saved successfully.",
@@ -144,44 +135,33 @@ export default function Settings() {
     }
   };
 
-  const handleThemeChange = async () => {
-    const newTheme: "light" | "dark" = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    try {
-      await updateProfile({ theme_preference: newTheme });
-    } catch (error) {
-      console.error("Error updating theme:", error);
-      toast({ title: "Error", description: "Failed to update theme." });
-    }
-  };
-
   if (!profile) {
     return <ProfileSkeleton />;
   }
 
   return (
-    <div
-      className={`min-h-screen bg-background pb-16 ${
-        theme === "dark" ? "dark" : ""
-      }`}
-    >
+    <div className={`min-h-screen bg-background pb-16 ${theme === "dark" ? "dark" : ""}`}>
       <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4 backdrop-blur-lg rounded-b-3xl">
         <h1 className="text-lg font-semibold">Settings</h1>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleThemeChange}
-            aria-label={
-              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-            }
+            onClick={async () => {
+              const newTheme: "light" | "dark" = theme === "dark" ? "light" : "dark";
+              setTheme(newTheme);
+              try {
+                await updateProfile({ theme_preference: newTheme });
+                setProfileState((prev) => ({ ...prev!, theme_preference: newTheme }));
+              } catch (error) {
+                console.error("Error updating theme:", error);
+                toast({ title: "Error", description: "Failed to update theme." });
+              }
+            }}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             className="rounded-full hover:bg-secondary"
           >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
           <Button
             variant="ghost"
@@ -234,9 +214,7 @@ export default function Settings() {
                         <User className="h-5 w-5 mr-2 text-primary" />
                         Personal Information
                       </CardTitle>
-                      <CardDescription>
-                        Update your personal details
-                      </CardDescription>
+                      <CardDescription>Update your personal details</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
                       <ProfileSettings />
@@ -251,9 +229,7 @@ export default function Settings() {
                         <Ruler className="h-5 w-5 mr-2 text-primary" />
                         Body Measurements
                       </CardTitle>
-                      <CardDescription>
-                        Track your physical measurements
-                      </CardDescription>
+                      <CardDescription>Track your physical measurements</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
                       <MeasurementsSettings />

@@ -219,7 +219,6 @@ export function useWorkouts(userId: string) {
 
 export function useDeleteWorkout() {
   const { mutate } = useWorkouts("");
-  const { fetchProfile } = useUserProfile(); // Get fetchProfile (SWR mutate)
 
   const deleteWorkoutHandler = useCallback(
     async (workoutId: string) => {
@@ -229,14 +228,8 @@ export function useDeleteWorkout() {
         .eq("id", workoutId);
       if (error) throw error;
       await mutate();
-      try {
-        await fetchProfile(); // Refresh profile data using SWR mutate  <-- ENSURE THIS IS PRESENT
-      } catch (error) {
-        console.error("Error refreshing profile after workout save:", error);
-        // ... error handling ...
-      }
     },
-    [mutate, fetchProfile]
+    [mutate]
   );
 
   return { deleteWorkout: deleteWorkoutHandler };
@@ -244,7 +237,6 @@ export function useDeleteWorkout() {
 
 export function useSaveWorkout() {
   const { mutate } = useWorkouts("");
-  const { fetchProfile } = useUserProfile(); // Get fetchProfile (SWR mutate)
 
   const saveWorkoutHandler = useCallback(
     async (workout: NewWorkout) => {
@@ -301,15 +293,8 @@ export function useSaveWorkout() {
         if (setsError) throw setsError;
       }
       await mutate();
-
-      try {
-        await fetchProfile(); // Refresh profile data using SWR mutate  <-- ENSURE THIS IS PRESENT
-      } catch (error) {
-        console.error("Error refreshing profile after workout save:", error);
-        // ... error handling ...
-      }
     },
-    [mutate, fetchProfile]
+    [mutate]
   );
 
   return { saveWorkout: saveWorkoutHandler };
